@@ -1,0 +1,32 @@
+<% wrap_layout :inner do %>
+  <% content_for :sidebar do %>
+  <div class="docs-sidebar hidden-print affix-top" role="complementary">
+  <ul class="nav docs-sidenav">
+    <li<%= sidebar_current("docs-home") %>>
+    <a class="back" href="/docs/providers/index.html">All Providers</a>
+    </li>
+
+    <li<%= sidebar_current("docs-pureport-provider") %>>
+      <a href="/docs/providers/pureport/index.html">Pureport Provider</a>
+      <ul class="nav nav-visible">
+        <li<%= sidebar_current("docs-pureport-provider-x") %>>
+          <a href="/docs/providers/pureport/index.html">Provider Info</a>
+        </li>
+        <li<%= sidebar_current("docs-pureport-provider-reference") %>>
+          <a href="/docs/providers/pureport/provider_reference.html">Provider Configuration Reference</a>
+        </li>
+        <li<%= sidebar_current("docs-pureport-provider-versions") %>>
+          <a href="/docs/providers/pureport/provider_versions.html">Pureport Provider Versions</a>
+        </li>
+        <li<%= sidebar_current("docs-pureport-provider-getting-started") %>>
+          <a href="/docs/providers/pureport/getting_started.html">Getting Started Guide</a>
+        </li>
+      </ul>
+    </li>
+
+  </ul>
+</div>
+  <% end %>
+
+<%= yield %>
+  <% end %>
