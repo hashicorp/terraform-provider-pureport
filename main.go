@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"github.com/hashicorp/terraform/plugin"
+	"github.com/pureport/terraform-provider-pureport/pureport"
+)
 
 func main() {
-	fmt.Println("vim-go")
+	plugin.Serve(&plugin.ServeOpts{
+		ProviderFunc: pureport.Provider})
 }
