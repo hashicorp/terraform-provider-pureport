@@ -62,8 +62,11 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"pureport_connection": resourceConnection(),
-			"pureport_network":    resourceNetwork(),
+			"pureport_aws_connection":          resourceAWSConnection(),
+			"pureport_azure_connection":        resourceAzureConnection(),
+			"pureport_google_cloud_connection": resourceGoogleCloudConnection(),
+			"pureport_dummy_connection":        resourceDummyConnection(),
+			"pureport_network":                 resourceNetwork(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{},
 	}

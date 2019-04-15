@@ -13,7 +13,15 @@ func resourceNetwork() *schema.Resource {
 		Delete: resourceNetworkDelete,
 
 		Schema: map[string]*schema.Schema{
-			"Id": &schema.Schema{
+			"name": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+			},
+			"description": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"account_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},

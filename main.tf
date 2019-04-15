@@ -1,1 +1,1 @@
-resource "pureport_connection" "myConnection" {}
+resource "pureport_aws_connection" "myConnection" {}
