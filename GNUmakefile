@@ -8,6 +8,9 @@ default: build
 build: fmtcheck
 	go install
 
+plugin: fmtcheck
+	go build -o terraform-provider-pureport
+
 test: fmtcheck
 	go test -i $(TEST) || exit 1
 	echo $(TEST) | \

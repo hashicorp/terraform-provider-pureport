@@ -1,32 +1,74 @@
 package pureport
 
 import (
-	"context"
-	"fmt"
-	"os"
-
-	"github.com/hashicorp/terraform/helper/mutexkv"
+	//	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	//	"github.com/hashicorp/terraform/terraform"
+	//	"github.com/pureport/pureport-sdk-go"
 )
 
 // Global MutexKV
-var mutexKV = mutexkv.NewMutexKV()
+//var mutexKV = mutexkv.NewMutexKV()
 
-// Provider returns a terraform.ResourceProvider.
-func Provider() terraform.ResourceProvider {
-	return &schema.Provider{}
+var descriptions map[string]string
+
+func init() {
+	descriptions = map[string]string{
+		"access_key":  "",
+		"secret_key":  "",
+		"profile":     "",
+		"token":       "",
+		"max_retries": "",
+	}
 }
 
-//func ResourceMap() map[string]*schema.Resource {
-//	resourceMap, _ := ResourceMapWithErrors()
-//	return resourceMap
-//}
-//
-//func ResourceMapWithErrors() (map[string]*schema.Resource, error) {
-//	return mergeResourceMaps()
-//}
-//
+// Provider returns a terraform.ResourceProvider.
+func Provider() *schema.Provider {
+	return &schema.Provider{
+		Schema: map[string]*schema.Schema{
+			"access_key": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: descriptions["access_key"],
+			},
+
+			"secret_key": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: descriptions["secret_key"],
+			},
+
+			"profile": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: descriptions["profile"],
+			},
+
+			"token": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
+				Description: descriptions["token"],
+			},
+
+			"max_retries": {
+				Type:        schema.TypeInt,
+				Optional:    true,
+				Default:     25,
+				Description: descriptions["max_retries"],
+			},
+		},
+		ResourcesMap: map[string]*schema.Resource{
+			"pureport_connection": resourceConnection(),
+			"pureport_network":    resourceNetwork(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{},
+	}
+}
+
 //func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 //	config := Config{}
 //}
