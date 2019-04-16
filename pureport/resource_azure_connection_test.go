@@ -11,7 +11,12 @@ import (
 )
 
 const testAccDataSourceAzureConnectionConfig_basic = `
-resource "pureport_aws_connection" "main" {
+resource "pureport_azure_connection" "main" {
+	name = "AzureExpressRouteTest"
+	speed = "50"
+	location_id = "us-ral"
+	network_id = "network-RgwELBcU0ATnC5JezEAsSg"
+	service_key = "8d892e3a-caae-48ac-9b71-4760de0b1d2c"
 }
 `
 

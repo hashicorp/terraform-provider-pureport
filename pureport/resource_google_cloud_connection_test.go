@@ -12,6 +12,10 @@ import (
 
 const testAccDataSourceGoogleCloudConnectionConfig_basic = `
 resource "pureport_dummy_connection" "main" {
+	name = "GoogleCloudTest"
+	speed = "100"
+	location_id = "us-ral"
+	network_id = "network-RgwELBcU0ATnC5JezEAsSg"
 }
 `
 

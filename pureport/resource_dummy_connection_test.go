@@ -12,6 +12,10 @@ import (
 
 const testAccDataSourceDummyConnectionConfig_basic = `
 resource "pureport_dummy_connection" "main" {
+	name = "DummyTest"
+	speed = "50"
+	location_id = "us-ral"
+	network_id = "network-RgwELBcU0ATnC5JezEAsSg"
 }
 `
 

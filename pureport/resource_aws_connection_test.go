@@ -12,6 +12,12 @@ import (
 
 const testAccDataSourceAWSConnectionConfig_basic = `
 resource "pureport_aws_connection" "main" {
+	name = "AwsDirectConnectTest"
+	speed = "100"
+	location_id = "us-ral"
+	network_id = "network-RgwELBcU0ATnC5JezEAsSg"
+	aws_region = "us-west-2"
+	aws_account_id = "123456789012"
 }
 `
 
