@@ -18,7 +18,7 @@ resource "pureport_aws_connection" "main" {
 func TestAzureConnection_basic(t *testing.T) {
 
 	resourceName := "resource.pureport_aws_connection.main"
-	var instance swagger.AwsDirectConnectConnection
+	var instance swagger.AzureExpressRouteConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -38,7 +38,7 @@ func TestAzureConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDataSourceAzureConnection(name string, instance *swagger.AwsDirectConnectConnection) resource.TestCheckFunc {
+func testAccCheckDataSourceAzureConnection(name string, instance *swagger.AzureExpressRouteConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
@@ -62,14 +62,14 @@ func testAccCheckDataSourceAzureConnection(name string, instance *swagger.AwsDir
 		found, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
 
 		if err != nil {
-			return fmt.Errorf("receive error when requesting AWS Connection %s", id)
+			return fmt.Errorf("receive error when requesting Azure Connection %s", id)
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting AWS Connection ID %s: %s", id, err)
+			fmt.Errorf("Error getting Azure Connection ID %s: %s", id, err)
 		}
 
-		//*instance = *found
+		*instance = *found.(*swagger.AzureExpressRouteConnection)
 
 		return nil
 	}
@@ -93,11 +93,11 @@ func testAccCheckAzureConnectionDestroy(s *terraform.State) error {
 		_, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
 
 		if err != nil {
-			return fmt.Errorf("should not get error for AWS Connection with ID %s after delete: %s", id, err)
+			return fmt.Errorf("should not get error for Azure Connection with ID %s after delete: %s", id, err)
 		}
 
 		if resp.StatusCode != 404 {
-			return fmt.Errorf("should not find AWS Connection with ID %s existing after delete", id)
+			return fmt.Errorf("should not find Azure Connection with ID %s existing after delete", id)
 		}
 	}
 

@@ -10,25 +10,25 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
-const testAccDataSourceAWSConnectionConfig_basic = `
-resource "pureport_aws_connection" "main" {
+const testAccDataSourceDummyConnectionConfig_basic = `
+resource "pureport_dummy_connection" "main" {
 }
 `
 
-func TestAWSConnection_basic(t *testing.T) {
+func TestDummyConnection_basic(t *testing.T) {
 
 	resourceName := "resource.pureport_aws_connection.main"
-	var instance swagger.AwsDirectConnectConnection
+	var instance swagger.DummyConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAWSConnectionDestroy,
+		CheckDestroy: testAccCheckDummyConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceAWSConnectionConfig_basic,
+				Config: testAccDataSourceDummyConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceAWSConnection(resourceName, &instance),
+					testAccCheckDataSourceDummyConnection(resourceName, &instance),
 					resource.TestCheckResourceAttr(resourceName, "id", instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", ""),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
@@ -38,7 +38,7 @@ func TestAWSConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDataSourceAWSConnection(name string, instance *swagger.AwsDirectConnectConnection) resource.TestCheckFunc {
+func testAccCheckDataSourceDummyConnection(name string, instance *swagger.DummyConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
@@ -49,7 +49,7 @@ func testAccCheckDataSourceAWSConnection(name string, instance *swagger.AwsDirec
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find AWS Connnection resource: %s", name)
+			return fmt.Errorf("Can't find Dummy Connnection resource: %s", name)
 		}
 
 		if rs.Primary.ID == "" {
@@ -62,20 +62,20 @@ func testAccCheckDataSourceAWSConnection(name string, instance *swagger.AwsDirec
 		found, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
 
 		if err != nil {
-			return fmt.Errorf("receive error when requesting AWS Connection %s", id)
+			return fmt.Errorf("receive error when requesting Dummy Connection %s", id)
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting AWS Connection ID %s: %s", id, err)
+			fmt.Errorf("Error getting Dummy Connection ID %s: %s", id, err)
 		}
 
-		*instance = *found.(*swagger.AwsDirectConnectConnection)
+		*instance = *found.(*swagger.DummyConnection)
 
 		return nil
 	}
 }
 
-func testAccCheckAWSConnectionDestroy(s *terraform.State) error {
+func testAccCheckDummyConnectionDestroy(s *terraform.State) error {
 
 	sess, ok := testAccProvider.Meta().(*session.Session)
 	if !ok {
@@ -93,11 +93,11 @@ func testAccCheckAWSConnectionDestroy(s *terraform.State) error {
 		_, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
 
 		if err != nil {
-			return fmt.Errorf("should not get error for AWS Connection with ID %s after delete: %s", id, err)
+			return fmt.Errorf("should not get error for Dummy Connection with ID %s after delete: %s", id, err)
 		}
 
 		if resp.StatusCode != 404 {
-			return fmt.Errorf("should not find AWS Connection with ID %s existing after delete", id)
+			return fmt.Errorf("should not find Dummy Connection with ID %s existing after delete", id)
 		}
 	}
 
