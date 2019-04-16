@@ -3,6 +3,7 @@ package pureport
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func getBaseConnectionSchema() map[string]*schema.Schema {
@@ -63,8 +64,9 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 						},
 					},
 					"blocks": {
-						Type:     schema.TypeString,
+						Type:     schema.TypeList,
 						Computed: true,
+						Elem:     &schema.Schema{Type: schema.TypeString},
 					},
 					"pnat_cidr": {
 						Type:     schema.TypeString,
@@ -87,4 +89,56 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 	}
+}
+
+func flattenConnection(connection swagger.Connection) map[string]interface{} {
+	return map[string]interface{}{
+		"customer_asn":      connection.CustomerASN,
+		"customer_networks": flattenCustomerNetworks(connection.CustomerNetworks),
+		"description":       connection.Description,
+		"high_availability": connection.HighAvailability,
+		"location_id":       connection.Location.Id,
+		"name":              connection.Name,
+		"network_id":        connection.Network.Id,
+		"speed":             connection.Speed,
+	}
+}
+
+func flattenCustomerNetworks(networks []swagger.CustomerNetwork) (out []map[string]interface{}) {
+
+	for _, network := range networks {
+
+		n := map[string]interface{}{
+			"name":    network.Name,
+			"address": network.Address,
+		}
+
+		out = append(out, n)
+	}
+
+	return
+}
+
+func flattenNatConfig(config swagger.NatConfig) map[string]interface{} {
+	return map[string]interface{}{
+		"blocks":    config.Blocks,
+		"enabled":   config.Enabled,
+		"pnat_cidr": config.PnatCidr,
+		"mappings":  flattenMappings(config.Mappings),
+	}
+}
+
+func flattenMappings(mappings []swagger.NatMapping) (out []map[string]interface{}) {
+
+	for _, mapping := range mappings {
+
+		m := map[string]interface{}{
+			"nat_cidr":    mapping.NatCidr,
+			"native_cidr": mapping.NativeCidr,
+		}
+
+		out = append(out, m)
+	}
+
+	return
 }

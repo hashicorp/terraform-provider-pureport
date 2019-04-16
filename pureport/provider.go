@@ -3,8 +3,10 @@ package pureport
 import (
 	//	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
-	//	"github.com/hashicorp/terraform/terraform"
-	//	"github.com/pureport/pureport-sdk-go"
+	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/pureport-sdk-go/pureport"
+	ppLog "github.com/pureport/pureport-sdk-go/pureport/logging"
+	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 // Global MutexKV
@@ -23,7 +25,7 @@ func init() {
 }
 
 // Provider returns a terraform.ResourceProvider.
-func Provider() *schema.Provider {
+func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"access_key": {
@@ -68,10 +70,24 @@ func Provider() *schema.Provider {
 			"pureport_dummy_connection":        resourceDummyConnection(),
 			"pureport_network":                 resourceNetwork(),
 		},
-		DataSourcesMap: map[string]*schema.Resource{},
+		DataSourcesMap: map[string]*schema.Resource{
+			"pureport_cloud_regions":  dataSourceCloudRegions(),
+			"pureport_cloud_services": dataSourceCloudServices(),
+			"pureport_locations":      dataSourceLocations(),
+		},
+		ConfigureFunc: providerConfigure,
 	}
 }
 
-//func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-//	config := Config{}
-//}
+func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+
+	cfg := pureport.NewConfiguration("")
+	cfg = cfg.WithEndPoint("https://dev1-api.pureportdev.com")
+
+	logCfg := ppLog.NewLogConfig()
+	ppLog.SetupLogger(logCfg)
+
+	s := session.NewSession(cfg)
+
+	return s, nil
+}
