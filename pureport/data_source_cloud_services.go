@@ -79,7 +79,7 @@ func dataSourceCloudServicesRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode >= 300 {
 		log.Printf("[Error] Error Response while Reading Cloud Services data")
 		d.SetId("")
 		return nil

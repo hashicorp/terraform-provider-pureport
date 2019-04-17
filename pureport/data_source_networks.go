@@ -82,7 +82,7 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode >= 300 {
 		log.Printf("[Error] Error Response while Reading Pureport Network data")
 		d.SetId("")
 		return nil
