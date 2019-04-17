@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
@@ -17,6 +19,12 @@ func dataSourceCloudServices() *schema.Resource {
 		Read: dataSourceCloudServicesRead,
 
 		Schema: map[string]*schema.Schema{
+			"name_regex": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.ValidateRegexp,
+			},
 			"services": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -60,6 +68,8 @@ func dataSourceCloudServices() *schema.Resource {
 func dataSourceCloudServicesRead(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
+	nameRegex, nameRegexOk := d.GetOk("name_regex")
+
 	ctx := sess.GetSessionContext()
 
 	services, resp, err := sess.Client.CloudServicesApi.GetCloudServices(ctx)
@@ -75,13 +85,26 @@ func dataSourceCloudServicesRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
+	// Filter the results
+	var filteredServices []swagger.CloudService
+	if nameRegexOk {
+		r := regexp.MustCompile(nameRegex.(string))
+		for _, service := range services {
+			if r.MatchString(service.Name) {
+				filteredServices = append(filteredServices, service)
+			}
+		}
+	} else {
+		filteredServices = services
+	}
+
 	// Sort the list
-	sort.Slice(services, func(i int, j int) bool {
-		return services[i].Id < services[j].Id
+	sort.Slice(filteredServices, func(i int, j int) bool {
+		return filteredServices[i].Id < filteredServices[j].Id
 	})
 
 	// Convert to Map
-	out := flattenServices(services)
+	out := flattenServices(filteredServices)
 	if err := d.Set("services", out); err != nil {
 		return fmt.Errorf("Error reading cloud services: %s", err)
 	}

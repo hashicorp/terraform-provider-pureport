@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
@@ -18,6 +20,12 @@ func dataSourceCloudRegions() *schema.Resource {
 		Read: dataSourceCloudRegionsRead,
 
 		Schema: map[string]*schema.Schema{
+			"name_regex": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.ValidateRegexp,
+			},
 			"regions": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -49,6 +57,8 @@ func dataSourceCloudRegions() *schema.Resource {
 func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
+	nameRegex, nameRegexOk := d.GetOk("name_regex")
+
 	ctx := sess.GetSessionContext()
 
 	regions, resp, err := sess.Client.CloudRegionsApi.GetCloudRegions(ctx)
@@ -64,13 +74,26 @@ func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
+	// Filter the results
+	var filteredRegions []swagger.CloudRegion
+	if nameRegexOk {
+		r := regexp.MustCompile(nameRegex.(string))
+		for _, region := range regions {
+			if r.MatchString(region.DisplayName) {
+				filteredRegions = append(filteredRegions, region)
+			}
+		}
+	} else {
+		filteredRegions = regions
+	}
+
 	// Sort the list
-	sort.Slice(regions, func(i int, j int) bool {
-		return regions[i].Id < regions[j].Id
+	sort.Slice(filteredRegions, func(i int, j int) bool {
+		return filteredRegions[i].Id < filteredRegions[j].Id
 	})
 
 	// Convert to Map
-	out := flattenRegions(regions)
+	out := flattenRegions(filteredRegions)
 	if err := d.Set("regions", out); err != nil {
 		return fmt.Errorf("Error reading cloud regions: %s", err)
 	}

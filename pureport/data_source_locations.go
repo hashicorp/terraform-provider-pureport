@@ -66,7 +66,6 @@ func dataSourceLocations() *schema.Resource {
 func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
-
 	nameRegex, nameRegexOk := d.GetOk("name_regex")
 
 	ctx := sess.GetSessionContext()
