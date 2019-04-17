@@ -20,7 +20,18 @@ func resourceAWSConnection() *schema.Resource {
 		"cloud_services": {
 			Type:     schema.TypeList,
 			Optional: true,
-			Elem:     &schema.Schema{Type: schema.TypeString},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"id": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"href": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+				},
+			},
 		},
 		"peering": {
 			Type:         schema.TypeString,

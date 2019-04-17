@@ -27,8 +27,16 @@ data "pureport_networks" "main" {
 resource "pureport_aws_connection" "main" {
 	name = "AwsDirectConnectTest"
 	speed = "100"
-	location_id = "${data.pureport_locations.main.locations.0.id}"
-	network_id = "${data.pureport_networks.main.networks.0.id}"
+
+	location {
+		id = "${data.pureport_locations.main.locations.0.id}"
+		href = "${data.pureport_locations.main.locations.0.href}"
+	}
+	network {
+		id = "${data.pureport_networks.main.networks.0.id}"
+		href = "${data.pureport_networks.main.networks.0.href}"
+	}
+
 	aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
 	aws_account_id = "123456789012"
 }

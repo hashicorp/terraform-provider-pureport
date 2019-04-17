@@ -33,9 +33,23 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Optional: true,
 		},
-		"location_id": {
-			Type:     schema.TypeString,
+		"location": {
+			Type:     schema.TypeList,
 			Required: true,
+			MaxItems: 1,
+			MinItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"id": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"href": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+				},
+			},
 		},
 		"nat_config": {
 			Type:     schema.TypeList,
@@ -79,9 +93,23 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Required: true,
 		},
-		"network_id": {
-			Type:     schema.TypeString,
+		"network": {
+			Type:     schema.TypeList,
 			Required: true,
+			MaxItems: 1,
+			MinItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"id": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+					"href": {
+						Type:     schema.TypeString,
+						Required: true,
+					},
+				},
+			},
 		},
 		"speed": {
 			Type:         schema.TypeInt,
@@ -97,10 +125,17 @@ func flattenConnection(connection swagger.Connection) map[string]interface{} {
 		"customer_networks": flattenCustomerNetworks(connection.CustomerNetworks),
 		"description":       connection.Description,
 		"high_availability": connection.HighAvailability,
-		"location_id":       connection.Location.Id,
+		"location":          flattenLink(connection.Location),
 		"name":              connection.Name,
-		"network_id":        connection.Network.Id,
+		"network":           flattenLink(connection.Network),
 		"speed":             connection.Speed,
+	}
+}
+
+func flattenLink(link *swagger.Link) map[string]interface{} {
+	return map[string]interface{}{
+		"id":   link.Id,
+		"href": link.Href,
 	}
 }
 

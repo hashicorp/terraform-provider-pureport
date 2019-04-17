@@ -40,6 +40,10 @@ func dataSourceNetworks() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"href": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"name": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -123,6 +127,7 @@ func flattenNetworks(networks []swagger.Network) (out []map[string]interface{}) 
 
 		l := map[string]interface{}{
 			"id":          network.Id,
+			"href":        network.Href,
 			"name":        network.Name,
 			"description": network.Description,
 			"account_id":  network.Account.Id,

@@ -36,6 +36,10 @@ func dataSourceLocations() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"href": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 						"name": {
 							Type:     schema.TypeString,
 							Computed: true,
@@ -122,6 +126,7 @@ func flattenLocations(locations []swagger.Location) (out []map[string]interface{
 
 		l := map[string]interface{}{
 			"id":    loc.Id,
+			"href":  loc.Href,
 			"name":  loc.Name,
 			"links": flattenLinks(loc.LocationLinks),
 		}
