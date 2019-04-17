@@ -99,8 +99,6 @@ func flattenServices(services []swagger.CloudService) (out []map[string]interfac
 
 	for _, cs := range services {
 
-		fmt.Printf("Service: %+v\n", cs.CloudRegion)
-
 		s := map[string]interface{}{
 			"id":                cs.Id,
 			"name":              cs.Name,

@@ -8,31 +8,31 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-const testAccDataSourceCloudServicesConfig_foo = `
-data "pureport_cloud_services" "foo" {
+const testAccDataSourceCloudServicesConfig_empty = `
+data "pureport_cloud_services" "empty" {
 }
 `
 
-func TestCloudServices_basic(t *testing.T) {
+func TestCloudServices_empty(t *testing.T) {
 
-	resourceName := "data.pureport_cloud_services.foo"
+	resourceName := "data.pureport_cloud_services.empty"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceCloudServicesConfig_foo,
+				Config: testAccDataSourceCloudServicesConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudServices(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "services.0.id", ""),
-					resource.TestCheckResourceAttr(resourceName, "services.0.name", ""),
-					resource.TestCheckResourceAttr(resourceName, "services.0.provider", ""),
-					resource.TestCheckResourceAttr(resourceName, "services.0.service", ""),
-					resource.TestCheckResourceAttr(resourceName, "services.0.ipv4_prefix_count", ""),
-					resource.TestCheckResourceAttr(resourceName, "services.0.ipv6_prefix_count", ""),
-					resource.TestCheckResourceAttr(resourceName, "services.0.cloud_region_id", ""),
-					resource.TestCheckResourceAttr(resourceName, "services.#", "20"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.id", "aws-cloud9-us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.name", "AWS Cloud9 us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.provider", "AWS"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.service", "CLOUD9"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.ipv4_prefix_count", "2"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.ipv6_prefix_count", "0"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.cloud_region_id", "aws-us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "services.#", "16"),
 				),
 			},
 		},
