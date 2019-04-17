@@ -11,12 +11,25 @@ import (
 )
 
 const testAccDataSourceAWSConnectionConfig_basic = `
+data "pureport_cloud_regions" "main" {
+	name_regex = "Oregon"
+}
+
+data "pureport_locations" "main" {
+	name_regex = "^Sea*"
+}
+
+data "pureport_networks" "main" {
+	account_id = "ac-8QVPmcPb_EhapbGHBMAo6Q"
+	name_regex = "Bansh.*"
+}
+
 resource "pureport_aws_connection" "main" {
 	name = "AwsDirectConnectTest"
 	speed = "100"
-	location_id = "us-ral"
-	network_id = "network-RgwELBcU0ATnC5JezEAsSg"
-	aws_region = "us-west-2"
+	location_id = "${data.pureport_locations.main.locations.0.id}"
+	network_id = "${data.pureport_networks.main.networks.0.id}"
+	aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
 	aws_account_id = "123456789012"
 }
 `

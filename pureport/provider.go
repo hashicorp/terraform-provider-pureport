@@ -74,6 +74,7 @@ func Provider() terraform.ResourceProvider {
 			"pureport_cloud_regions":  dataSourceCloudRegions(),
 			"pureport_cloud_services": dataSourceCloudServices(),
 			"pureport_locations":      dataSourceLocations(),
+			"pureport_networks":       dataSourceNetworks(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
