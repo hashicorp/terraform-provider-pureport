@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
@@ -18,6 +20,12 @@ func dataSourceLocations() *schema.Resource {
 		Read: dataSourceLocationsRead,
 
 		Schema: map[string]*schema.Schema{
+			"name_regex": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.ValidateRegexp,
+			},
 			"locations": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -58,6 +66,9 @@ func dataSourceLocations() *schema.Resource {
 func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
+
+	nameRegex, nameRegexOk := d.GetOk("name_regex")
+
 	ctx := sess.GetSessionContext()
 
 	locations, resp, err := sess.Client.LocationsApi.FindLocations(ctx)
@@ -73,13 +84,26 @@ func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
+	// Filter the results
+	var filteredLocations []swagger.Location
+	if nameRegexOk {
+		r := regexp.MustCompile(nameRegex.(string))
+		for _, location := range locations {
+			if r.MatchString(location.Name) {
+				filteredLocations = append(filteredLocations, location)
+			}
+		}
+	} else {
+		filteredLocations = locations
+	}
+
 	// Sort the list
-	sort.Slice(locations, func(i int, j int) bool {
-		return locations[i].Id < locations[j].Id
+	sort.Slice(filteredLocations, func(i int, j int) bool {
+		return filteredLocations[i].Id < filteredLocations[j].Id
 	})
 
 	// Convert to Map
-	out := flattenLocations(locations)
+	out := flattenLocations(filteredLocations)
 	if err := d.Set("locations", out); err != nil {
 		return fmt.Errorf("Error reading locations: %s", err)
 	}

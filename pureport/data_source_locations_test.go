@@ -8,29 +8,55 @@ import (
 	"github.com/hashicorp/terraform/terraform"
 )
 
-const testAccDataSourceLocationsConfig_foo = `
-data "pureport_locations" "foo" {
+const testAccDataSourceLocationsConfig_empty = `
+data "pureport_locations" "empty" {
 }
 `
 
-func TestLocations_basic(t *testing.T) {
+const testAccDataSourceLocationsConfig_name_regex = `
+data "pureport_locations" "name_regex" {
+	name_regex = "^Sea*"
+}
+`
 
-	resourceName := "data.pureport_cloud_regions.any"
+func TestLocations_empty(t *testing.T) {
+
+	resourceName := "data.pureport_locations.empty"
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceLocationsConfig_foo,
+				Config: testAccDataSourceLocationsConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceLocations(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.id", ""),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.name", ""),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.#", ""),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.0.location_id", ""),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.0.speed", ""),
-					resource.TestCheckResourceAttr(resourceName, "locations.#", "20"),
+					resource.TestCheckResourceAttr(resourceName, "locations.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "locations.0.id", "us-ral"),
+					resource.TestCheckResourceAttr(resourceName, "locations.0.name", "Raleigh"),
+					resource.TestCheckResourceAttr(resourceName, "locations.0.links.#", "0"),
+				),
+			},
+		},
+	})
+}
+
+func TestLocations_name_regex(t *testing.T) {
+
+	resourceName := "data.pureport_locations.name_regex"
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccDataSourceLocationsConfig_name_regex,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckDataSourceLocations(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "locations.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "locations.0.id", "us-sea"),
+					resource.TestCheckResourceAttr(resourceName, "locations.0.name", "Seattle"),
+					resource.TestCheckResourceAttr(resourceName, "locations.0.links.#", "0"),
 				),
 			},
 		},
