@@ -11,11 +11,30 @@ import (
 )
 
 const testAccDataSourceAzureConnectionConfig_basic = `
+data "pureport_cloud_regions" "main" {
+	name_regex = "Oregon"
+}
+
+data "pureport_locations" "main" {
+	name_regex = "^Sea*"
+}
+
+data "pureport_networks" "main" {
+	account_id = "ac-8QVPmcPb_EhapbGHBMAo6Q"
+	name_regex = "Bansh.*"
+}
+
 resource "pureport_azure_connection" "main" {
 	name = "AzureExpressRouteTest"
 	speed = "50"
-	location_id = "us-ral"
-	network_id = "network-RgwELBcU0ATnC5JezEAsSg"
+	location {
+		id = "${data.pureport_locations.main.locations.0.id}"
+		href = "${data.pureport_locations.main.locations.0.href}"
+	}
+	network {
+		id = "${data.pureport_networks.main.networks.0.id}"
+		href = "${data.pureport_networks.main.networks.0.href}"
+	}
 	service_key = "8d892e3a-caae-48ac-9b71-4760de0b1d2c"
 }
 `
