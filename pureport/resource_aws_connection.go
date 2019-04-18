@@ -2,16 +2,26 @@
 package pureport
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
+)
+
+var (
+	DeletableState = map[string]bool{
+		"FAILED_TO_PROVISION": true,
+		"ACTIVE":              true,
+		"DOWN":                true,
+		"FAILED_TO_UPDATE":    true,
+		"FAILED_TO_DELETE":    true,
+		"DELETED":             true,
+	}
 )
 
 func resourceAWSConnection() *schema.Resource {
@@ -74,6 +84,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 	speed := d.Get("speed").(int)
 	name := d.Get("name").(string)
 	location := d.Get("location").([]interface{})
+	billingTerm := d.Get("billing_term").(string)
 
 	// AWS specific values
 	awsAccountId := d.Get("aws_account_id").(string)
@@ -93,6 +104,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		},
 		AwsAccountId: awsAccountId,
 		AwsRegion:    awsRegion,
+		BillingTerm:  billingTerm,
 	}
 
 	// Generic Optionals
@@ -156,44 +168,33 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
+	connection.Type_ = "AWS_DIRECT_CONNECT"
+
 	ctx := sess.GetSessionContext()
 
 	opts := swagger.AddConnectionOpts{
 		Body: optional.NewInterface(connection),
 	}
 
-	resp, err := sess.Client.ConnectionsApi.AddConnection(
+	id, resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
 		network[0].(map[string]interface{})["id"].(string),
 		&opts,
 	)
 
 	if err != nil {
-		log.Printf("[Error] Error Creating new AWS Connection: %s", err)
+		log.Printf("[Error] Error Creating new AWS Connection: %v", err)
 		d.SetId("")
 		return nil
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode >= 300 {
 		log.Printf("[Error] Error Response while creating new AWS Connection: code=%v", resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
 
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("[Error] Error reading create AWS Connection response")
-		return nil
-	}
-
-	var data map[string]string
-	if err = json.Unmarshal(body, &data); err != nil {
-		log.Printf("[Error] Error reading response from creating new AWS Connection")
-		return nil
-	}
-
-	d.SetId(data["id"])
+	d.SetId(id)
 
 	return resourceAWSConnectionRead(d, m)
 }
@@ -205,23 +206,19 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	ctx := sess.GetSessionContext()
 
 	c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
-	conn := c.(swagger.AwsDirectConnectConnection)
-
 	if err != nil {
-		log.Printf("[Error] Error reading data for AWS Connection: %s", err)
-
 		if resp.StatusCode == 404 {
 			log.Printf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
 			d.SetId("")
 		}
-		return nil
+		return fmt.Errorf("[Error] Error reading data for AWS Connection: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
+		fmt.Errorf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
 	}
 
-	fmt.Printf("Connection: %+v", conn)
+	conn := c.(swagger.AwsDirectConnectConnection)
 	d.Set("aws_account_id", conn.AwsAccountId)
 	d.Set("aws_region", conn.AwsRegion)
 
@@ -233,8 +230,6 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 	d.Set("cloud_services", cloudServices)
-
-	fmt.Printf("Peering: %+v", conn.Peering.Type_)
 	d.Set("peering", conn.Peering.Type_)
 
 	var customerNetworks []map[string]string
@@ -261,5 +256,56 @@ func resourceAWSConnectionUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceAWSConnectionDelete(d *schema.ResourceData, m interface{}) error {
+
+	sess := m.(*session.Session)
+	ctx := sess.GetSessionContext()
+	connectionId := d.Id()
+
+	// Wait until we are in a state that we can trigger a delete from
+	log.Printf("[Info] Waiting to trigger a delete.")
+	for i := 0; i < 100; i++ {
+
+		c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+		conn := c.(swagger.AwsDirectConnectConnection)
+
+		if err != nil {
+			return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
+		}
+
+		if resp.StatusCode >= 300 {
+			return fmt.Errorf("Error Response while attempting to delete AWS Connection: code=%v", resp.StatusCode)
+		}
+
+		if DeletableState[conn.State] {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	// Delete
+	_, resp, err := sess.Client.ConnectionsApi.Delete9(ctx, connectionId)
+
+	if err != nil {
+		return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("Error Response while deleting AWS Connection: code=%v", resp.StatusCode)
+	}
+
+	for i := 0; i < 100; i++ {
+
+		log.Printf("[Info] Waiting for channel to be deleted: attempt %d", i)
+		_, resp, _ := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+
+		if resp.StatusCode == 404 {
+			d.SetId("")
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
 	return nil
 }

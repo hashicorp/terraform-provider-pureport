@@ -51,6 +51,11 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"billing_term": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "HOURLY",
+		},
 		"nat_config": {
 			Type:     schema.TypeList,
 			Optional: true,

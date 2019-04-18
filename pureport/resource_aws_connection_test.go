@@ -16,17 +16,18 @@ data "pureport_cloud_regions" "main" {
 }
 
 data "pureport_locations" "main" {
-	name_regex = "^Sea*"
+	name_regex = "^Ral*"
 }
 
 data "pureport_networks" "main" {
-	account_id = "ac-8QVPmcPb_EhapbGHBMAo6Q"
+	account_id = "ac-1DzvVWqsmnX8ynGkBEclUQ"
 	name_regex = "Bansh.*"
 }
 
 resource "pureport_aws_connection" "main" {
 	name = "AwsDirectConnectTest"
 	speed = "100"
+	high_availability = true
 
 	location {
 		id = "${data.pureport_locations.main.locations.0.id}"
@@ -44,7 +45,7 @@ resource "pureport_aws_connection" "main" {
 
 func TestAWSConnection_basic(t *testing.T) {
 
-	resourceName := "resource.pureport_aws_connection.main"
+	resourceName := "pureport_aws_connection.main"
 	var instance swagger.AwsDirectConnectConnection
 
 	resource.Test(t, resource.TestCase{
@@ -56,9 +57,11 @@ func TestAWSConnection_basic(t *testing.T) {
 				Config: testAccDataSourceAWSConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceAWSConnection(resourceName, &instance),
-					resource.TestCheckResourceAttr(resourceName, "id", instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", ""),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
+					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 				),
 			},
 		},
@@ -96,7 +99,7 @@ func testAccCheckDataSourceAWSConnection(name string, instance *swagger.AwsDirec
 			fmt.Errorf("Error getting AWS Connection ID %s: %s", id, err)
 		}
 
-		*instance = *found.(*swagger.AwsDirectConnectConnection)
+		*instance = found.(swagger.AwsDirectConnectConnection)
 
 		return nil
 	}
@@ -119,12 +122,8 @@ func testAccCheckAWSConnectionDestroy(s *terraform.State) error {
 		ctx := sess.GetSessionContext()
 		_, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
 
-		if err != nil {
+		if err != nil && resp.StatusCode != 404 {
 			return fmt.Errorf("should not get error for AWS Connection with ID %s after delete: %s", id, err)
-		}
-
-		if resp.StatusCode != 404 {
-			return fmt.Errorf("should not find AWS Connection with ID %s existing after delete", id)
 		}
 	}
 

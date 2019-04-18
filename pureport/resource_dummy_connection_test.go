@@ -40,7 +40,7 @@ resource "pureport_dummy_connection" "main" {
 
 func TestDummyConnection_basic(t *testing.T) {
 
-	resourceName := "resource.pureport_aws_connection.main"
+	resourceName := "pureport_dummy_connection.main"
 	var instance swagger.DummyConnection
 
 	resource.Test(t, resource.TestCase{

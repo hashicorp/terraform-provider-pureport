@@ -41,7 +41,7 @@ resource "pureport_azure_connection" "main" {
 
 func TestAzureConnection_basic(t *testing.T) {
 
-	resourceName := "resource.pureport_aws_connection.main"
+	resourceName := "pureport_aws_connection.main"
 	var instance swagger.AzureExpressRouteConnection
 
 	resource.Test(t, resource.TestCase{

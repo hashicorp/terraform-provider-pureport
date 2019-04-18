@@ -24,7 +24,7 @@ data "pureport_networks" "main" {
 	name_regex = "Bansh.*"
 }
 
-resource "pureport_dummy_connection" "main" {
+resource "pureport_google_cloud_connection" "main" {
 	name = "GoogleCloudTest"
 	speed = "100"
 	location {
@@ -40,7 +40,7 @@ resource "pureport_dummy_connection" "main" {
 
 func TestGoogleCloudConnection_basic(t *testing.T) {
 
-	resourceName := "resource.pureport_aws_connection.main"
+	resourceName := "pureport_google_cloud_connection.main"
 	var instance swagger.GoogleCloudInterconnectConnection
 
 	resource.Test(t, resource.TestCase{
