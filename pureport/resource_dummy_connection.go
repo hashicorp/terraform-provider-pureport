@@ -52,6 +52,7 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	// Create the body of the request
 	connection := swagger.DummyConnection{
+		Type_: "DUMMY",
 		Name:  name,
 		Speed: int32(speed),
 		Location: &swagger.Link{
@@ -66,17 +67,9 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	}
 
 	// Generic Optionals
-	if customerNetworks, ok := d.GetOk("customer_networks"); ok {
-		for _, cn := range customerNetworks.([]map[string]string) {
-
-			new := swagger.CustomerNetwork{
-				Name:    cn["name"],
-				Address: cn["Address"],
-			}
-
-			connection.CustomerNetworks = append(connection.CustomerNetworks, new)
-		}
-	}
+	connection.CustomerNetworks = AddCustomerNetworks(d)
+	connection.Nat = AddNATConfiguration(d)
+	connection.Peering = AddPeeringType(d)
 
 	if description, ok := d.GetOk("description"); ok {
 		connection.Description = description.(string)
@@ -85,35 +78,6 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	if highAvailability, ok := d.GetOk("high_availability"); ok {
 		connection.HighAvailability = highAvailability.(bool)
 	}
-
-	if natConfig, ok := d.GetOk("nat_config"); ok {
-
-		config := natConfig.(map[string]interface{})
-		connection.Nat = &swagger.NatConfig{
-			Enabled: config["enabled"].(bool),
-		}
-
-		for _, m := range config["mappings"].([]map[string]string) {
-
-			new := swagger.NatMapping{
-				NativeCidr: m["native_cidr"],
-			}
-
-			connection.Nat.Mappings = append(connection.Nat.Mappings, new)
-		}
-	}
-
-	if peeringType, ok := d.GetOk("peering"); ok {
-		connection.Peering = &swagger.PeeringConfiguration{
-			Type_: peeringType.(string),
-		}
-	} else {
-		connection.Peering = &swagger.PeeringConfiguration{
-			Type_: "",
-		}
-	}
-
-	connection.Type_ = "DUMMY"
 
 	ctx := sess.GetSessionContext()
 

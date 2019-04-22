@@ -255,3 +255,78 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	return nil
 
 }
+
+// AddCustomerNetworks to decode the customer network information
+func AddCustomerNetworks(d *schema.ResourceData) []swagger.CustomerNetwork {
+	customerNetworks := []swagger.CustomerNetwork{}
+
+	if data, ok := d.GetOk("customer_networks"); ok {
+		for _, cn := range data.([]map[string]string) {
+
+			new := swagger.CustomerNetwork{
+				Name:    cn["name"],
+				Address: cn["Address"],
+			}
+
+			customerNetworks = append(customerNetworks, new)
+		}
+	}
+
+	return customerNetworks
+}
+
+func AddNATConfiguration(d *schema.ResourceData) *swagger.NatConfig {
+
+	natConfig := &swagger.NatConfig{
+		Enabled: false,
+	}
+
+	if data, ok := d.GetOk("nat_config"); ok {
+
+		config := data.(map[string]interface{})
+		natConfig.Enabled = config["enabled"].(bool)
+
+		for _, m := range config["mappings"].([]map[string]string) {
+
+			new := swagger.NatMapping{
+				NativeCidr: m["native_cidr"],
+			}
+
+			natConfig.Mappings = append(natConfig.Mappings, new)
+		}
+	}
+
+	return natConfig
+}
+
+func AddCloudServices(d *schema.ResourceData) []swagger.Link {
+
+	cloudServices := []swagger.Link{}
+
+	if data, ok := d.GetOk("cloud_services"); ok {
+		for _, cs := range data.([]map[string]string) {
+
+			new := swagger.Link{
+				Id:   cs["id"],
+				Href: cs["href"],
+			}
+
+			cloudServices = append(cloudServices, new)
+		}
+	}
+
+	return cloudServices
+}
+
+func AddPeeringType(d *schema.ResourceData) *swagger.PeeringConfiguration {
+
+	peeringConfig := &swagger.PeeringConfiguration{}
+
+	if data, ok := d.GetOk("peering"); ok {
+		peeringConfig.Type_ = data.(string)
+	} else {
+		peeringConfig.Type_ = "Private"
+	}
+
+	return peeringConfig
+}

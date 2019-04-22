@@ -55,6 +55,7 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 
 	// Create the body of the request
 	connection := swagger.GoogleCloudInterconnectConnection{
+		Type_: "GOOGLE_CLOUD_INTERCONNECT",
 		Name:  name,
 		Speed: int32(speed),
 		Location: &swagger.Link{
@@ -70,17 +71,8 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 	}
 
 	// Generic Optionals
-	if customerNetworks, ok := d.GetOk("customer_networks"); ok {
-		for _, cn := range customerNetworks.([]map[string]string) {
-
-			new := swagger.CustomerNetwork{
-				Name:    cn["name"],
-				Address: cn["Address"],
-			}
-
-			connection.CustomerNetworks = append(connection.CustomerNetworks, new)
-		}
-	}
+	connection.CustomerNetworks = AddCustomerNetworks(d)
+	connection.Nat = AddNATConfiguration(d)
 
 	if description, ok := d.GetOk("description"); ok {
 		connection.Description = description.(string)
@@ -90,29 +82,10 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		connection.HighAvailability = highAvailability.(bool)
 	}
 
-	if natConfig, ok := d.GetOk("nat_config"); ok {
-
-		config := natConfig.(map[string]interface{})
-		connection.Nat = &swagger.NatConfig{
-			Enabled: config["enabled"].(bool),
-		}
-
-		for _, m := range config["mappings"].([]map[string]string) {
-
-			new := swagger.NatMapping{
-				NativeCidr: m["native_cidr"],
-			}
-
-			connection.Nat.Mappings = append(connection.Nat.Mappings, new)
-		}
-	}
-
 	// Google Optionals
 	if secondaryPairingKey, ok := d.GetOk("secondary_pairing_key"); ok {
 		connection.SecondaryPairingKey = secondaryPairingKey.(string)
 	}
-
-	connection.Type_ = "GOOGLE_CLOUD_INTERCONNECT"
 
 	ctx := sess.GetSessionContext()
 

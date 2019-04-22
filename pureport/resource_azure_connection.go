@@ -59,6 +59,7 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	// Create the body of the request
 	connection := swagger.AzureExpressRouteConnection{
+		Type_: "AZURE_EXPRESS_ROUTE",
 		Name:  name,
 		Speed: int32(speed),
 		Location: &swagger.Link{
@@ -74,17 +75,8 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	}
 
 	// Generic Optionals
-	if customerNetworks, ok := d.GetOk("customer_networks"); ok {
-		for _, cn := range customerNetworks.([]map[string]string) {
-
-			new := swagger.CustomerNetwork{
-				Name:    cn["name"],
-				Address: cn["Address"],
-			}
-
-			connection.CustomerNetworks = append(connection.CustomerNetworks, new)
-		}
-	}
+	connection.CustomerNetworks = AddCustomerNetworks(d)
+	connection.Nat = AddNATConfiguration(d)
 
 	if description, ok := d.GetOk("description"); ok {
 		connection.Description = description.(string)
@@ -94,35 +86,8 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		connection.HighAvailability = highAvailability.(bool)
 	}
 
-	if natConfig, ok := d.GetOk("nat_config"); ok {
-
-		config := natConfig.(map[string]interface{})
-		connection.Nat = &swagger.NatConfig{
-			Enabled: config["enabled"].(bool),
-		}
-
-		for _, m := range config["mappings"].([]map[string]string) {
-
-			new := swagger.NatMapping{
-				NativeCidr: m["native_cidr"],
-			}
-
-			connection.Nat.Mappings = append(connection.Nat.Mappings, new)
-		}
-	}
-
 	// Azure Optionals
-	if peeringType, ok := d.GetOk("peering"); ok {
-		connection.Peering = &swagger.PeeringConfiguration{
-			Type_: peeringType.(string),
-		}
-	} else {
-		connection.Peering = &swagger.PeeringConfiguration{
-			Type_: "",
-		}
-	}
-
-	connection.Type_ = "AZURE_EXPRESS_ROUTE"
+	connection.Peering = AddPeeringType(d)
 
 	ctx := sess.GetSessionContext()
 
