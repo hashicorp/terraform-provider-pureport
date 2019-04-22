@@ -189,6 +189,70 @@ func resourceSiteVPNConnection() *schema.Resource {
 	}
 }
 
+func addTrafficSelectorMappings(d *schema.ResourceData) []swagger.TrafficSelectorMapping {
+
+	mappings := []swagger.TrafficSelectorMapping{}
+
+	if data, ok := d.GetOk("customer_networks"); ok {
+		for _, m := range data.([]map[string]string) {
+
+			new := swagger.TrafficSelectorMapping{
+				CustomerSide: m["customer_side"],
+				PureportSide: m["pureport_side"],
+			}
+
+			mappings = append(mappings, new)
+		}
+	}
+
+	return mappings
+}
+
+func addIkeVersion1(d *schema.ResourceData) *swagger.Ikev1Config {
+
+	config := &swagger.Ikev1Config{}
+
+	if data, ok := d.GetOk("ikev1_config"); ok {
+
+		raw_config := data.(map[string]interface{})
+
+		esp := raw_config["esp"].(map[string]interface{})
+		config.Esp.DhGroup = esp["dh_group"].(string)
+		config.Esp.Encryption = esp["encryption"].(string)
+		config.Esp.Integrity = esp["integrity"].(string)
+
+		ike := raw_config["ike"].(map[string]interface{})
+		config.Ike.DhGroup = ike["dh_group"].(string)
+		config.Ike.Encryption = ike["encryption"].(string)
+		config.Ike.Integrity = ike["integrity"].(string)
+	}
+
+	return config
+}
+
+func addIkeVersion2(d *schema.ResourceData) *swagger.Ikev2Config {
+
+	config := &swagger.Ikev2Config{}
+
+	if data, ok := d.GetOk("ikev2_config"); ok {
+
+		raw_config := data.(map[string]interface{})
+
+		esp := raw_config["esp"].(map[string]interface{})
+		config.Esp.DhGroup = esp["dh_group"].(string)
+		config.Esp.Encryption = esp["encryption"].(string)
+		config.Esp.Integrity = esp["integrity"].(string)
+
+		ike := raw_config["ike"].(map[string]interface{})
+		config.Ike.DhGroup = ike["dh_group"].(string)
+		config.Ike.Encryption = ike["encryption"].(string)
+		config.Ike.Integrity = ike["integrity"].(string)
+		config.Ike.Prf = ike["prf"].(string)
+	}
+
+	return config
+}
+
 func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
@@ -200,14 +264,17 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 	location := d.Get("location").([]interface{})
 	billingTerm := d.Get("billing_term").(string)
 
-	// SiteVPN specific values
-	awsAccountId := d.Get("aws_account_id").(string)
-	awsRegion := d.Get("aws_region").(string)
-
 	// Create the body of the request
-	connection := swagger.AwsDirectConnectConnection{
-		Name:  name,
-		Speed: int32(speed),
+	connection := swagger.SiteIpSecVpnConnection{
+		Type_:                   "SITE_IPSEC_VPN",
+		Name:                    name,
+		Speed:                   int32(speed),
+		AuthType:                d.Get("auth_type").(string),
+		IkeVersion:              d.Get("ike_version").(string),
+		RoutingType:             d.Get("routing_type").(string),
+		PrimaryCustomerRouterIP: d.Get("primary_customer_router_ip").(string),
+		PrimaryKey:              d.Get("primary_key").(string),
+
 		Location: &swagger.Link{
 			Id:   location[0].(map[string]interface{})["id"].(string),
 			Href: location[0].(map[string]interface{})["href"].(string),
@@ -216,23 +283,12 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 			Id:   network[0].(map[string]interface{})["id"].(string),
 			Href: network[0].(map[string]interface{})["href"].(string),
 		},
-		AwsAccountId: awsAccountId,
-		AwsRegion:    awsRegion,
-		BillingTerm:  billingTerm,
+		BillingTerm: billingTerm,
 	}
 
 	// Generic Optionals
-	if customerNetworks, ok := d.GetOk("customer_networks"); ok {
-		for _, cn := range customerNetworks.([]map[string]string) {
-
-			new := swagger.CustomerNetwork{
-				Name:    cn["name"],
-				Address: cn["Address"],
-			}
-
-			connection.CustomerNetworks = append(connection.CustomerNetworks, new)
-		}
-	}
+	connection.CustomerNetworks = AddCustomerNetworks(d)
+	connection.Nat = AddNATConfiguration(d)
 
 	if description, ok := d.GetOk("description"); ok {
 		connection.Description = description.(string)
@@ -242,47 +298,30 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		connection.HighAvailability = highAvailability.(bool)
 	}
 
-	if natConfig, ok := d.GetOk("nat_config"); ok {
-
-		config := natConfig.(map[string]interface{})
-		connection.Nat = &swagger.NatConfig{
-			Enabled: config["enabled"].(bool),
-		}
-
-		for _, m := range config["mappings"].([]map[string]string) {
-
-			new := swagger.NatMapping{
-				NativeCidr: m["native_cidr"],
-			}
-
-			connection.Nat.Mappings = append(connection.Nat.Mappings, new)
-		}
-	}
-
 	// SiteVPN Optionals
-	if cloudServices, ok := d.GetOk("cloud_services"); ok {
-		for _, cs := range cloudServices.([]map[string]string) {
+	connection.TrafficSelectors = addTrafficSelectorMappings(d)
 
-			new := swagger.Link{
-				Id:   cs["id"],
-				Href: cs["href"],
-			}
-
-			connection.CloudServices = append(connection.CloudServices, new)
-		}
-	}
-
-	if peeringType, ok := d.GetOk("peering"); ok {
-		connection.Peering = &swagger.PeeringConfiguration{
-			Type_: peeringType.(string),
-		}
+	if connection.IkeVersion == "1" {
+		connection.IkeV1 = addIkeVersion1(d)
 	} else {
-		connection.Peering = &swagger.PeeringConfiguration{
-			Type_: "",
-		}
+		connection.IkeV2 = addIkeVersion2(d)
 	}
 
-	connection.Type_ = "SiteVPN_DIRECT_CONNECT"
+	if authType, ok := d.GetOk("auth_type"); ok {
+		connection.AuthType = authType.(string)
+	}
+
+	if enableBGPPassword, ok := d.GetOk("enable_bgp_password"); ok {
+		connection.EnableBGPPassword = enableBGPPassword.(bool)
+	}
+
+	if secondaryCustomerRouterIP, ok := d.GetOk("secondary_customer_router_ip"); ok {
+		connection.SecondaryCustomerRouterIP = secondaryCustomerRouterIP.(string)
+	}
+
+	if secondaryKey, ok := d.GetOk("secondary_key"); ok {
+		connection.SecondaryKey = secondaryKey.(string)
+	}
 
 	ctx := sess.GetSessionContext()
 
@@ -332,19 +371,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		fmt.Errorf("[Error] Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
 	}
 
-	conn := c.(swagger.AwsDirectConnectConnection)
-	d.Set("aws_account_id", conn.AwsAccountId)
-	d.Set("aws_region", conn.AwsRegion)
-
-	var cloudServices []map[string]string
-	for _, cs := range conn.CloudServices {
-		cloudServices = append(cloudServices, map[string]string{
-			"id":   cs.Id,
-			"href": cs.Href,
-		})
-	}
-	d.Set("cloud_services", cloudServices)
-	d.Set("peering", conn.Peering.Type_)
+	conn := c.(swagger.SiteIpSecVpnConnection)
 
 	var customerNetworks []map[string]string
 	for _, cn := range conn.CustomerNetworks {
@@ -365,6 +392,51 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		"id":   conn.Network.Id,
 		"href": conn.Network.Href,
 	})
+
+	d.Set("auth_type", conn.AuthType)
+	d.Set("enable_bgp_password", conn.EnableBGPPassword)
+	d.Set("ike_version", conn.IkeVersion)
+	d.Set("ikev1_config", map[string]interface{}{
+		"esp": map[string]string{
+			"dh_group":   conn.IkeV1.Esp.DhGroup,
+			"encryption": conn.IkeV1.Esp.Encryption,
+			"integrity":  conn.IkeV1.Esp.Integrity,
+		},
+		"ike": map[string]string{
+			"dh_group":   conn.IkeV1.Ike.DhGroup,
+			"encryption": conn.IkeV1.Ike.Encryption,
+			"integrity":  conn.IkeV1.Ike.Integrity,
+		},
+	})
+
+	d.Set("ikev2_config", map[string]interface{}{
+		"esp": map[string]string{
+			"dh_group":   conn.IkeV2.Esp.DhGroup,
+			"encryption": conn.IkeV2.Esp.Encryption,
+			"integrity":  conn.IkeV2.Esp.Integrity,
+		},
+		"ike": map[string]string{
+			"dh_group":   conn.IkeV2.Ike.DhGroup,
+			"encryption": conn.IkeV2.Ike.Encryption,
+			"integrity":  conn.IkeV2.Ike.Integrity,
+			"prf":        conn.IkeV2.Ike.Prf,
+		},
+	})
+	d.Set("routing_type", conn.RoutingType)
+	d.Set("primary_customer_router_ip", conn.PrimaryCustomerRouterIP)
+	d.Set("primary_key", conn.PrimaryKey)
+	d.Set("secondary_customer_router_ip", conn.SecondaryCustomerRouterIP)
+	d.Set("secondary_key", conn.SecondaryKey)
+
+	trafficSelectors := []map[string]string{}
+	for _, v := range conn.TrafficSelectors {
+		trafficSelectors = append(trafficSelectors, map[string]string{
+			"customer_side": v.CustomerSide,
+			"pureport_side": v.PureportSide,
+		})
+	}
+
+	d.Set("traffic_selectors", trafficSelectors)
 
 	return nil
 }
