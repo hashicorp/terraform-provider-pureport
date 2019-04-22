@@ -68,6 +68,7 @@ func Provider() terraform.ResourceProvider {
 			"pureport_azure_connection":        resourceAzureConnection(),
 			"pureport_google_cloud_connection": resourceGoogleCloudConnection(),
 			"pureport_dummy_connection":        resourceDummyConnection(),
+			"pureport_site_vpn_connection":     resourceSiteVPNConnection(),
 			"pureport_network":                 resourceNetwork(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
@@ -75,6 +76,7 @@ func Provider() terraform.ResourceProvider {
 			"pureport_cloud_services": dataSourceCloudServices(),
 			"pureport_locations":      dataSourceLocations(),
 			"pureport_networks":       dataSourceNetworks(),
+			"pureport_accounts":       dataSourceAccounts(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

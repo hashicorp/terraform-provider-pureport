@@ -1,4 +1,4 @@
-// Package main provides AWSConnection resource
+// Package main provides SiteVPNConnection resource
 package pureport
 
 import (
@@ -12,39 +12,165 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
-func resourceAWSConnection() *schema.Resource {
+func resourceSiteVPNConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
-		"aws_account_id": {
+		"auth_type": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Default:      "psk",
+			ValidateFunc: validation.StringInSlice([]string{"psk"}, true),
+		},
+		"enable_bgp_password": {
+			Type:     schema.TypeBool,
+			Optional: true,
+		},
+		"ike_version": {
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"1", "2"}, true),
+		},
+		"ikev1_config": {
+			Type:     schema.TypeList,
+			Optional: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"esp": {
+						Type:     schema.TypeList,
+						MaxItems: 1,
+						Required: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"dh_group": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"encryption": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"integrity": {
+									Type:     schema.TypeString,
+									Optional: true,
+								},
+							},
+						},
+					},
+					"ike": {
+						Type:     schema.TypeList,
+						MaxItems: 1,
+						Required: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"dh_group": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"encryption": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"integrity": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"ikev2_config": {
+			Type:     schema.TypeList,
+			Optional: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"esp": {
+						Type:     schema.TypeList,
+						MaxItems: 1,
+						Required: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"dh_group": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"encryption": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"integrity": {
+									Type:     schema.TypeString,
+									Optional: true,
+								},
+							},
+						},
+					},
+					"ike": {
+						Type:     schema.TypeList,
+						MaxItems: 1,
+						Required: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"dh_group": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"encryption": {
+									Type:     schema.TypeString,
+									Required: true,
+								},
+								"integrity": {
+									Type:     schema.TypeString,
+									Optional: true,
+								},
+								"prf": {
+									Type:     schema.TypeString,
+									Optional: true,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"primary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Required: true,
 		},
-		"aws_region": {
+		"primary_key": {
 			Type:     schema.TypeString,
 			Required: true,
 		},
-		"cloud_services": {
+		"routing_type": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"secondary_customer_router_ip": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+		"secondary_key": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+		"traffic_selectors": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"id": {
+					"customer_side": {
 						Type:     schema.TypeString,
 						Required: true,
 					},
-					"href": {
+					"pureport_side": {
 						Type:     schema.TypeString,
 						Required: true,
 					},
 				},
 			},
-		},
-		"peering": {
-			Type:         schema.TypeString,
-			Description:  "The peering configuration to use for this connection Public/Private",
-			Default:      "Private",
-			Optional:     true,
-			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
 		},
 	}
 
@@ -54,16 +180,16 @@ func resourceAWSConnection() *schema.Resource {
 	}
 
 	return &schema.Resource{
-		Create: resourceAWSConnectionCreate,
-		Read:   resourceAWSConnectionRead,
-		Update: resourceAWSConnectionUpdate,
-		Delete: resourceAWSConnectionDelete,
+		Create: resourceSiteVPNConnectionCreate,
+		Read:   resourceSiteVPNConnectionRead,
+		Update: resourceSiteVPNConnectionUpdate,
+		Delete: resourceSiteVPNConnectionDelete,
 
 		Schema: connection_schema,
 	}
 }
 
-func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
+func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
 
@@ -74,7 +200,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 	location := d.Get("location").([]interface{})
 	billingTerm := d.Get("billing_term").(string)
 
-	// AWS specific values
+	// SiteVPN specific values
 	awsAccountId := d.Get("aws_account_id").(string)
 	awsRegion := d.Get("aws_region").(string)
 
@@ -133,7 +259,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	// AWS Optionals
+	// SiteVPN Optionals
 	if cloudServices, ok := d.GetOk("cloud_services"); ok {
 		for _, cs := range cloudServices.([]map[string]string) {
 
@@ -156,7 +282,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		}
 	}
 
-	connection.Type_ = "AWS_DIRECT_CONNECT"
+	connection.Type_ = "SiteVPN_DIRECT_CONNECT"
 
 	ctx := sess.GetSessionContext()
 
@@ -171,23 +297,23 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 	)
 
 	if err != nil {
-		log.Printf("[Error] Error Creating new AWS Connection: %v", err)
+		log.Printf("[Error] Error Creating new SiteVPN Connection: %v", err)
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while creating new AWS Connection: code=%v", resp.StatusCode)
+		log.Printf("[Error] Error Response while creating new SiteVPN Connection: code=%v", resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
 
 	d.SetId(id)
 
-	return resourceAWSConnectionRead(d, m)
+	return resourceSiteVPNConnectionRead(d, m)
 }
 
-func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
+func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
 	connectionId := d.Id()
@@ -196,14 +322,14 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
+			log.Printf("[Error] Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("[Error] Error reading data for AWS Connection: %s", err)
+		return fmt.Errorf("[Error] Error reading data for SiteVPN Connection: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
+		fmt.Errorf("[Error] Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
 	}
 
 	conn := c.(swagger.AwsDirectConnectConnection)
@@ -243,10 +369,10 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func resourceAWSConnectionUpdate(d *schema.ResourceData, m interface{}) error {
-	return resourceAWSConnectionRead(d, m)
+func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) error {
+	return resourceSiteVPNConnectionRead(d, m)
 }
 
-func resourceAWSConnectionDelete(d *schema.ResourceData, m interface{}) error {
+func resourceSiteVPNConnectionDelete(d *schema.ResourceData, m interface{}) error {
 	return DeleteConnection(d, m)
 }

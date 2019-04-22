@@ -1,9 +1,26 @@
 package pureport
 
 import (
+	"fmt"
+	"log"
+	"reflect"
+	"time"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/session"
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
+)
+
+var (
+	DeletableState = map[string]bool{
+		"FAILED_TO_PROVISION": true,
+		"ACTIVE":              true,
+		"DOWN":                true,
+		"FAILED_TO_UPDATE":    true,
+		"FAILED_TO_DELETE":    true,
+		"DELETED":             true,
+	}
 )
 
 func getBaseConnectionSchema() map[string]*schema.Schema {
@@ -181,4 +198,60 @@ func flattenMappings(mappings []swagger.NatMapping) (out []map[string]interface{
 	}
 
 	return
+}
+
+func DeleteConnection(d *schema.ResourceData, m interface{}) error {
+
+	sess := m.(*session.Session)
+	ctx := sess.GetSessionContext()
+	connectionId := d.Id()
+
+	// Wait until we are in a state that we can trigger a delete from
+	log.Printf("[Info] Waiting to trigger a delete.")
+	for i := 0; i < 100; i++ {
+
+		c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+		conn := reflect.ValueOf(c).Elem()
+
+		if err != nil {
+			return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
+		}
+
+		if resp.StatusCode >= 300 {
+			return fmt.Errorf("Error Response while attempting to delete AWS Connection: code=%v", resp.StatusCode)
+		}
+
+		if DeletableState[conn.FieldByName("State").String()] {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	// Delete
+	_, resp, err := sess.Client.ConnectionsApi.Delete9(ctx, connectionId)
+
+	if err != nil {
+		return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("Error Response while deleting AWS Connection: code=%v", resp.StatusCode)
+	}
+
+	for i := 0; i < 100; i++ {
+
+		log.Printf("[Info] Waiting for channel to be deleted: attempt %d", i)
+		_, resp, _ := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+
+		if resp.StatusCode == 404 {
+			d.SetId("")
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return nil
+
 }

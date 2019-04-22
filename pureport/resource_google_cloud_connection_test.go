@@ -11,6 +11,10 @@ import (
 )
 
 const testAccDataSourceGoogleCloudConnectionConfig_basic = `
+data "pureport_accounts" "main" {
+	name_regex = "Terraform"
+}
+
 data "pureport_cloud_regions" "main" {
 	name_regex = "Oregon"
 }
@@ -20,7 +24,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-	account_id = "ac-8QVPmcPb_EhapbGHBMAo6Q"
+	account_id = "${pureport_accounts.main.0.id}"
 	name_regex = "Bansh.*"
 }
 
