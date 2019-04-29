@@ -9,14 +9,22 @@ import (
 )
 
 const testAccDataSourceNetworksConfig_empty = `
+data "pureport_accounts" "main" {
+	name_regex = "Terraform .*"
+}
+
 data "pureport_networks" "empty" {
-	account_id = "ac-8QVPmcPb_EhapbGHBMAo6Q"
+	account_id = "${data.pureport_accounts.main.accounts.0.id}"
 }
 `
 
 const testAccDataSourceNetworksConfig_name_regex = `
+data "pureport_accounts" "main" {
+	name_regex = "Terraform .*"
+}
+
 data "pureport_networks" "name_regex" {
-	account_id = "ac-8QVPmcPb_EhapbGHBMAo6Q"
+	account_id = "${data.pureport_accounts.main.accounts.0.id}"
 	name_regex = "Clash.*"
 }
 `
@@ -34,9 +42,9 @@ func TestNetworks_empty(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceNetworks(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "networks.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.id", "network-EhlpJLhAcHMOmY75J91H3g"),
+					resource.TestCheckResourceAttrSet(resourceName, "networks.0.id"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "Siouxsie The Banshees"),
+					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "Siouxsie And The Banshees"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Test Network #2"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.account_id", "ac-8QVPmcPb_EhapbGHBMAo6Q"),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.id", "network-fN6NX6utBCoE5L_H261P4A"),
@@ -80,7 +88,7 @@ func testAccCheckDataSourceNetworks(name string) resource.TestCheckFunc {
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find Cloud Region data source: %s", name)
+			return fmt.Errorf("Can't find Network data source: %s", name)
 		}
 
 		if rs.Primary.ID == "" {

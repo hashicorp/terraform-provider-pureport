@@ -4,6 +4,8 @@ package pureport
 import (
 	"fmt"
 	"log"
+	"net/url"
+	"path/filepath"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -142,7 +144,7 @@ func resourceSiteVPNConnection() *schema.Resource {
 		},
 		"primary_key": {
 			Type:     schema.TypeString,
-			Required: true,
+			Optional: true,
 		},
 		"routing_type": {
 			Type:     schema.TypeString,
@@ -329,25 +331,38 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		Body: optional.NewInterface(connection),
 	}
 
-	id, resp, err := sess.Client.ConnectionsApi.AddConnection(
+	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
 		network[0].(map[string]interface{})["id"].(string),
 		&opts,
 	)
 
 	if err != nil {
-		log.Printf("[Error] Error Creating new SiteVPN Connection: %v", err)
+		log.Printf("Error Creating new SiteVPN Connection: %v", err)
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while creating new SiteVPN Connection: code=%v", resp.StatusCode)
+		log.Printf("Error Response while creating new SiteVPN Connection: code=%v", resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
 
+	loc := resp.Header.Get("location")
+	u, err := url.Parse(loc)
+	if err != nil {
+		log.Printf("Error when decoding Connection ID")
+		return nil
+	}
+
+	id := filepath.Base(u.Path)
 	d.SetId(id)
+
+	if id == "" {
+		log.Printf("Error when decoding location header")
+		return nil
+	}
 
 	return resourceSiteVPNConnectionRead(d, m)
 }
@@ -358,20 +373,21 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	connectionId := d.Id()
 	ctx := sess.GetSessionContext()
 
-	c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+	c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("[Error] Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
+			log.Printf("Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("[Error] Error reading data for SiteVPN Connection: %s", err)
+		return fmt.Errorf("Error reading data for SiteVPN Connection: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("[Error] Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
+		fmt.Errorf("Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
 	}
 
 	conn := c.(swagger.SiteIpSecVpnConnection)
+	d.Set("speed", conn.Speed)
 
 	var customerNetworks []map[string]string
 	for _, cn := range conn.CustomerNetworks {

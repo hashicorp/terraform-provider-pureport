@@ -24,7 +24,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-	account_id = "${pureport_accounts.main.0.id}"
+	account_id = "${data.pureport_accounts.main.accounts.0.id}"
 	name_regex = "Bansh.*"
 }
 
@@ -93,7 +93,7 @@ func testAccCheckDataSourceAWSConnection(name string, instance *swagger.AwsDirec
 		id := rs.Primary.ID
 
 		ctx := sess.GetSessionContext()
-		found, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
+		found, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting AWS Connection %s", id)
@@ -124,7 +124,7 @@ func testAccCheckAWSConnectionDestroy(s *terraform.State) error {
 		id := rs.Primary.ID
 
 		ctx := sess.GetSessionContext()
-		_, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
+		_, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil && resp.StatusCode != 404 {
 			return fmt.Errorf("should not get error for AWS Connection with ID %s after delete: %s", id, err)

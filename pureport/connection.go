@@ -210,9 +210,7 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[Info] Waiting to trigger a delete.")
 	for i := 0; i < 100; i++ {
 
-		c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
-		conn := reflect.ValueOf(c).Elem()
-
+		c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 		if err != nil {
 			return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
 		}
@@ -221,6 +219,7 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("Error Response while attempting to delete AWS Connection: code=%v", resp.StatusCode)
 		}
 
+		conn := reflect.ValueOf(c)
 		if DeletableState[conn.FieldByName("State").String()] {
 			break
 		}
@@ -229,7 +228,7 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Delete
-	_, resp, err := sess.Client.ConnectionsApi.Delete9(ctx, connectionId)
+	_, resp, err := sess.Client.ConnectionsApi.DeleteConnection(ctx, connectionId)
 
 	if err != nil {
 		return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
@@ -242,7 +241,7 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	for i := 0; i < 100; i++ {
 
 		log.Printf("[Info] Waiting for channel to be deleted: attempt %d", i)
-		_, resp, _ := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+		_, resp, _ := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 
 		if resp.StatusCode == 404 {
 			d.SetId("")

@@ -24,11 +24,11 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-	account_id = "${pureport_accounts.main.0.id}"
+	account_id = "${data.pureport_accounts.main.accounts.0.id}"
 	name_regex = "Bansh.*"
 }
 
-resource "pureport_aws_connection" "main" {
+resource "pureport_site_vpn_connection" "main" {
 	name = "SiteVPNTest"
 	speed = "100"
 	high_availability = true
@@ -42,14 +42,15 @@ resource "pureport_aws_connection" "main" {
 		href = "${data.pureport_networks.main.networks.0.href}"
 	}
 
-	aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-	aws_account_id = "123456789012"
+	ike_version = "2"
+	primary_customer_router_ip = "123.123.123.123"
+	routing_type = "ROUTE_BASED_BGP"
 }
 `
 
 func TestSiteVPNConnection_basic(t *testing.T) {
 
-	resourceName := "pureport_aws_connection.main"
+	resourceName := "pureport_site_vpn_connection.main"
 	var instance swagger.SiteIpSecVpnConnection
 
 	resource.Test(t, resource.TestCase{
@@ -93,7 +94,7 @@ func testAccCheckDataSourceSiteVPNConnection(name string, instance *swagger.Site
 		id := rs.Primary.ID
 
 		ctx := sess.GetSessionContext()
-		found, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
+		found, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting SiteVPN Connection %s", id)
@@ -124,7 +125,7 @@ func testAccCheckSiteVPNConnectionDestroy(s *terraform.State) error {
 		id := rs.Primary.ID
 
 		ctx := sess.GetSessionContext()
-		_, resp, err := sess.Client.ConnectionsApi.Get11(ctx, id)
+		_, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil && resp.StatusCode != 404 {
 			return fmt.Errorf("should not get error for SiteVPN Connection with ID %s after delete: %s", id, err)

@@ -4,6 +4,8 @@ package pureport
 import (
 	"fmt"
 	"log"
+	"net/url"
+	"path/filepath"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -42,7 +44,7 @@ func resourceAWSConnection() *schema.Resource {
 		"peering": {
 			Type:         schema.TypeString,
 			Description:  "The peering configuration to use for this connection Public/Private",
-			Default:      "Private",
+			Default:      "PRIVATE",
 			Optional:     true,
 			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
 		},
@@ -112,25 +114,38 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		Body: optional.NewInterface(connection),
 	}
 
-	id, resp, err := sess.Client.ConnectionsApi.AddConnection(
+	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
 		network[0].(map[string]interface{})["id"].(string),
 		&opts,
 	)
 
 	if err != nil {
-		log.Printf("[Error] Error Creating new AWS Connection: %v", err)
+		log.Printf("Error Creating new AWS Connection: %v", err)
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while creating new AWS Connection: code=%v", resp.StatusCode)
+		log.Printf("Error Response while creating new AWS Connection: code=%v", resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
 
+	loc := resp.Header.Get("location")
+	u, err := url.Parse(loc)
+	if err != nil {
+		log.Printf("Error when decoding Connection ID")
+		return nil
+	}
+
+	id := filepath.Base(u.Path)
 	d.SetId(id)
+
+	if id == "" {
+		log.Printf("Error when decoding location header")
+		return nil
+	}
 
 	return resourceAWSConnectionRead(d, m)
 }
@@ -141,17 +156,17 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	connectionId := d.Id()
 	ctx := sess.GetSessionContext()
 
-	c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+	c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
+			log.Printf("Error Response while reading AWS Connection: code=%v", resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("[Error] Error reading data for AWS Connection: %s", err)
+		return fmt.Errorf("Error reading data for AWS Connection: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
+		fmt.Errorf("Error Response while reading AWS Connection: code=%v", resp.StatusCode)
 	}
 
 	conn := c.(swagger.AwsDirectConnectConnection)
@@ -167,6 +182,7 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	}
 	d.Set("cloud_services", cloudServices)
 	d.Set("peering", conn.Peering.Type_)
+	d.Set("speed", conn.Speed)
 
 	var customerNetworks []map[string]string
 	for _, cn := range conn.CustomerNetworks {

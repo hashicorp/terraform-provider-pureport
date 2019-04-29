@@ -4,6 +4,8 @@ package pureport
 import (
 	"fmt"
 	"log"
+	"net/url"
+	"path/filepath"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -93,25 +95,39 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		Body: optional.NewInterface(connection),
 	}
 
-	id, resp, err := sess.Client.ConnectionsApi.AddConnection(
+	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
 		network[0].(map[string]interface{})["id"].(string),
 		&opts,
 	)
 
 	if err != nil {
-		log.Printf("[Error] Error Creating new Google Cloud Connection: %v", err)
+		log.Printf("Error Creating new Google Cloud Connection: %v", err)
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while creating new Google Cloud Connection: code=%v", resp.StatusCode)
+		log.Printf("Error Response while creating new Google Cloud Connection: code=%v", resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
 
+	loc := resp.Header.Get("location")
+	u, err := url.Parse(loc)
+	if err != nil {
+		log.Printf("Error when decoding Connection ID")
+		return nil
+	}
+
+	id := filepath.Base(u.Path)
 	d.SetId(id)
+
+	if id == "" {
+		log.Printf("Error when decoding location header")
+		return nil
+	}
+
 	return resourceGoogleCloudConnectionRead(d, m)
 }
 
@@ -121,20 +137,21 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 	connectionId := d.Id()
 	ctx := sess.GetSessionContext()
 
-	c, resp, err := sess.Client.ConnectionsApi.Get11(ctx, connectionId)
+	c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("[Error] Error Response while reading Google Cloud Connection: code=%v", resp.StatusCode)
+			log.Printf("Error Response while reading Google Cloud Connection: code=%v", resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("[Error] Error reading data for Google Cloud Connection: %s", err)
+		return fmt.Errorf("Error reading data for Google Cloud Connection: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("[Error] Error Response while reading Google Cloud Connection: code=%v", resp.StatusCode)
+		fmt.Errorf("Error Response while reading Google Cloud Connection: code=%v", resp.StatusCode)
 	}
 
 	conn := c.(swagger.GoogleCloudInterconnectConnection)
+	d.Set("speed", conn.Speed)
 
 	var customerNetworks []map[string]string
 	for _, cn := range conn.CustomerNetworks {
