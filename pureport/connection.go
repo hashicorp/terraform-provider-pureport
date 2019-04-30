@@ -25,6 +25,11 @@ var (
 
 func getBaseConnectionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
+		"customer_asn": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ValidateFunc: validation.IntBetween(0, 65535),
+		},
 		"customer_networks": {
 			Type:     schema.TypeList,
 			Optional: true,
@@ -81,7 +86,8 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 				Schema: map[string]*schema.Schema{
 					"enabled": {
 						Type:     schema.TypeBool,
-						Required: true,
+						Optional: true,
+						Default:  true,
 					},
 					"mappings": {
 						Type:     schema.TypeList,
@@ -212,7 +218,7 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 
 		c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 		if err != nil {
-			return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
+			return fmt.Errorf("Error deleting data for AWS Connection: %s", err)
 		}
 
 		if resp.StatusCode >= 300 {
@@ -231,7 +237,7 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	_, resp, err := sess.Client.ConnectionsApi.DeleteConnection(ctx, connectionId)
 
 	if err != nil {
-		return fmt.Errorf("[Error] Error deleting data for AWS Connection: %s", err)
+		return fmt.Errorf("Error deleting data for AWS Connection: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
@@ -252,14 +258,15 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	}
 
 	return nil
-
 }
 
 // AddCustomerNetworks to decode the customer network information
 func AddCustomerNetworks(d *schema.ResourceData) []swagger.CustomerNetwork {
-	customerNetworks := []swagger.CustomerNetwork{}
 
 	if data, ok := d.GetOk("customer_networks"); ok {
+
+		customerNetworks := []swagger.CustomerNetwork{}
+
 		for _, cn := range data.([]map[string]string) {
 
 			new := swagger.CustomerNetwork{
@@ -269,18 +276,18 @@ func AddCustomerNetworks(d *schema.ResourceData) []swagger.CustomerNetwork {
 
 			customerNetworks = append(customerNetworks, new)
 		}
+
+		return customerNetworks
 	}
 
-	return customerNetworks
+	return nil
 }
 
 func AddNATConfiguration(d *schema.ResourceData) *swagger.NatConfig {
 
-	natConfig := &swagger.NatConfig{
-		Enabled: false,
-	}
-
 	if data, ok := d.GetOk("nat_config"); ok {
+
+		natConfig := &swagger.NatConfig{}
 
 		config := data.(map[string]interface{})
 		natConfig.Enabled = config["enabled"].(bool)
@@ -293,16 +300,18 @@ func AddNATConfiguration(d *schema.ResourceData) *swagger.NatConfig {
 
 			natConfig.Mappings = append(natConfig.Mappings, new)
 		}
+		return natConfig
 	}
 
-	return natConfig
+	return nil
 }
 
 func AddCloudServices(d *schema.ResourceData) []swagger.Link {
 
-	cloudServices := []swagger.Link{}
-
 	if data, ok := d.GetOk("cloud_services"); ok {
+
+		cloudServices := []swagger.Link{}
+
 		for _, cs := range data.([]map[string]string) {
 
 			new := swagger.Link{
@@ -312,9 +321,11 @@ func AddCloudServices(d *schema.ResourceData) []swagger.Link {
 
 			cloudServices = append(cloudServices, new)
 		}
+
+		return cloudServices
 	}
 
-	return cloudServices
+	return nil
 }
 
 func AddPeeringType(d *schema.ResourceData) *swagger.PeeringConfiguration {

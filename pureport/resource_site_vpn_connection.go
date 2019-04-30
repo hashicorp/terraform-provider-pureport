@@ -20,17 +20,18 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"auth_type": {
 			Type:         schema.TypeString,
 			Optional:     true,
-			Default:      "psk",
+			Default:      "PSK",
 			ValidateFunc: validation.StringInSlice([]string{"psk"}, true),
 		},
 		"enable_bgp_password": {
 			Type:     schema.TypeBool,
 			Optional: true,
+			Default:  false,
 		},
 		"ike_version": {
 			Type:         schema.TypeString,
 			Required:     true,
-			ValidateFunc: validation.StringInSlice([]string{"1", "2"}, true),
+			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
 		},
 		"ikev1_config": {
 			Type:     schema.TypeList,
@@ -140,7 +141,7 @@ func resourceSiteVPNConnection() *schema.Resource {
 		},
 		"primary_customer_router_ip": {
 			Type:     schema.TypeString,
-			Required: true,
+			Optional: true,
 		},
 		"primary_key": {
 			Type:     schema.TypeString,
@@ -193,9 +194,10 @@ func resourceSiteVPNConnection() *schema.Resource {
 
 func addTrafficSelectorMappings(d *schema.ResourceData) []swagger.TrafficSelectorMapping {
 
-	mappings := []swagger.TrafficSelectorMapping{}
+	if data, ok := d.GetOk("traffic_selectors"); ok {
 
-	if data, ok := d.GetOk("customer_networks"); ok {
+		mappings := []swagger.TrafficSelectorMapping{}
+
 		for _, m := range data.([]map[string]string) {
 
 			new := swagger.TrafficSelectorMapping{
@@ -205,9 +207,11 @@ func addTrafficSelectorMappings(d *schema.ResourceData) []swagger.TrafficSelecto
 
 			mappings = append(mappings, new)
 		}
+
+		return mappings
 	}
 
-	return mappings
+	return nil
 }
 
 func addIkeVersion1(d *schema.ResourceData) *swagger.Ikev1Config {
@@ -217,19 +221,38 @@ func addIkeVersion1(d *schema.ResourceData) *swagger.Ikev1Config {
 	if data, ok := d.GetOk("ikev1_config"); ok {
 
 		raw_config := data.(map[string]interface{})
-
 		esp := raw_config["esp"].(map[string]interface{})
-		config.Esp.DhGroup = esp["dh_group"].(string)
-		config.Esp.Encryption = esp["encryption"].(string)
-		config.Esp.Integrity = esp["integrity"].(string)
-
 		ike := raw_config["ike"].(map[string]interface{})
-		config.Ike.DhGroup = ike["dh_group"].(string)
-		config.Ike.Encryption = ike["encryption"].(string)
-		config.Ike.Integrity = ike["integrity"].(string)
+
+		config.Esp = &swagger.Ikev1EspConfig{
+			DhGroup:    esp["dh_group"].(string),
+			Encryption: esp["encryption"].(string),
+			Integrity:  esp["integrity"].(string),
+		}
+
+		config.Ike = &swagger.Ikev1IkeConfig{
+			DhGroup:    ike["dh_group"].(string),
+			Encryption: ike["encryption"].(string),
+			Integrity:  ike["integrity"].(string),
+		}
+
+	} else {
+
+		config.Esp = &swagger.Ikev1EspConfig{
+			DhGroup:    "MODP_2048",
+			Encryption: "AES_128",
+			Integrity:  "SHA256_HMAC",
+		}
+
+		config.Ike = &swagger.Ikev1IkeConfig{
+			DhGroup:    "MODP_2048",
+			Encryption: "AES_128",
+			Integrity:  "SHA256_HMAC",
+		}
 	}
 
 	return config
+
 }
 
 func addIkeVersion2(d *schema.ResourceData) *swagger.Ikev2Config {
@@ -239,17 +262,35 @@ func addIkeVersion2(d *schema.ResourceData) *swagger.Ikev2Config {
 	if data, ok := d.GetOk("ikev2_config"); ok {
 
 		raw_config := data.(map[string]interface{})
-
 		esp := raw_config["esp"].(map[string]interface{})
-		config.Esp.DhGroup = esp["dh_group"].(string)
-		config.Esp.Encryption = esp["encryption"].(string)
-		config.Esp.Integrity = esp["integrity"].(string)
-
 		ike := raw_config["ike"].(map[string]interface{})
-		config.Ike.DhGroup = ike["dh_group"].(string)
-		config.Ike.Encryption = ike["encryption"].(string)
-		config.Ike.Integrity = ike["integrity"].(string)
-		config.Ike.Prf = ike["prf"].(string)
+
+		config.Esp = &swagger.Ikev2EspConfig{
+			DhGroup:    esp["dh_group"].(string),
+			Encryption: esp["encryption"].(string),
+			Integrity:  esp["integrity"].(string),
+		}
+
+		config.Ike = &swagger.Ikev2IkeConfig{
+			DhGroup:    ike["dh_group"].(string),
+			Encryption: ike["encryption"].(string),
+			Integrity:  ike["integrity"].(string),
+			Prf:        ike["prf"].(string),
+		}
+
+	} else {
+
+		config.Esp = &swagger.Ikev2EspConfig{
+			DhGroup:    "MODP_2048",
+			Encryption: "AES_128",
+			Integrity:  "SHA256_HMAC",
+		}
+
+		config.Ike = &swagger.Ikev2IkeConfig{
+			DhGroup:    "MODP_2048",
+			Encryption: "AES_128",
+			Integrity:  "SHA256_HMAC",
+		}
 	}
 
 	return config
@@ -268,14 +309,13 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 
 	// Create the body of the request
 	connection := swagger.SiteIpSecVpnConnection{
-		Type_:                   "SITE_IPSEC_VPN",
-		Name:                    name,
-		Speed:                   int32(speed),
-		AuthType:                d.Get("auth_type").(string),
-		IkeVersion:              d.Get("ike_version").(string),
-		RoutingType:             d.Get("routing_type").(string),
-		PrimaryCustomerRouterIP: d.Get("primary_customer_router_ip").(string),
-		PrimaryKey:              d.Get("primary_key").(string),
+		Type_:       "SITE_IPSEC_VPN",
+		Name:        name,
+		Speed:       int32(speed),
+		AuthType:    d.Get("auth_type").(string),
+		IkeVersion:  d.Get("ike_version").(string),
+		RoutingType: d.Get("routing_type").(string),
+		PrimaryKey:  d.Get("primary_key").(string),
 
 		Location: &swagger.Link{
 			Id:   location[0].(map[string]interface{})["id"].(string),
@@ -300,6 +340,10 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		connection.HighAvailability = highAvailability.(bool)
 	}
 
+	if customerASN, ok := d.GetOk("customer_asn"); ok {
+		connection.CustomerASN = int64(customerASN.(int))
+	}
+
 	// SiteVPN Optionals
 	connection.TrafficSelectors = addTrafficSelectorMappings(d)
 
@@ -315,6 +359,10 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 
 	if enableBGPPassword, ok := d.GetOk("enable_bgp_password"); ok {
 		connection.EnableBGPPassword = enableBGPPassword.(bool)
+	}
+
+	if primaryCustomerRouterIP, ok := d.GetOk("primary_customer_router_ip"); ok {
+		connection.PrimaryCustomerRouterIP = primaryCustomerRouterIP.(string)
 	}
 
 	if secondaryCustomerRouterIP, ok := d.GetOk("secondary_customer_router_ip"); ok {
@@ -412,32 +460,38 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	d.Set("auth_type", conn.AuthType)
 	d.Set("enable_bgp_password", conn.EnableBGPPassword)
 	d.Set("ike_version", conn.IkeVersion)
-	d.Set("ikev1_config", map[string]interface{}{
-		"esp": map[string]string{
-			"dh_group":   conn.IkeV1.Esp.DhGroup,
-			"encryption": conn.IkeV1.Esp.Encryption,
-			"integrity":  conn.IkeV1.Esp.Integrity,
-		},
-		"ike": map[string]string{
-			"dh_group":   conn.IkeV1.Ike.DhGroup,
-			"encryption": conn.IkeV1.Ike.Encryption,
-			"integrity":  conn.IkeV1.Ike.Integrity,
-		},
-	})
 
-	d.Set("ikev2_config", map[string]interface{}{
-		"esp": map[string]string{
-			"dh_group":   conn.IkeV2.Esp.DhGroup,
-			"encryption": conn.IkeV2.Esp.Encryption,
-			"integrity":  conn.IkeV2.Esp.Integrity,
-		},
-		"ike": map[string]string{
-			"dh_group":   conn.IkeV2.Ike.DhGroup,
-			"encryption": conn.IkeV2.Ike.Encryption,
-			"integrity":  conn.IkeV2.Ike.Integrity,
-			"prf":        conn.IkeV2.Ike.Prf,
-		},
-	})
+	if conn.IkeVersion == "V1" {
+		d.Set("ikev1_config", map[string]interface{}{
+			"esp": map[string]string{
+				"dh_group":   conn.IkeV1.Esp.DhGroup,
+				"encryption": conn.IkeV1.Esp.Encryption,
+				"integrity":  conn.IkeV1.Esp.Integrity,
+			},
+			"ike": map[string]string{
+				"dh_group":   conn.IkeV1.Ike.DhGroup,
+				"encryption": conn.IkeV1.Ike.Encryption,
+				"integrity":  conn.IkeV1.Ike.Integrity,
+			},
+		})
+	}
+
+	if conn.IkeVersion == "V2" {
+		d.Set("ikev2_config", map[string]interface{}{
+			"esp": map[string]string{
+				"dh_group":   conn.IkeV2.Esp.DhGroup,
+				"encryption": conn.IkeV2.Esp.Encryption,
+				"integrity":  conn.IkeV2.Esp.Integrity,
+			},
+			"ike": map[string]string{
+				"dh_group":   conn.IkeV2.Ike.DhGroup,
+				"encryption": conn.IkeV2.Ike.Encryption,
+				"integrity":  conn.IkeV2.Ike.Integrity,
+				"prf":        conn.IkeV2.Ike.Prf,
+			},
+		})
+	}
+
 	d.Set("routing_type", conn.RoutingType)
 	d.Set("primary_customer_router_ip", conn.PrimaryCustomerRouterIP)
 	d.Set("primary_key", conn.PrimaryKey)
@@ -452,12 +506,15 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		})
 	}
 
-	d.Set("traffic_selectors", trafficSelectors)
+	if err := d.Set("traffic_selectors", trafficSelectors); err != nil {
+		return fmt.Errorf("Error setting traffics selectors for VPN Connection %s: %s", d.Id(), err)
+	}
 
 	return nil
 }
 
 func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) error {
+
 	return resourceSiteVPNConnectionRead(d, m)
 }
 

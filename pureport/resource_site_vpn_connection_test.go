@@ -42,9 +42,12 @@ resource "pureport_site_vpn_connection" "main" {
 		href = "${data.pureport_networks.main.networks.0.href}"
 	}
 
-	ike_version = "2"
-	primary_customer_router_ip = "123.123.123.123"
+	ike_version = "V2"
 	routing_type = "ROUTE_BASED_BGP"
+	customer_asn = 30000
+
+	primary_customer_router_ip = "123.123.123.123"
+	secondary_customer_router_ip = "124.124.124.124"
 }
 `
 
