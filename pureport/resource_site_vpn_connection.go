@@ -142,10 +142,12 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"primary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Optional: true,
+			Default:  "",
 		},
 		"primary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
+			Default:  "",
 		},
 		"routing_type": {
 			Type:     schema.TypeString,
@@ -154,10 +156,12 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"secondary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Optional: true,
+			Default:  "",
 		},
 		"secondary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
+			Default:  "",
 		},
 		"traffic_selectors": {
 			Type:     schema.TypeList,
@@ -436,6 +440,8 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 
 	conn := c.(swagger.SiteIpSecVpnConnection)
 	d.Set("speed", conn.Speed)
+	d.Set("description", conn.Description)
+	d.Set("high_availability", conn.HighAvailability)
 
 	var customerNetworks []map[string]string
 	for _, cn := range conn.CustomerNetworks {
@@ -444,25 +450,30 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 			"address": cn.Address,
 		})
 	}
-	d.Set("customer_networks", customerNetworks)
+	if err := d.Set("customer_networks", customerNetworks); err != nil {
+		return fmt.Errorf("Error setting customer networks for VPN Connection %s: %s", d.Id(), err)
+	}
 
-	d.Set("description", conn.Description)
-	d.Set("high_availability", conn.HighAvailability)
-	d.Set("location", map[string]string{
+	if err := d.Set("location", map[string]string{
 		"id":   conn.Location.Id,
 		"href": conn.Location.Href,
-	})
-	d.Set("network", map[string]string{
+	}); err != nil {
+		return fmt.Errorf("Error setting location for VPN Connection %s: %s", d.Id(), err)
+	}
+
+	if err := d.Set("network", map[string]string{
 		"id":   conn.Network.Id,
 		"href": conn.Network.Href,
-	})
+	}); err != nil {
+		return fmt.Errorf("Error setting network for VPN Connection %s: %s", d.Id(), err)
+	}
 
 	d.Set("auth_type", conn.AuthType)
 	d.Set("enable_bgp_password", conn.EnableBGPPassword)
 	d.Set("ike_version", conn.IkeVersion)
 
 	if conn.IkeVersion == "V1" {
-		d.Set("ikev1_config", map[string]interface{}{
+		if err := d.Set("ikev1_config", map[string]interface{}{
 			"esp": map[string]string{
 				"dh_group":   conn.IkeV1.Esp.DhGroup,
 				"encryption": conn.IkeV1.Esp.Encryption,
@@ -473,11 +484,13 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 				"encryption": conn.IkeV1.Ike.Encryption,
 				"integrity":  conn.IkeV1.Ike.Integrity,
 			},
-		})
+		}); err != nil {
+			return fmt.Errorf("Error setting IKE V1 Configuration for VPN Connection %s: %s", d.Id(), err)
+		}
 	}
 
 	if conn.IkeVersion == "V2" {
-		d.Set("ikev2_config", map[string]interface{}{
+		if err := d.Set("ikev2_config", map[string]interface{}{
 			"esp": map[string]string{
 				"dh_group":   conn.IkeV2.Esp.DhGroup,
 				"encryption": conn.IkeV2.Esp.Encryption,
@@ -489,7 +502,9 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 				"integrity":  conn.IkeV2.Ike.Integrity,
 				"prf":        conn.IkeV2.Ike.Prf,
 			},
-		})
+		}); err != nil {
+			return fmt.Errorf("Error setting IKE V2 Configuration for VPN Connection %s: %s", d.Id(), err)
+		}
 	}
 
 	d.Set("routing_type", conn.RoutingType)

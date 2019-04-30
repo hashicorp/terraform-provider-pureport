@@ -147,7 +147,7 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("Error Response while reading Google Cloud Connection: code=%v", resp.StatusCode)
+		return fmt.Errorf("Error Response while reading Google Cloud Connection: code=%v", resp.StatusCode)
 	}
 
 	conn := c.(swagger.GoogleCloudInterconnectConnection)
@@ -160,18 +160,25 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 			"address": cn.Address,
 		})
 	}
-	d.Set("customer_networks", customerNetworks)
+	if err := d.Set("customer_networks", customerNetworks); err != nil {
+		return fmt.Errorf("Error setting customer networks for Google Cloud Connection %s: %s", d.Id(), err)
+	}
 
 	d.Set("description", conn.Description)
 	d.Set("high_availability", conn.HighAvailability)
-	d.Set("location", map[string]string{
+	if err := d.Set("location", map[string]string{
 		"id":   conn.Location.Id,
 		"href": conn.Location.Href,
-	})
-	d.Set("network", map[string]string{
+	}); err != nil {
+		return fmt.Errorf("Error setting location for Google Cloud Connection %s: %s", d.Id(), err)
+	}
+
+	if err := d.Set("network", map[string]string{
 		"id":   conn.Network.Id,
 		"href": conn.Network.Href,
-	})
+	}); err != nil {
+		return fmt.Errorf("Error setting network for Google Cloud Connection %s: %s", d.Id(), err)
+	}
 
 	d.Set("primary_pairing_key", conn.PrimaryPairingKey)
 	d.Set("secondary_pairing_key", conn.SecondaryPairingKey)
