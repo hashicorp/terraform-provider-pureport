@@ -37,7 +37,6 @@ func TestNetwork_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceNetwork(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttrPtr(resourceName, "href", &instance.Href),
 					resource.TestCheckResourceAttr(resourceName, "name", "NetworkTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Network Terraform Test"),
 				),

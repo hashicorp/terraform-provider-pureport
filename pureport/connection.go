@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
@@ -214,28 +215,39 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 
 	// Wait until we are in a state that we can trigger a delete from
 	log.Printf("[Info] Waiting to trigger a delete.")
-	for i := 0; i < 100; i++ {
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 3 * time.Minute
+
+	wait_to_delete := func() error {
 
 		c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 		if err != nil {
-			return fmt.Errorf("Error deleting data for Connection: %s", err)
+			return backoff.Permanent(
+				fmt.Errorf("Error deleting data for Connection: %s", err),
+			)
 		}
 
 		if resp.StatusCode >= 300 {
-			return fmt.Errorf("Error Response while attempting to delete Connection: code=%v", resp.StatusCode)
+			return backoff.Permanent(
+				fmt.Errorf("Error Response while attempting to delete Connection: code=%v", resp.StatusCode),
+			)
 		}
 
 		conn := reflect.ValueOf(c)
 		if DeletableState[conn.FieldByName("State").String()] {
-			break
+			return nil
+		} else {
+			return fmt.Errorf("Not Completed ...")
 		}
+	}
 
-		time.Sleep(time.Second)
+	if err := backoff.Retry(wait_to_delete, b); err != nil {
+		return err
 	}
 
 	// Delete
 	_, resp, err := sess.Client.ConnectionsApi.DeleteConnection(ctx, connectionId)
-
 	if err != nil {
 		return fmt.Errorf("Error deleting data for Connection: %s", err)
 	}
@@ -244,20 +256,21 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error Response while deleting Connection: code=%v", resp.StatusCode)
 	}
 
-	for i := 0; i < 100; i++ {
+	log.Printf("[Info] Waiting for connection to be deleted")
+	wait_for_delete := func() error {
 
-		log.Printf("[Info] Waiting for connection to be deleted: attempt %d", i)
+		log.Printf("Retrying ...%+v", b.GetElapsedTime())
 		_, resp, _ := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 
 		if resp.StatusCode == 404 {
 			d.SetId("")
-			break
+			return nil
+		} else {
+			return fmt.Errorf("Not Completed ...")
 		}
-
-		time.Sleep(time.Second)
 	}
 
-	return nil
+	return backoff.Retry(wait_for_delete, b)
 }
 
 // AddCustomerNetworks to decode the customer network information
