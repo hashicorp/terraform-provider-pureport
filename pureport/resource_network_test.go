@@ -68,8 +68,6 @@ func testAccCheckResourceNetwork(name string, instance *client.Network) resource
 		ctx := sess.GetSessionContext()
 		found, resp, err := sess.Client.NetworksApi.GetNetwork(ctx, id)
 
-		fmt.Printf("Network: %v\n", found)
-
 		if err != nil {
 			return fmt.Errorf("receive error when requesting Network ID %s", id)
 		}

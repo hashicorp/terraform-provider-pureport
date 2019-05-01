@@ -44,7 +44,7 @@ func TestNetworks_empty(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "networks.#", "2"),
 					resource.TestCheckResourceAttrSet(resourceName, "networks.0.id"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "Siouxsie And The Banshees"),
+					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "Siouxsie & The Banshees"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Test Network #2"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.account_id", "ac-8QVPmcPb_EhapbGHBMAo6Q"),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.id", "network-fN6NX6utBCoE5L_H261P4A"),

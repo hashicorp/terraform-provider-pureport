@@ -1,4 +1,3 @@
-// Package main provides SiteVPNConnection resource
 package pureport
 
 import (

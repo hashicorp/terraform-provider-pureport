@@ -1,4 +1,3 @@
-// Package main provides AWSConnection resource
 package pureport
 
 import (

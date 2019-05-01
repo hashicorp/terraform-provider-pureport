@@ -1,4 +1,3 @@
-// Package pureport provides ...
 package pureport
 
 import (

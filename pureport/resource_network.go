@@ -1,4 +1,3 @@
-// Package main provides Connection resource
 package pureport
 
 import (
