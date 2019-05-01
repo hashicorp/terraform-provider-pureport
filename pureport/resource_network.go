@@ -4,6 +4,8 @@ package pureport
 import (
 	"fmt"
 	"log"
+	"net/url"
+	"path/filepath"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -27,9 +29,14 @@ func resourceNetwork() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"account_id": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"account": {
 				Type:     schema.TypeList,
-				Required: true,
+				Computed: true,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -54,13 +61,9 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	account := d.Get("account").(map[string]string)
+	accountId := d.Get("account_id").(string)
 
 	network := swagger.Network{
-		Account: &swagger.Link{
-			Id:   account["id"],
-			Href: account["href"],
-		},
 		Name:        name,
 		Description: description,
 	}
@@ -73,27 +76,34 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 	resp, err := sess.Client.NetworksApi.AddNetwork(
 		ctx,
-		account["id"],
+		accountId,
 		&opts,
 	)
 
 	if err != nil {
-		log.Printf("[Error] Error Creating new Network: %v", err)
+		log.Printf("Error Creating new Network: %v", err)
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while creating new Network: code=%v", resp.StatusCode)
+		log.Printf("Error Response while creating new Network: code=%v", resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
 
-	id := resp.Header.Get("location")
+	loc := resp.Header.Get("location")
+	u, err := url.Parse(loc)
+	if err != nil {
+		log.Printf("Error when decoding Network ID")
+		return nil
+	}
+
+	id := filepath.Base(u.Path)
 	d.SetId(id)
 
 	if id == "" {
-		log.Printf("[Error] Error when decoding location header")
+		log.Printf("Error when decoding location header")
 		return nil
 	}
 
@@ -109,23 +119,28 @@ func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 	n, resp, err := sess.Client.NetworksApi.GetNetwork(ctx, networkId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("[Error] Error Response while reading Network: code=%v", resp.StatusCode)
+			log.Printf("Error Response while reading Network: code=%v", resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("[Error] Error reading data for Network: %s", err)
+		return fmt.Errorf("Error reading data for Network: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("[Error] Error Response while reading AWS Connection: code=%v", resp.StatusCode)
+		return fmt.Errorf("Error Response while reading Network: code=%v", resp.StatusCode)
 	}
 
-	account := map[string]string{
-		"id":   n.Account.Id,
-		"href": n.Account.Href,
-	}
-	d.Set("account", account)
+	d.Set("account_id", n.Account.Id)
 	d.Set("name", n.Name)
 	d.Set("description", n.Description)
+
+	if err := d.Set("account", []map[string]string{
+		{
+			"id":   n.Account.Id,
+			"href": n.Account.Href,
+		},
+	}); err != nil {
+		return fmt.Errorf("Error while setting Network: code=%v", resp.StatusCode)
+	}
 
 	return nil
 }
@@ -144,7 +159,7 @@ func resourceNetworkDelete(d *schema.ResourceData, m interface{}) error {
 	resp, err := sess.Client.NetworksApi.DeleteNetwork(ctx, networkId)
 
 	if err != nil {
-		return fmt.Errorf("[Error] Error deleting Network: %s", err)
+		return fmt.Errorf("Error deleting Network: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
