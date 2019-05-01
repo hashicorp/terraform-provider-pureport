@@ -87,7 +87,7 @@ func testAccCheckResourceSiteVPNConnection(name string, instance *client.SiteIpS
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find SiteVPN Connnection resource: %s", name)
+			return fmt.Errorf("Can't find SiteVPN Connection resource: %s", name)
 		}
 
 		if rs.Primary.ID == "" {

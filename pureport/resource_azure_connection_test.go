@@ -83,7 +83,7 @@ func testAccCheckResourceAzureConnection(name string, instance *client.AzureExpr
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find AWS Connnection resource: %s", name)
+			return fmt.Errorf("Can't find Azure Connnection resource: %s", name)
 		}
 
 		if rs.Primary.ID == "" {

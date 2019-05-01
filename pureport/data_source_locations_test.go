@@ -71,7 +71,7 @@ func testAccCheckDataSourceLocations(name string) resource.TestCheckFunc {
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find Cloud Region data source: %s", name)
+			return fmt.Errorf("Can't find Locations data source: %s", name)
 		}
 
 		if rs.Primary.ID == "" {

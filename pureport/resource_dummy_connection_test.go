@@ -80,7 +80,7 @@ func testAccCheckResourceDummyConnection(name string, instance *client.DummyConn
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find Dummy Connnection resource: %s", name)
+			return fmt.Errorf("Can't find Dummy Connection resource: %s", name)
 		}
 
 		if rs.Primary.ID == "" {
