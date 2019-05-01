@@ -37,10 +37,9 @@ func TestNetwork_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceNetwork(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttrPtr(resourceName, "href", &instance.Href),
 					resource.TestCheckResourceAttr(resourceName, "name", "NetworkTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Network Terraform Test"),
-					resource.TestCheckResourceAttrPtr(resourceName, "account.0.id", &instance.Account.Id),
-					resource.TestCheckResourceAttrSet(resourceName, "account.0.href"),
 				),
 			},
 		},
@@ -69,6 +68,8 @@ func testAccCheckResourceNetwork(name string, instance *client.Network) resource
 
 		ctx := sess.GetSessionContext()
 		found, resp, err := sess.Client.NetworksApi.GetNetwork(ctx, id)
+
+		fmt.Printf("Network: %v\n", found)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting Network ID %s", id)
