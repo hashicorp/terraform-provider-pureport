@@ -218,11 +218,11 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 
 		c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 		if err != nil {
-			return fmt.Errorf("Error deleting data for AWS Connection: %s", err)
+			return fmt.Errorf("Error deleting data for Connection: %s", err)
 		}
 
 		if resp.StatusCode >= 300 {
-			return fmt.Errorf("Error Response while attempting to delete AWS Connection: code=%v", resp.StatusCode)
+			return fmt.Errorf("Error Response while attempting to delete Connection: code=%v", resp.StatusCode)
 		}
 
 		conn := reflect.ValueOf(c)
@@ -237,16 +237,16 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	_, resp, err := sess.Client.ConnectionsApi.DeleteConnection(ctx, connectionId)
 
 	if err != nil {
-		return fmt.Errorf("Error deleting data for AWS Connection: %s", err)
+		return fmt.Errorf("Error deleting data for Connection: %s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while deleting AWS Connection: code=%v", resp.StatusCode)
+		return fmt.Errorf("Error Response while deleting Connection: code=%v", resp.StatusCode)
 	}
 
 	for i := 0; i < 100; i++ {
 
-		log.Printf("[Info] Waiting for channel to be deleted: attempt %d", i)
+		log.Printf("[Info] Waiting for connection to be deleted: attempt %d", i)
 		_, resp, _ := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 
 		if resp.StatusCode == 404 {
