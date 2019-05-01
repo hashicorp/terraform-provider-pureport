@@ -9,8 +9,8 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func resourceNetwork() *schema.Resource {
@@ -63,14 +63,14 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 	description := d.Get("description").(string)
 	accountId := d.Get("account_id").(string)
 
-	network := swagger.Network{
+	network := client.Network{
 		Name:        name,
 		Description: description,
 	}
 
 	ctx := sess.GetSessionContext()
 
-	opts := swagger.AddNetworkOpts{
+	opts := client.AddNetworkOpts{
 		Body: optional.NewInterface(network),
 	}
 

@@ -10,8 +10,8 @@ import (
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func resourceSiteVPNConnection() *schema.Resource {
@@ -196,15 +196,15 @@ func resourceSiteVPNConnection() *schema.Resource {
 	}
 }
 
-func addTrafficSelectorMappings(d *schema.ResourceData) []swagger.TrafficSelectorMapping {
+func addTrafficSelectorMappings(d *schema.ResourceData) []client.TrafficSelectorMapping {
 
 	if data, ok := d.GetOk("traffic_selectors"); ok {
 
-		mappings := []swagger.TrafficSelectorMapping{}
+		mappings := []client.TrafficSelectorMapping{}
 
 		for _, m := range data.([]map[string]string) {
 
-			new := swagger.TrafficSelectorMapping{
+			new := client.TrafficSelectorMapping{
 				CustomerSide: m["customer_side"],
 				PureportSide: m["pureport_side"],
 			}
@@ -218,9 +218,9 @@ func addTrafficSelectorMappings(d *schema.ResourceData) []swagger.TrafficSelecto
 	return nil
 }
 
-func addIkeVersion1(d *schema.ResourceData) *swagger.Ikev1Config {
+func addIkeVersion1(d *schema.ResourceData) *client.Ikev1Config {
 
-	config := &swagger.Ikev1Config{}
+	config := &client.Ikev1Config{}
 
 	if data, ok := d.GetOk("ikev1_config"); ok {
 
@@ -228,13 +228,13 @@ func addIkeVersion1(d *schema.ResourceData) *swagger.Ikev1Config {
 		esp := raw_config["esp"].(map[string]interface{})
 		ike := raw_config["ike"].(map[string]interface{})
 
-		config.Esp = &swagger.Ikev1EspConfig{
+		config.Esp = &client.Ikev1EspConfig{
 			DhGroup:    esp["dh_group"].(string),
 			Encryption: esp["encryption"].(string),
 			Integrity:  esp["integrity"].(string),
 		}
 
-		config.Ike = &swagger.Ikev1IkeConfig{
+		config.Ike = &client.Ikev1IkeConfig{
 			DhGroup:    ike["dh_group"].(string),
 			Encryption: ike["encryption"].(string),
 			Integrity:  ike["integrity"].(string),
@@ -242,13 +242,13 @@ func addIkeVersion1(d *schema.ResourceData) *swagger.Ikev1Config {
 
 	} else {
 
-		config.Esp = &swagger.Ikev1EspConfig{
+		config.Esp = &client.Ikev1EspConfig{
 			DhGroup:    "MODP_2048",
 			Encryption: "AES_128",
 			Integrity:  "SHA256_HMAC",
 		}
 
-		config.Ike = &swagger.Ikev1IkeConfig{
+		config.Ike = &client.Ikev1IkeConfig{
 			DhGroup:    "MODP_2048",
 			Encryption: "AES_128",
 			Integrity:  "SHA256_HMAC",
@@ -259,9 +259,9 @@ func addIkeVersion1(d *schema.ResourceData) *swagger.Ikev1Config {
 
 }
 
-func addIkeVersion2(d *schema.ResourceData) *swagger.Ikev2Config {
+func addIkeVersion2(d *schema.ResourceData) *client.Ikev2Config {
 
-	config := &swagger.Ikev2Config{}
+	config := &client.Ikev2Config{}
 
 	if data, ok := d.GetOk("ikev2_config"); ok {
 
@@ -269,13 +269,13 @@ func addIkeVersion2(d *schema.ResourceData) *swagger.Ikev2Config {
 		esp := raw_config["esp"].(map[string]interface{})
 		ike := raw_config["ike"].(map[string]interface{})
 
-		config.Esp = &swagger.Ikev2EspConfig{
+		config.Esp = &client.Ikev2EspConfig{
 			DhGroup:    esp["dh_group"].(string),
 			Encryption: esp["encryption"].(string),
 			Integrity:  esp["integrity"].(string),
 		}
 
-		config.Ike = &swagger.Ikev2IkeConfig{
+		config.Ike = &client.Ikev2IkeConfig{
 			DhGroup:    ike["dh_group"].(string),
 			Encryption: ike["encryption"].(string),
 			Integrity:  ike["integrity"].(string),
@@ -284,13 +284,13 @@ func addIkeVersion2(d *schema.ResourceData) *swagger.Ikev2Config {
 
 	} else {
 
-		config.Esp = &swagger.Ikev2EspConfig{
+		config.Esp = &client.Ikev2EspConfig{
 			DhGroup:    "MODP_2048",
 			Encryption: "AES_128",
 			Integrity:  "SHA256_HMAC",
 		}
 
-		config.Ike = &swagger.Ikev2IkeConfig{
+		config.Ike = &client.Ikev2IkeConfig{
 			DhGroup:    "MODP_2048",
 			Encryption: "AES_128",
 			Integrity:  "SHA256_HMAC",
@@ -312,7 +312,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 	billingTerm := d.Get("billing_term").(string)
 
 	// Create the body of the request
-	connection := swagger.SiteIpSecVpnConnection{
+	connection := client.SiteIpSecVpnConnection{
 		Type_:       "SITE_IPSEC_VPN",
 		Name:        name,
 		Speed:       int32(speed),
@@ -321,11 +321,11 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		RoutingType: d.Get("routing_type").(string),
 		PrimaryKey:  d.Get("primary_key").(string),
 
-		Location: &swagger.Link{
+		Location: &client.Link{
 			Id:   location[0].(map[string]interface{})["id"].(string),
 			Href: location[0].(map[string]interface{})["href"].(string),
 		},
-		Network: &swagger.Link{
+		Network: &client.Link{
 			Id:   network[0].(map[string]interface{})["id"].(string),
 			Href: network[0].(map[string]interface{})["href"].(string),
 		},
@@ -379,7 +379,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 
 	ctx := sess.GetSessionContext()
 
-	opts := swagger.AddConnectionOpts{
+	opts := client.AddConnectionOpts{
 		Body: optional.NewInterface(connection),
 	}
 
@@ -438,7 +438,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		fmt.Errorf("Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
 	}
 
-	conn := c.(swagger.SiteIpSecVpnConnection)
+	conn := c.(client.SiteIpSecVpnConnection)
 	d.Set("speed", conn.Speed)
 	d.Set("description", conn.Description)
 	d.Set("high_availability", conn.HighAvailability)

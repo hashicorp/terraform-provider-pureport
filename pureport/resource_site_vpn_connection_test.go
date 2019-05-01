@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 const testAccResourceSiteVPNConnectionConfig_basic = `
@@ -54,7 +54,7 @@ resource "pureport_site_vpn_connection" "main" {
 func TestSiteVPNConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_site_vpn_connection.main"
-	var instance swagger.SiteIpSecVpnConnection
+	var instance client.SiteIpSecVpnConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -76,7 +76,7 @@ func TestSiteVPNConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceSiteVPNConnection(name string, instance *swagger.SiteIpSecVpnConnection) resource.TestCheckFunc {
+func testAccCheckResourceSiteVPNConnection(name string, instance *client.SiteIpSecVpnConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
@@ -107,7 +107,7 @@ func testAccCheckResourceSiteVPNConnection(name string, instance *swagger.SiteIp
 			fmt.Errorf("Error getting SiteVPN Connection ID %s: %s", id, err)
 		}
 
-		*instance = found.(swagger.SiteIpSecVpnConnection)
+		*instance = found.(client.SiteIpSecVpnConnection)
 
 		return nil
 	}

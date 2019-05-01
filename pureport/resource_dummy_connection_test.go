@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 const testAccResourceDummyConnectionConfig_basic = `
@@ -47,7 +47,7 @@ resource "pureport_dummy_connection" "main" {
 func TestDummyConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_dummy_connection.main"
-	var instance swagger.DummyConnection
+	var instance client.DummyConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -69,7 +69,7 @@ func TestDummyConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceDummyConnection(name string, instance *swagger.DummyConnection) resource.TestCheckFunc {
+func testAccCheckResourceDummyConnection(name string, instance *client.DummyConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
@@ -100,7 +100,7 @@ func testAccCheckResourceDummyConnection(name string, instance *swagger.DummyCon
 			fmt.Errorf("Error getting Dummy Connection ID %s: %s", id, err)
 		}
 
-		*instance = found.(swagger.DummyConnection)
+		*instance = found.(client.DummyConnection)
 
 		return nil
 	}

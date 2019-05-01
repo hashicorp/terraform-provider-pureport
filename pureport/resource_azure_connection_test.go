@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 const testAccResourceAzureConnectionConfig_basic = `
@@ -49,7 +49,7 @@ resource "pureport_azure_connection" "main" {
 func TestAzureConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_azure_connection.main"
-	var instance swagger.AzureExpressRouteConnection
+	var instance client.AzureExpressRouteConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -72,7 +72,7 @@ func TestAzureConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceAzureConnection(name string, instance *swagger.AzureExpressRouteConnection) resource.TestCheckFunc {
+func testAccCheckResourceAzureConnection(name string, instance *client.AzureExpressRouteConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
@@ -103,7 +103,7 @@ func testAccCheckResourceAzureConnection(name string, instance *swagger.AzureExp
 			fmt.Errorf("Error getting Azure Connection ID %s: %s", id, err)
 		}
 
-		*instance = found.(swagger.AzureExpressRouteConnection)
+		*instance = found.(client.AzureExpressRouteConnection)
 
 		return nil
 	}

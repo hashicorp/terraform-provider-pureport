@@ -10,8 +10,8 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func dataSourceAccounts() *schema.Resource {
@@ -75,7 +75,7 @@ func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Filter the results
-	var filteredAccounts []swagger.Account
+	var filteredAccounts []client.Account
 	if nameRegexOk {
 		r := regexp.MustCompile(nameRegex.(string))
 		for _, account := range accounts {
@@ -107,7 +107,7 @@ func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func flattenAccounts(accounts []swagger.Account) (out []map[string]interface{}) {
+func flattenAccounts(accounts []client.Account) (out []map[string]interface{}) {
 
 	for _, account := range accounts {
 

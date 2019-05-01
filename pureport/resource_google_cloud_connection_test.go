@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 const testAccResourceGoogleCloudConnectionConfig_basic = `
@@ -50,7 +50,7 @@ resource "pureport_google_cloud_connection" "main" {
 func TestGoogleCloudConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_google_cloud_connection.main"
-	var instance swagger.GoogleCloudInterconnectConnection
+	var instance client.GoogleCloudInterconnectConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -75,7 +75,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceGoogleCloudConnection(name string, instance *swagger.GoogleCloudInterconnectConnection) resource.TestCheckFunc {
+func testAccCheckResourceGoogleCloudConnection(name string, instance *client.GoogleCloudInterconnectConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
@@ -106,7 +106,7 @@ func testAccCheckResourceGoogleCloudConnection(name string, instance *swagger.Go
 			fmt.Errorf("Error getting Google Cloud Connection ID %s: %s", id, err)
 		}
 
-		*instance = found.(swagger.GoogleCloudInterconnectConnection)
+		*instance = found.(client.GoogleCloudInterconnectConnection)
 
 		return nil
 	}

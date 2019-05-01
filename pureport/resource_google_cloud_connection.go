@@ -9,8 +9,8 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func resourceGoogleCloudConnection() *schema.Resource {
@@ -56,15 +56,15 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 	primaryPairingKey := d.Get("primary_pairing_key").(string)
 
 	// Create the body of the request
-	connection := swagger.GoogleCloudInterconnectConnection{
+	connection := client.GoogleCloudInterconnectConnection{
 		Type_: "GOOGLE_CLOUD_INTERCONNECT",
 		Name:  name,
 		Speed: int32(speed),
-		Location: &swagger.Link{
+		Location: &client.Link{
 			Id:   location[0].(map[string]interface{})["id"].(string),
 			Href: location[0].(map[string]interface{})["href"].(string),
 		},
-		Network: &swagger.Link{
+		Network: &client.Link{
 			Id:   network[0].(map[string]interface{})["id"].(string),
 			Href: network[0].(map[string]interface{})["href"].(string),
 		},
@@ -91,7 +91,7 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 
 	ctx := sess.GetSessionContext()
 
-	opts := swagger.AddConnectionOpts{
+	opts := client.AddConnectionOpts{
 		Body: optional.NewInterface(connection),
 	}
 
@@ -150,7 +150,7 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 		return fmt.Errorf("Error Response while reading Google Cloud Connection: code=%v", resp.StatusCode)
 	}
 
-	conn := c.(swagger.GoogleCloudInterconnectConnection)
+	conn := c.(client.GoogleCloudInterconnectConnection)
 	d.Set("speed", conn.Speed)
 
 	var customerNetworks []map[string]string

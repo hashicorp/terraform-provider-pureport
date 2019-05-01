@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 const testAccResourceNetworkConfig_basic = `
@@ -25,7 +25,7 @@ resource "pureport_network" "main" {
 func TestNetwork_basic(t *testing.T) {
 
 	resourceName := "pureport_network.main"
-	var instance swagger.Network
+	var instance client.Network
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -47,7 +47,7 @@ func TestNetwork_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceNetwork(name string, instance *swagger.Network) resource.TestCheckFunc {
+func testAccCheckResourceNetwork(name string, instance *client.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)

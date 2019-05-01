@@ -10,8 +10,8 @@ import (
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func resourceAWSConnection() *schema.Resource {
@@ -77,15 +77,15 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 	billingTerm := d.Get("billing_term").(string)
 
 	// Create the body of the request
-	connection := swagger.AwsDirectConnectConnection{
+	connection := client.AwsDirectConnectConnection{
 		Type_: "AWS_DIRECT_CONNECT",
 		Name:  name,
 		Speed: int32(speed),
-		Location: &swagger.Link{
+		Location: &client.Link{
 			Id:   location[0].(map[string]interface{})["id"].(string),
 			Href: location[0].(map[string]interface{})["href"].(string),
 		},
-		Network: &swagger.Link{
+		Network: &client.Link{
 			Id:   network[0].(map[string]interface{})["id"].(string),
 			Href: network[0].(map[string]interface{})["href"].(string),
 		},
@@ -110,7 +110,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
 	ctx := sess.GetSessionContext()
 
-	opts := swagger.AddConnectionOpts{
+	opts := client.AddConnectionOpts{
 		Body: optional.NewInterface(connection),
 	}
 
@@ -169,7 +169,7 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error Response while reading AWS Connection: code=%v", resp.StatusCode)
 	}
 
-	conn := c.(swagger.AwsDirectConnectConnection)
+	conn := c.(client.AwsDirectConnectConnection)
 	d.Set("aws_account_id", conn.AwsAccountId)
 	d.Set("aws_region", conn.AwsRegion)
 

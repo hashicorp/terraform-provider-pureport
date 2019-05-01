@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 const testAccResourceAWSConnectionConfig_basic = `
@@ -50,7 +50,7 @@ resource "pureport_aws_connection" "main" {
 func TestAWSConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.main"
-	var instance swagger.AwsDirectConnectConnection
+	var instance client.AwsDirectConnectConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -72,7 +72,7 @@ func TestAWSConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckResourceAWSConnection(name string, instance *swagger.AwsDirectConnectConnection) resource.TestCheckFunc {
+func testAccCheckResourceAWSConnection(name string, instance *client.AwsDirectConnectConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
@@ -103,7 +103,7 @@ func testAccCheckResourceAWSConnection(name string, instance *swagger.AwsDirectC
 			fmt.Errorf("Error getting AWS Connection ID %s: %s", id, err)
 		}
 
-		*instance = found.(swagger.AwsDirectConnectConnection)
+		*instance = found.(client.AwsDirectConnectConnection)
 
 		return nil
 	}

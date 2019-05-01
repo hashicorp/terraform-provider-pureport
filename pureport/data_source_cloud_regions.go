@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func dataSourceCloudRegions() *schema.Resource {
@@ -75,7 +75,7 @@ func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Filter the results
-	var filteredRegions []swagger.CloudRegion
+	var filteredRegions []client.CloudRegion
 	if nameRegexOk {
 		r := regexp.MustCompile(nameRegex.(string))
 		for _, region := range regions {
@@ -107,7 +107,7 @@ func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func flattenRegions(regions []swagger.CloudRegion) (out []map[string]interface{}) {
+func flattenRegions(regions []client.CloudRegion) (out []map[string]interface{}) {
 
 	for _, cr := range regions {
 

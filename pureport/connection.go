@@ -8,8 +8,8 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 var (
@@ -147,7 +147,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 	}
 }
 
-func flattenConnection(connection swagger.Connection) map[string]interface{} {
+func flattenConnection(connection client.Connection) map[string]interface{} {
 	return map[string]interface{}{
 		"customer_asn":      connection.CustomerASN,
 		"customer_networks": flattenCustomerNetworks(connection.CustomerNetworks),
@@ -160,14 +160,14 @@ func flattenConnection(connection swagger.Connection) map[string]interface{} {
 	}
 }
 
-func flattenLink(link *swagger.Link) map[string]interface{} {
+func flattenLink(link *client.Link) map[string]interface{} {
 	return map[string]interface{}{
 		"id":   link.Id,
 		"href": link.Href,
 	}
 }
 
-func flattenCustomerNetworks(networks []swagger.CustomerNetwork) (out []map[string]interface{}) {
+func flattenCustomerNetworks(networks []client.CustomerNetwork) (out []map[string]interface{}) {
 
 	for _, network := range networks {
 
@@ -182,7 +182,7 @@ func flattenCustomerNetworks(networks []swagger.CustomerNetwork) (out []map[stri
 	return
 }
 
-func flattenNatConfig(config swagger.NatConfig) map[string]interface{} {
+func flattenNatConfig(config client.NatConfig) map[string]interface{} {
 	return map[string]interface{}{
 		"blocks":    config.Blocks,
 		"enabled":   config.Enabled,
@@ -191,7 +191,7 @@ func flattenNatConfig(config swagger.NatConfig) map[string]interface{} {
 	}
 }
 
-func flattenMappings(mappings []swagger.NatMapping) (out []map[string]interface{}) {
+func flattenMappings(mappings []client.NatMapping) (out []map[string]interface{}) {
 
 	for _, mapping := range mappings {
 
@@ -261,15 +261,15 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 }
 
 // AddCustomerNetworks to decode the customer network information
-func AddCustomerNetworks(d *schema.ResourceData) []swagger.CustomerNetwork {
+func AddCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
 
 	if data, ok := d.GetOk("customer_networks"); ok {
 
-		customerNetworks := []swagger.CustomerNetwork{}
+		customerNetworks := []client.CustomerNetwork{}
 
 		for _, cn := range data.([]map[string]string) {
 
-			new := swagger.CustomerNetwork{
+			new := client.CustomerNetwork{
 				Name:    cn["name"],
 				Address: cn["Address"],
 			}
@@ -283,18 +283,18 @@ func AddCustomerNetworks(d *schema.ResourceData) []swagger.CustomerNetwork {
 	return nil
 }
 
-func AddNATConfiguration(d *schema.ResourceData) *swagger.NatConfig {
+func AddNATConfiguration(d *schema.ResourceData) *client.NatConfig {
 
 	if data, ok := d.GetOk("nat_config"); ok {
 
-		natConfig := &swagger.NatConfig{}
+		natConfig := &client.NatConfig{}
 
 		config := data.(map[string]interface{})
 		natConfig.Enabled = config["enabled"].(bool)
 
 		for _, m := range config["mappings"].([]map[string]string) {
 
-			new := swagger.NatMapping{
+			new := client.NatMapping{
 				NativeCidr: m["native_cidr"],
 			}
 
@@ -306,15 +306,15 @@ func AddNATConfiguration(d *schema.ResourceData) *swagger.NatConfig {
 	return nil
 }
 
-func AddCloudServices(d *schema.ResourceData) []swagger.Link {
+func AddCloudServices(d *schema.ResourceData) []client.Link {
 
 	if data, ok := d.GetOk("cloud_services"); ok {
 
-		cloudServices := []swagger.Link{}
+		cloudServices := []client.Link{}
 
 		for _, cs := range data.([]map[string]string) {
 
-			new := swagger.Link{
+			new := client.Link{
 				Id:   cs["id"],
 				Href: cs["href"],
 			}
@@ -328,9 +328,9 @@ func AddCloudServices(d *schema.ResourceData) []swagger.Link {
 	return nil
 }
 
-func AddPeeringType(d *schema.ResourceData) *swagger.PeeringConfiguration {
+func AddPeeringType(d *schema.ResourceData) *client.PeeringConfiguration {
 
-	peeringConfig := &swagger.PeeringConfiguration{}
+	peeringConfig := &client.PeeringConfiguration{}
 
 	if data, ok := d.GetOk("peering"); ok {
 		peeringConfig.Type_ = data.(string)

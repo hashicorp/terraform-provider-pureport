@@ -10,8 +10,8 @@ import (
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func resourceAzureConnection() *schema.Resource {
@@ -60,15 +60,15 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	serviceKey := d.Get("service_key").(string)
 
 	// Create the body of the request
-	connection := swagger.AzureExpressRouteConnection{
+	connection := client.AzureExpressRouteConnection{
 		Type_: "AZURE_EXPRESS_ROUTE",
 		Name:  name,
 		Speed: int32(speed),
-		Location: &swagger.Link{
+		Location: &client.Link{
 			Id:   location[0].(map[string]interface{})["id"].(string),
 			Href: location[0].(map[string]interface{})["href"].(string),
 		},
-		Network: &swagger.Link{
+		Network: &client.Link{
 			Id:   network[0].(map[string]interface{})["id"].(string),
 			Href: network[0].(map[string]interface{})["href"].(string),
 		},
@@ -93,7 +93,7 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	ctx := sess.GetSessionContext()
 
-	opts := swagger.AddConnectionOpts{
+	opts := client.AddConnectionOpts{
 		Body: optional.NewInterface(connection),
 	}
 
@@ -152,7 +152,7 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error Response while reading Azure Connection: code=%v", resp.StatusCode)
 	}
 
-	conn := c.(swagger.AzureExpressRouteConnection)
+	conn := c.(client.AzureExpressRouteConnection)
 	d.Set("service_key", conn.ServiceKey)
 	d.Set("peering", conn.Peering.Type_)
 	d.Set("speed", conn.Speed)

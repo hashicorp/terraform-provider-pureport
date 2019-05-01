@@ -10,8 +10,8 @@ import (
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func resourceDummyConnection() *schema.Resource {
@@ -53,15 +53,15 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	billingTerm := d.Get("billing_term").(string)
 
 	// Create the body of the request
-	connection := swagger.DummyConnection{
+	connection := client.DummyConnection{
 		Type_: "DUMMY",
 		Name:  name,
 		Speed: int32(speed),
-		Location: &swagger.Link{
+		Location: &client.Link{
 			Id:   location[0].(map[string]interface{})["id"].(string),
 			Href: location[0].(map[string]interface{})["href"].(string),
 		},
-		Network: &swagger.Link{
+		Network: &client.Link{
 			Id:   network[0].(map[string]interface{})["id"].(string),
 			Href: network[0].(map[string]interface{})["href"].(string),
 		},
@@ -83,7 +83,7 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	ctx := sess.GetSessionContext()
 
-	opts := swagger.AddConnectionOpts{
+	opts := client.AddConnectionOpts{
 		Body: optional.NewInterface(connection),
 	}
 
@@ -142,7 +142,7 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error Response while reading Dummy Connection: code=%v", resp.StatusCode)
 	}
 
-	conn := c.(swagger.DummyConnection)
+	conn := c.(client.DummyConnection)
 
 	d.Set("peering", conn.Peering.Type_)
 	d.Set("speed", conn.Speed)

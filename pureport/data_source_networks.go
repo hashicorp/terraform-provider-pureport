@@ -10,8 +10,8 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func dataSourceNetworks() *schema.Resource {
@@ -84,7 +84,7 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Filter the results
-	var filteredNetworks []swagger.Network
+	var filteredNetworks []client.Network
 
 	nameRegex, nameRegexOk := d.GetOk("name_regex")
 	if nameRegexOk {
@@ -118,7 +118,7 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func flattenNetworks(networks []swagger.Network) (out []map[string]interface{}) {
+func flattenNetworks(networks []client.Network) (out []map[string]interface{}) {
 
 	for _, network := range networks {
 

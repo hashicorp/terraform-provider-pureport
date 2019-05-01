@@ -11,8 +11,8 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
 func dataSourceLocations() *schema.Resource {
@@ -88,7 +88,7 @@ func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Filter the results
-	var filteredLocations []swagger.Location
+	var filteredLocations []client.Location
 	if nameRegexOk {
 		r := regexp.MustCompile(nameRegex.(string))
 		for _, location := range locations {
@@ -120,7 +120,7 @@ func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func flattenLocations(locations []swagger.Location) (out []map[string]interface{}) {
+func flattenLocations(locations []client.Location) (out []map[string]interface{}) {
 
 	for _, loc := range locations {
 
@@ -137,7 +137,7 @@ func flattenLocations(locations []swagger.Location) (out []map[string]interface{
 	return
 }
 
-func flattenLinks(links []swagger.LocationLinkConnection) (out []map[string]interface{}) {
+func flattenLinks(links []client.LocationLinkConnection) (out []map[string]interface{}) {
 
 	for _, link := range links {
 
