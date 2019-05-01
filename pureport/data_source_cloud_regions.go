@@ -94,7 +94,7 @@ func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 	// Convert to Map
 	out := flattenRegions(filteredRegions)
 	if err := d.Set("regions", out); err != nil {
-		return fmt.Errorf("Error reading cloud regions: %s", err)
+		return fmt.Errorf("Error reading Cloud Regions: %s", err)
 	}
 
 	data, err := json.Marshal(regions)
