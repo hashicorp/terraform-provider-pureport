@@ -10,7 +10,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
-const testAccDataSourceAWSConnectionConfig_basic = `
+const testAccResourceAWSConnectionConfig_basic = `
 data "pureport_accounts" "main" {
 	name_regex = "Terraform"
 }
@@ -58,9 +58,9 @@ func TestAWSConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckAWSConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceAWSConnectionConfig_basic,
+				Config: testAccResourceAWSConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceAWSConnection(resourceName, &instance),
+					testAccCheckResourceAWSConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
@@ -72,7 +72,7 @@ func TestAWSConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDataSourceAWSConnection(name string, instance *swagger.AwsDirectConnectConnection) resource.TestCheckFunc {
+func testAccCheckResourceAWSConnection(name string, instance *swagger.AwsDirectConnectConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)

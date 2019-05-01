@@ -10,7 +10,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
-const testAccDataSourceAzureConnectionConfig_basic = `
+const testAccResourceAzureConnectionConfig_basic = `
 data "pureport_accounts" "main" {
 	name_regex = "Terraform"
 }
@@ -57,9 +57,9 @@ func TestAzureConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckAzureConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceAzureConnectionConfig_basic,
+				Config: testAccResourceAzureConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceAzureConnection(resourceName, &instance),
+					testAccCheckResourceAzureConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AzureExpressRouteTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Some random description"),
@@ -72,7 +72,7 @@ func TestAzureConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDataSourceAzureConnection(name string, instance *swagger.AzureExpressRouteConnection) resource.TestCheckFunc {
+func testAccCheckResourceAzureConnection(name string, instance *swagger.AzureExpressRouteConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)

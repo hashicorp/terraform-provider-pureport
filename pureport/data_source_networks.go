@@ -66,30 +66,27 @@ func dataSourceNetworks() *schema.Resource {
 func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
-	nameRegex, nameRegexOk := d.GetOk("name_regex")
-	accountId, accountIdOk := d.GetOk("account_id")
-
-	if !accountIdOk {
-		log.Printf("[Error] Invalid Pureport Account ID")
-	}
+	accountId := d.Get("account_id")
 
 	ctx := sess.GetSessionContext()
 
 	networks, resp, err := sess.Client.NetworksApi.FindNetworks(ctx, accountId.(string))
 	if err != nil {
-		log.Printf("[Error] Error when Reading Pureport Network data")
+		log.Printf("Error when Reading Pureport Network data")
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while Reading Pureport Network data")
+		log.Printf("Error Response while Reading Pureport Network data")
 		d.SetId("")
 		return nil
 	}
 
 	// Filter the results
 	var filteredNetworks []swagger.Network
+
+	nameRegex, nameRegexOk := d.GetOk("name_regex")
 	if nameRegexOk {
 		r := regexp.MustCompile(nameRegex.(string))
 		for _, network := range networks {

@@ -166,16 +166,20 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 
 	d.Set("description", conn.Description)
 	d.Set("high_availability", conn.HighAvailability)
-	if err := d.Set("location", map[string]string{
-		"id":   conn.Location.Id,
-		"href": conn.Location.Href,
+	if err := d.Set("location", []map[string]string{
+		{
+			"id":   conn.Location.Id,
+			"href": conn.Location.Href,
+		},
 	}); err != nil {
 		return fmt.Errorf("Error setting location for Google Cloud Connection %s: %s", d.Id(), err)
 	}
 
-	if err := d.Set("network", map[string]string{
-		"id":   conn.Network.Id,
-		"href": conn.Network.Href,
+	if err := d.Set("network", []map[string]string{
+		{
+			"id":   conn.Network.Id,
+			"href": conn.Network.Href,
+		},
 	}); err != nil {
 		return fmt.Errorf("Error setting network for Google Cloud Connection %s: %s", d.Id(), err)
 	}

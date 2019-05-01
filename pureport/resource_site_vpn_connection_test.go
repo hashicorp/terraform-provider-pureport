@@ -10,7 +10,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
-const testAccDataSourceSiteVPNConnectionConfig_basic = `
+const testAccResourceSiteVPNConnectionConfig_basic = `
 data "pureport_accounts" "main" {
 	name_regex = "Terraform"
 }
@@ -62,9 +62,9 @@ func TestSiteVPNConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceSiteVPNConnectionConfig_basic,
+				Config: testAccResourceSiteVPNConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceSiteVPNConnection(resourceName, &instance),
+					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPNTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
@@ -76,7 +76,7 @@ func TestSiteVPNConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDataSourceSiteVPNConnection(name string, instance *swagger.SiteIpSecVpnConnection) resource.TestCheckFunc {
+func testAccCheckResourceSiteVPNConnection(name string, instance *swagger.SiteIpSecVpnConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)

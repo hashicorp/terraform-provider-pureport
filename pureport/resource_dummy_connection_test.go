@@ -10,7 +10,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
-const testAccDataSourceDummyConnectionConfig_basic = `
+const testAccResourceDummyConnectionConfig_basic = `
 data "pureport_accounts" "main" {
 	name_regex = "Terraform"
 }
@@ -55,9 +55,9 @@ func TestDummyConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckDummyConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceDummyConnectionConfig_basic,
+				Config: testAccResourceDummyConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceDummyConnection(resourceName, &instance),
+					testAccCheckResourceDummyConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "DummyTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
@@ -69,7 +69,7 @@ func TestDummyConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDataSourceDummyConnection(name string, instance *swagger.DummyConnection) resource.TestCheckFunc {
+func testAccCheckResourceDummyConnection(name string, instance *swagger.DummyConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)

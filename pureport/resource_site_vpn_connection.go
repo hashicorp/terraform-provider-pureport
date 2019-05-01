@@ -454,16 +454,20 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error setting customer networks for VPN Connection %s: %s", d.Id(), err)
 	}
 
-	if err := d.Set("location", map[string]string{
-		"id":   conn.Location.Id,
-		"href": conn.Location.Href,
+	if err := d.Set("location", []map[string]string{
+		{
+			"id":   conn.Location.Id,
+			"href": conn.Location.Href,
+		},
 	}); err != nil {
 		return fmt.Errorf("Error setting location for VPN Connection %s: %s", d.Id(), err)
 	}
 
-	if err := d.Set("network", map[string]string{
-		"id":   conn.Network.Id,
-		"href": conn.Network.Href,
+	if err := d.Set("network", []map[string]string{
+		{
+			"id":   conn.Network.Id,
+			"href": conn.Network.Href,
+		},
 	}); err != nil {
 		return fmt.Errorf("Error setting network for VPN Connection %s: %s", d.Id(), err)
 	}
@@ -473,16 +477,22 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	d.Set("ike_version", conn.IkeVersion)
 
 	if conn.IkeVersion == "V1" {
-		if err := d.Set("ikev1_config", map[string]interface{}{
-			"esp": map[string]string{
-				"dh_group":   conn.IkeV1.Esp.DhGroup,
-				"encryption": conn.IkeV1.Esp.Encryption,
-				"integrity":  conn.IkeV1.Esp.Integrity,
-			},
-			"ike": map[string]string{
-				"dh_group":   conn.IkeV1.Ike.DhGroup,
-				"encryption": conn.IkeV1.Ike.Encryption,
-				"integrity":  conn.IkeV1.Ike.Integrity,
+		if err := d.Set("ikev1_config", []map[string]interface{}{
+			{
+				"esp": []map[string]string{
+					{
+						"dh_group":   conn.IkeV1.Esp.DhGroup,
+						"encryption": conn.IkeV1.Esp.Encryption,
+						"integrity":  conn.IkeV1.Esp.Integrity,
+					},
+				},
+				"ike": []map[string]string{
+					{
+						"dh_group":   conn.IkeV1.Ike.DhGroup,
+						"encryption": conn.IkeV1.Ike.Encryption,
+						"integrity":  conn.IkeV1.Ike.Integrity,
+					},
+				},
 			},
 		}); err != nil {
 			return fmt.Errorf("Error setting IKE V1 Configuration for VPN Connection %s: %s", d.Id(), err)
@@ -490,17 +500,23 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if conn.IkeVersion == "V2" {
-		if err := d.Set("ikev2_config", map[string]interface{}{
-			"esp": map[string]string{
-				"dh_group":   conn.IkeV2.Esp.DhGroup,
-				"encryption": conn.IkeV2.Esp.Encryption,
-				"integrity":  conn.IkeV2.Esp.Integrity,
-			},
-			"ike": map[string]string{
-				"dh_group":   conn.IkeV2.Ike.DhGroup,
-				"encryption": conn.IkeV2.Ike.Encryption,
-				"integrity":  conn.IkeV2.Ike.Integrity,
-				"prf":        conn.IkeV2.Ike.Prf,
+		if err := d.Set("ikev2_config", []map[string]interface{}{
+			{
+				"esp": []map[string]string{
+					{
+						"dh_group":   conn.IkeV2.Esp.DhGroup,
+						"encryption": conn.IkeV2.Esp.Encryption,
+						"integrity":  conn.IkeV2.Esp.Integrity,
+					},
+				},
+				"ike": []map[string]string{
+					{
+						"dh_group":   conn.IkeV2.Ike.DhGroup,
+						"encryption": conn.IkeV2.Ike.Encryption,
+						"integrity":  conn.IkeV2.Ike.Integrity,
+						"prf":        conn.IkeV2.Ike.Prf,
+					},
+				},
 			},
 		}); err != nil {
 			return fmt.Errorf("Error setting IKE V2 Configuration for VPN Connection %s: %s", d.Id(), err)

@@ -10,7 +10,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/swagger"
 )
 
-const testAccDataSourceGoogleCloudConnectionConfig_basic = `
+const testAccResourceGoogleCloudConnectionConfig_basic = `
 data "pureport_accounts" "main" {
 	name_regex = "Terraform"
 }
@@ -58,9 +58,9 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckGoogleCloudConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceGoogleCloudConnectionConfig_basic,
+				Config: testAccResourceGoogleCloudConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckDataSourceGoogleCloudConnection(resourceName, &instance),
+					testAccCheckResourceGoogleCloudConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "GoogleCloudTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
@@ -75,7 +75,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 	})
 }
 
-func testAccCheckDataSourceGoogleCloudConnection(name string, instance *swagger.GoogleCloudInterconnectConnection) resource.TestCheckFunc {
+func testAccCheckResourceGoogleCloudConnection(name string, instance *swagger.GoogleCloudInterconnectConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
 		sess, ok := testAccProvider.Meta().(*session.Session)
