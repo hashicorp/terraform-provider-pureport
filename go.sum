@@ -191,6 +191,10 @@ github.com/pureport/pureport-sdk-go v0.0.0-20190501192212-5a0c14b21f48 h1:J9L7Qx
 github.com/pureport/pureport-sdk-go v0.0.0-20190501192212-5a0c14b21f48/go.mod h1:AnIWdRq3Y+bJsxS80lYQOze22ac7QtwjQCak/pw5a2I=
 github.com/pureport/pureport-sdk-go v0.0.0-20190501192514-7809d779f2c1 h1:Dr4mMBbCRT/83MtQy6Wu3CittLC0i68FFp5Hsx/QT+0=
 github.com/pureport/pureport-sdk-go v0.0.0-20190501192514-7809d779f2c1/go.mod h1:AnIWdRq3Y+bJsxS80lYQOze22ac7QtwjQCak/pw5a2I=
+github.com/pureport/pureport-sdk-go v0.0.0-20190501194848-97823bb50557 h1:4P8L9PbyHWoRMJ/OKv1zd5X8wkgEI4xWztviJ8UG/KY=
+github.com/pureport/pureport-sdk-go v0.0.0-20190501194848-97823bb50557/go.mod h1:AnIWdRq3Y+bJsxS80lYQOze22ac7QtwjQCak/pw5a2I=
+github.com/pureport/pureport-sdk-go v0.0.0-20190501195110-1fcbfbb435ed h1:rWjcsbHYwHXesM/71pi8vOLHOw3eSV04wa614UBq588=
+github.com/pureport/pureport-sdk-go v0.0.0-20190501195110-1fcbfbb435ed/go.mod h1:AnIWdRq3Y+bJsxS80lYQOze22ac7QtwjQCak/pw5a2I=
 github.com/ryanuber/columnize v0.0.0-20161220214920-0fbbb3f0e3fb/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/satori/go.uuid v0.0.0-20160927100844-b061729afc07/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/satori/uuid v0.0.0-20160927100844-b061729afc07/go.mod h1:B8HLsPLik/YNn6KKWVMDJ8nzCL8RP5WyfsnmvnAEwIU=
