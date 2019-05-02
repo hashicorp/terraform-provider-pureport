@@ -15,9 +15,9 @@ pipeline {
     }
     environment {
         TF_LOG=INFO
-        PUREPORT_ENDPOINT="http://dev1-api.pureport.com"
-        PUREPORT_API_KEY=""
-        PUREPORT_API_SECRET=""
+        PUREPORT_ENDPOINT="https://dev1-api.pureportdev.com"
+        PUREPORT_API_KEY="mKBkM3l1ScUHW"
+        PUREPORT_API_SECRET="JMzOfGAbLRcrNziGO"
     }
     stages {
         stage('Build') {
