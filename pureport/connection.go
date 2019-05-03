@@ -207,7 +207,7 @@ func flattenMappings(mappings []client.NatMapping) (out []map[string]interface{}
 	return
 }
 
-func DeleteConnection(d *schema.ResourceData, m interface{}) error {
+func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
 	ctx := sess.GetSessionContext()
@@ -224,13 +224,13 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 		c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 		if err != nil {
 			return backoff.Permanent(
-				fmt.Errorf("Error deleting data for Connection: %s", err),
+				fmt.Errorf("Error deleting data for %s: %s", name, err),
 			)
 		}
 
 		if resp.StatusCode >= 300 {
 			return backoff.Permanent(
-				fmt.Errorf("Error Response while attempting to delete Connection: code=%v", resp.StatusCode),
+				fmt.Errorf("Error Response while attempting to delete %s: code=%v", name, resp.StatusCode),
 			)
 		}
 
@@ -249,11 +249,11 @@ func DeleteConnection(d *schema.ResourceData, m interface{}) error {
 	// Delete
 	_, resp, err := sess.Client.ConnectionsApi.DeleteConnection(ctx, connectionId)
 	if err != nil {
-		return fmt.Errorf("Error deleting data for Connection: %s", err)
+		return fmt.Errorf("Error deleting data for %s: %s", name, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while deleting Connection: code=%v", resp.StatusCode)
+		return fmt.Errorf("Error Response while deleting %s: code=%v", name, resp.StatusCode)
 	}
 
 	log.Printf("[Info] Waiting for connection to be deleted")

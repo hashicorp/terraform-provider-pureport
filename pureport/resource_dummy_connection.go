@@ -8,9 +8,14 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
+)
+
+const (
+	dummyConnectionName = "Dummy Cloud Connection"
 )
 
 func resourceDummyConnection() *schema.Resource {
@@ -93,13 +98,23 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	)
 
 	if err != nil {
-		log.Printf("Error Creating new Dummy Connection: %v", err)
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error Creating new %s: %v", dummyConnectionName, err)
+		} else {
+			log.Printf("Error Creating new %s: %f\n", dummyConnectionName, response["status"])
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new Dummy Connection: code=%v", resp.StatusCode)
+		log.Printf("Error Response while creating new %s: code=%v", dummyConnectionName, resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
@@ -131,14 +146,14 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 	c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("Error Response while reading Dummy Connection: code=%v", resp.StatusCode)
+			log.Printf("Error Response while reading %s: code=%v", dummyConnectionName, resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("Error reading data for Dummy Connection: %s", err)
+		return fmt.Errorf("Error reading data for %s: %s", dummyConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while reading Dummy Connection: code=%v", resp.StatusCode)
+		return fmt.Errorf("Error Response while reading %s: code=%v", dummyConnectionName, resp.StatusCode)
 	}
 
 	conn := c.(client.DummyConnection)
@@ -154,7 +169,7 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 	if err := d.Set("customer_networks", customerNetworks); err != nil {
-		return fmt.Errorf("Error setting customer networks for Dummy Cloud Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting customer networks for %s %s: %s", dummyConnectionName, d.Id(), err)
 	}
 
 	d.Set("description", conn.Description)
@@ -166,7 +181,7 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 			"href": conn.Location.Href,
 		},
 	}); err != nil {
-		return fmt.Errorf("Error setting location for Dummy Cloud Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting location for %s %s: %s", dummyConnectionName, d.Id(), err)
 	}
 
 	if err := d.Set("network", []map[string]string{
@@ -175,7 +190,7 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 			"href": conn.Network.Href,
 		},
 	}); err != nil {
-		return fmt.Errorf("Error setting network for Dummy Cloud Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting network for %s %s: %s", dummyConnectionName, d.Id(), err)
 	}
 
 	return nil
@@ -186,5 +201,5 @@ func resourceDummyConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 }
 
 func resourceDummyConnectionDelete(d *schema.ResourceData, m interface{}) error {
-	return DeleteConnection(d, m)
+	return DeleteConnection(dummyConnectionName, d, m)
 }

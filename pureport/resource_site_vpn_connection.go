@@ -8,9 +8,14 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
+)
+
+const (
+	sitevpnConnectionName = "SiteVPN Connection"
 )
 
 func resourceSiteVPNConnection() *schema.Resource {
@@ -389,13 +394,23 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 	)
 
 	if err != nil {
-		log.Printf("Error Creating new SiteVPN Connection: %v", err)
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error Creating new %s: %v", sitevpnConnectionName, err)
+		} else {
+			log.Printf("Error Creating new %s: %f\n", sitevpnConnectionName, response["status"])
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new SiteVPN Connection: code=%v", resp.StatusCode)
+		log.Printf("Error Response while creating new %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
@@ -427,14 +442,14 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
+			log.Printf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("Error reading data for SiteVPN Connection: %s", err)
+		return fmt.Errorf("Error reading data for %s: %s", sitevpnConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("Error Response while reading SiteVPN Connection: code=%v", resp.StatusCode)
+		fmt.Errorf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 	}
 
 	conn := c.(client.SiteIpSecVpnConnection)
@@ -450,7 +465,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		})
 	}
 	if err := d.Set("customer_networks", customerNetworks); err != nil {
-		return fmt.Errorf("Error setting customer networks for VPN Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting customer networks for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
 	if err := d.Set("location", []map[string]string{
@@ -459,7 +474,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 			"href": conn.Location.Href,
 		},
 	}); err != nil {
-		return fmt.Errorf("Error setting location for VPN Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting location for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
 	if err := d.Set("network", []map[string]string{
@@ -468,7 +483,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 			"href": conn.Network.Href,
 		},
 	}); err != nil {
-		return fmt.Errorf("Error setting network for VPN Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting network for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
 	d.Set("auth_type", conn.AuthType)
@@ -494,7 +509,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 				},
 			},
 		}); err != nil {
-			return fmt.Errorf("Error setting IKE V1 Configuration for VPN Connection %s: %s", d.Id(), err)
+			return fmt.Errorf("Error setting IKE V1 Configuration for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 		}
 	}
 
@@ -518,7 +533,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 				},
 			},
 		}); err != nil {
-			return fmt.Errorf("Error setting IKE V2 Configuration for VPN Connection %s: %s", d.Id(), err)
+			return fmt.Errorf("Error setting IKE V2 Configuration for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 		}
 	}
 
@@ -537,17 +552,16 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if err := d.Set("traffic_selectors", trafficSelectors); err != nil {
-		return fmt.Errorf("Error setting traffics selectors for VPN Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting traffics selectors for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
 	return nil
 }
 
 func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) error {
-
 	return resourceSiteVPNConnectionRead(d, m)
 }
 
 func resourceSiteVPNConnectionDelete(d *schema.ResourceData, m interface{}) error {
-	return DeleteConnection(d, m)
+	return DeleteConnection(sitevpnConnectionName, d, m)
 }

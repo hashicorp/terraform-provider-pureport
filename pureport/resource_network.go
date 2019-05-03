@@ -8,6 +8,7 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
@@ -80,7 +81,17 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 	)
 
 	if err != nil {
-		log.Printf("Error Creating new Network: %v", err)
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error Creating new Network: %v", err)
+		} else {
+			log.Printf("Error Creating new Network: %f\n", response["status"])
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
 		d.SetId("")
 		return nil
 	}

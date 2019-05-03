@@ -8,9 +8,14 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
+)
+
+const (
+	azureConnectionName = "Azure Cloud Connection"
 )
 
 func resourceAzureConnection() *schema.Resource {
@@ -103,13 +108,22 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	)
 
 	if err != nil {
-		log.Printf("Error Creating new Azure Connection: %v", err)
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error Creating new %s: %v", azureConnectionName, err)
+		} else {
+			log.Printf("Error Creating new %s: %f\n", azureConnectionName, response["status"])
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
 		d.SetId("")
 		return nil
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new Azure Connection: code=%v", resp.StatusCode)
+		log.Printf("Error Response while creating new %s: code=%v", azureConnectionName, resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
@@ -141,14 +155,14 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 	c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("Error Response while reading Azure Connection: code=%v", resp.StatusCode)
+			log.Printf("Error Response while reading %s: code=%v", azureConnectionName, resp.StatusCode)
 			d.SetId("")
 		}
-		return fmt.Errorf("Error reading data for Azure Connection: %s", err)
+		return fmt.Errorf("Error reading data for %s: %s", azureConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while reading Azure Connection: code=%v", resp.StatusCode)
+		return fmt.Errorf("Error Response while reading %s: code=%v", azureConnectionName, resp.StatusCode)
 	}
 
 	conn := c.(client.AzureExpressRouteConnection)
@@ -164,7 +178,7 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 		})
 	}
 	if err := d.Set("customer_networks", customerNetworks); err != nil {
-		return fmt.Errorf("Error setting customer networks for Azure Cloud Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting customer networks for %s %s: %s", azureConnectionName, d.Id(), err)
 	}
 
 	d.Set("description", conn.Description)
@@ -176,7 +190,7 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 			"href": conn.Location.Href,
 		},
 	}); err != nil {
-		return fmt.Errorf("Error setting location for Azure Cloud Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting location for %s %s: %s", azureConnectionName, d.Id(), err)
 	}
 
 	if err := d.Set("network", []map[string]string{
@@ -185,7 +199,7 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 			"href": conn.Network.Href,
 		},
 	}); err != nil {
-		return fmt.Errorf("Error setting location for Azure Cloud Connection %s: %s", d.Id(), err)
+		return fmt.Errorf("Error setting location for %s %s: %s", azureConnectionName, d.Id(), err)
 	}
 
 	return nil
@@ -196,5 +210,5 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 }
 
 func resourceAzureConnectionDelete(d *schema.ResourceData, m interface{}) error {
-	return DeleteConnection(d, m)
+	return DeleteConnection(azureConnectionName, d, m)
 }
