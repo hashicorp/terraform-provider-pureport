@@ -15,7 +15,7 @@ data "pureport_cloud_services" "empty" {
 
 const testAccDataSourceCloudServicesConfig_name_regex = `
 data "pureport_cloud_services" "name_regex" {
-	name_regex = ".*S3 us-east-1"
+	name_regex = ".*S3 us-west-2"
 }
 `
 
@@ -31,13 +31,13 @@ func TestCloudServices_empty(t *testing.T) {
 				Config: testAccDataSourceCloudServicesConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudServices(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "services.#", "11"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.id", "aws-cloud9-us-east-1"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.name", "AWS Cloud9 us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "services.#", "4"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.id", "aws-s3-us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.name", "AWS S3 us-east-1"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.provider", "AWS"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.service", "CLOUD9"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.ipv4_prefix_count", "2"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.ipv6_prefix_count", "0"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.service", "S3"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.ipv4_prefix_count", "3"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.ipv6_prefix_count", "4"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.cloud_region_id", "aws-us-east-1"),
 				),
 			},
@@ -58,13 +58,13 @@ func TestCloudServices_name_regex(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudServices(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "services.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.id", "aws-s3-us-east-1"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.name", "AWS S3 us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.id", "aws-s3-us-west-2"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.name", "AWS S3 us-west-2"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.provider", "AWS"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.service", "S3"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.ipv4_prefix_count", "3"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.ipv6_prefix_count", "4"),
-					resource.TestCheckResourceAttr(resourceName, "services.0.cloud_region_id", "aws-us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "services.0.cloud_region_id", "aws-us-west-2"),
 				),
 			},
 		},

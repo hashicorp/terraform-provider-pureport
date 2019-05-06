@@ -32,18 +32,7 @@ func resourceAWSConnection() *schema.Resource {
 		"cloud_services": {
 			Type:     schema.TypeList,
 			Optional: true,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"id": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"href": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-				},
-			},
+			Elem:     &schema.Schema{Type: schema.TypeString},
 		},
 		"peering": {
 			Type:         schema.TypeString,
@@ -187,12 +176,9 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("aws_account_id", conn.AwsAccountId)
 	d.Set("aws_region", conn.AwsRegion)
 
-	var cloudServices []map[string]string
+	var cloudServices []string
 	for _, cs := range conn.CloudServices {
-		cloudServices = append(cloudServices, map[string]string{
-			"id":   cs.Id,
-			"href": cs.Href,
-		})
+		cloudServices = append(cloudServices, cs.Href)
 	}
 	if err := d.Set("cloud_services", cloudServices); err != nil {
 		return fmt.Errorf("Error setting cloud services for %s %s: %s", awsConnectionName, d.Id(), err)

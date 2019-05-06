@@ -310,14 +310,10 @@ func AddCloudServices(d *schema.ResourceData) []client.Link {
 	if data, ok := d.GetOk("cloud_services"); ok {
 
 		cloudServices := []client.Link{}
-
 		for _, cs := range data.([]map[string]string) {
-
 			new := client.Link{
-				Id:   cs["id"],
 				Href: cs["href"],
 			}
-
 			cloudServices = append(cloudServices, new)
 		}
 
