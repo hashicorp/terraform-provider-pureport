@@ -16,11 +16,11 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_cloud_regions" "main" {
-	name_regex = "Oregon"
+	name_regex = "Los.*"
 }
 
 data "pureport_locations" "main" {
-	name_regex = "^Ral.*"
+	name_regex = "^Sea.*"
 }
 
 data "pureport_networks" "main" {
@@ -30,8 +30,7 @@ data "pureport_networks" "main" {
 
 resource "pureport_google_cloud_connection" "main" {
 	name = "GoogleCloudTest"
-	speed = "100"
-	high_availability = true
+	speed = "50"
 
 	location {
 		id = "${data.pureport_locations.main.locations.0.id}"
@@ -42,8 +41,7 @@ resource "pureport_google_cloud_connection" "main" {
 		href = "${data.pureport_networks.main.networks.0.href}"
 	}
 
-	primary_pairing_key = "ff040d5e-476a-43eb-a5c0-ec069f0d1ca1/us-west2/1"
-	secondary_pairing_key = "9826da45-2c3b-44e7-8d2f-ae856ce8a90d/us-west2/2"
+	primary_pairing_key = "3fdd5fbe-c2be-4b6e-8b36-99b5b1cfc3bb/us-west2/1"
 }
 `
 
@@ -64,11 +62,10 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "GoogleCloudTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
-					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
-					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
-					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
-					resource.TestCheckResourceAttr(resourceName, "primary_pairing_key", "ff040d5e-476a-43eb-a5c0-ec069f0d1ca1/us-west2/1"),
-					resource.TestCheckResourceAttr(resourceName, "secondary_pairing_key", "9826da45-2c3b-44e7-8d2f-ae856ce8a90d/us-west2/2"),
+					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
+					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
+					resource.TestCheckResourceAttr(resourceName, "primary_pairing_key", "3fdd5fbe-c2be-4b6e-8b36-99b5b1cfc3bb/us-west2/1"),
+					resource.TestCheckResourceAttr(resourceName, "secondary_pairing_key", ""),
 				),
 			},
 		},

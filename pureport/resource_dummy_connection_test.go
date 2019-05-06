@@ -20,7 +20,7 @@ data "pureport_cloud_regions" "main" {
 }
 
 data "pureport_locations" "main" {
-	name_regex = "^Ral.*"
+	name_regex = ".*ttle.*"
 }
 
 data "pureport_networks" "main" {

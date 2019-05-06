@@ -400,7 +400,8 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		if err != nil {
 			log.Printf("Error Creating new %s: %v", sitevpnConnectionName, err)
 		} else {
-			log.Printf("Error Creating new %s: %f\n", sitevpnConnectionName, response["status"])
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error Creating new %s: %d\n", sitevpnConnectionName, statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}

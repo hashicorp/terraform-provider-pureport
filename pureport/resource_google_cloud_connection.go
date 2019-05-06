@@ -112,7 +112,8 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		if err != nil {
 			log.Printf("Error Creating new %s: %v", googleConnectionName, err)
 		} else {
-			log.Printf("Error Creating new %s: %f\n", googleConnectionName, response["status"])
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error Creating new %s: %d\n", googleConnectionName, statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}

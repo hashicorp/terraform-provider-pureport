@@ -104,7 +104,8 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		if err != nil {
 			log.Printf("Error Creating new %s: %v", dummyConnectionName, err)
 		} else {
-			log.Printf("Error Creating new %s: %f\n", dummyConnectionName, response["status"])
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error Creating new %s: %d\n", dummyConnectionName, statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}

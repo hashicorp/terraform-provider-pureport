@@ -16,11 +16,11 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_cloud_regions" "main" {
-	name_regex = "Oregon"
+	name_regex = "Washington"
 }
 
 data "pureport_locations" "main" {
-	name_regex = "^Ral.*"
+	name_regex = "Sea.*"
 }
 
 data "pureport_networks" "main" {
@@ -42,7 +42,7 @@ resource "pureport_azure_connection" "main" {
 		id = "${data.pureport_networks.main.networks.0.id}"
 		href = "${data.pureport_networks.main.networks.0.href}"
 	}
-	service_key = "8d892e3a-caae-48ac-9b71-4760de0b1d2c"
+	service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
 }
 `
 
@@ -65,7 +65,7 @@ func TestAzureConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "Some random description"),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
-					resource.TestCheckResourceAttr(resourceName, "service_key", "8d892e3a-caae-48ac-9b71-4760de0b1d2c"),
+					resource.TestCheckResourceAttr(resourceName, "service_key", "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"),
 				),
 			},
 		},

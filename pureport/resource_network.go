@@ -87,7 +87,8 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			log.Printf("Error Creating new Network: %v", err)
 		} else {
-			log.Printf("Error Creating new Network: %f\n", response["status"])
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error Creating new Network: %d\n", statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}
