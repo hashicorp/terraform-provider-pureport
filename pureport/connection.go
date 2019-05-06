@@ -56,23 +56,9 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Optional: true,
 		},
-		"location": {
-			Type:     schema.TypeList,
+		"location_href": {
+			Type:     schema.TypeString,
 			Required: true,
-			MaxItems: 1,
-			MinItems: 1,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"id": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"href": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-				},
-			},
 		},
 		"billing_term": {
 			Type:     schema.TypeString,

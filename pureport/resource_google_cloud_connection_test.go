@@ -59,10 +59,7 @@ resource "pureport_google_cloud_connection" "main" {
 	name = "GoogleCloudTest"
 	speed = "50"
 
-	location {
-		id = "${data.pureport_locations.main.locations.0.id}"
-		href = "${data.pureport_locations.main.locations.0.href}"
-	}
+	location_href = "${data.pureport_locations.main.locations.0.href}"
 	network {
 		id = "${data.pureport_networks.main.networks.0.id}"
 		href = "${data.pureport_networks.main.networks.0.href}"

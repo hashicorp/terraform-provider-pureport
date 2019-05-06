@@ -33,10 +33,7 @@ resource "pureport_aws_connection" "main" {
 	speed = "100"
 	high_availability = true
 
-	location {
-		id = "${data.pureport_locations.main.locations.0.id}"
-		href = "${data.pureport_locations.main.locations.0.href}"
-	}
+	location_href = "${data.pureport_locations.main.locations.0.href}"
 	network {
 		id = "${data.pureport_networks.main.networks.0.id}"
 		href = "${data.pureport_networks.main.networks.0.href}"

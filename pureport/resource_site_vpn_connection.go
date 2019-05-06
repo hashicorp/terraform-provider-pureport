@@ -312,8 +312,8 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 	network := d.Get("network").([]interface{})
 	speed := d.Get("speed").(int)
 	name := d.Get("name").(string)
-	location := d.Get("location").([]interface{})
 	billingTerm := d.Get("billing_term").(string)
+	location_href := d.Get("location_href").(string)
 
 	// Create the body of the request
 	connection := client.SiteIpSecVpnConnection{
@@ -326,8 +326,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		PrimaryKey:  d.Get("primary_key").(string),
 
 		Location: &client.Link{
-			Id:   location[0].(map[string]interface{})["id"].(string),
-			Href: location[0].(map[string]interface{})["href"].(string),
+			Href: location_href,
 		},
 		Network: &client.Link{
 			Id:   network[0].(map[string]interface{})["id"].(string),
@@ -469,12 +468,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error setting customer networks for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
-	if err := d.Set("location", []map[string]string{
-		{
-			"id":   conn.Location.Id,
-			"href": conn.Location.Href,
-		},
-	}); err != nil {
+	if err := d.Set("location_href", conn.Location.Href); err != nil {
 		return fmt.Errorf("Error setting location for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 

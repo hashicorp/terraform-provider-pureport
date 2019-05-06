@@ -57,8 +57,8 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	network := d.Get("network").([]interface{})
 	speed := d.Get("speed").(int)
 	name := d.Get("name").(string)
-	location := d.Get("location").([]interface{})
 	billingTerm := d.Get("billing_term").(string)
+	location_href := d.Get("location_href").(string)
 
 	// Azure specific values
 	serviceKey := d.Get("service_key").(string)
@@ -69,8 +69,7 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		Name:  name,
 		Speed: int32(speed),
 		Location: &client.Link{
-			Id:   location[0].(map[string]interface{})["id"].(string),
-			Href: location[0].(map[string]interface{})["href"].(string),
+			Href: location_href,
 		},
 		Network: &client.Link{
 			Id:   network[0].(map[string]interface{})["id"].(string),
@@ -185,12 +184,7 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("description", conn.Description)
 	d.Set("high_availability", conn.HighAvailability)
 
-	if err := d.Set("location", []map[string]string{
-		{
-			"id":   conn.Location.Id,
-			"href": conn.Location.Href,
-		},
-	}); err != nil {
+	if err := d.Set("location_href", conn.Location.Href); err != nil {
 		return fmt.Errorf("Error setting location for %s %s: %s", azureConnectionName, d.Id(), err)
 	}
 
