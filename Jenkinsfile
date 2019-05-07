@@ -21,6 +21,13 @@ pipeline {
         PUREPORT_API_KEY="mKBkM3l1ScUHW"
         PUREPORT_API_SECRET="JMzOfGAbLRcrNziGO"
     }
+    parameters {
+      booleanParam(
+          name: 'RUN_ACCEPTANCE_TESTS',
+          defaultValue: false,
+          description: 'Should we run the acceptance tests as part of run?'
+          )
+    }
     stages {
         stage('Build') {
             steps {
@@ -32,7 +39,10 @@ pipeline {
             when {
 
                 // This can take a long time so we may only want to do this on develop
-                branch 'develop'
+                anyOf {
+                  branch 'develop'
+                  expression { return params.RUN_ACCEPTANCE_TESTS } 
+                }
             }
             steps {
                 sh "make testacc"
