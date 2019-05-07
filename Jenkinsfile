@@ -34,13 +34,6 @@ pipeline {
             steps {
                 sh "make testacc"
             }
-            post {
-                cleanup {
-                    // Make sure we cleanup an Networks or Connections that may be still hanging
-                    // around here. The Terraform Test framework should always call delete on the
-                    // plugin, but you never know.
-                }
-            }
         }
     }
     post {
