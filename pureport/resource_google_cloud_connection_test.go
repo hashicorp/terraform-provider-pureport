@@ -89,7 +89,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "primary_pairing_key"),
-					resource.TestNoCheckResourceAttr(resourceName, "secondary_pairing_key"),
+					resource.TestCheckNoResourceAttr(resourceName, "secondary_pairing_key"),
 				),
 			},
 		},
