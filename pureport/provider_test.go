@@ -35,7 +35,7 @@ func testAccPreCheck(t *testing.T) {
 	}
 
 	googleEnvVars := []string{
-		"GOOGLE_CREDENTIALS",
+		"GOOGLE_APPLICATION_CREDENTIALS",
 		"GOOGLE_PROJECT",
 		"GOOGLE_REGION",
 	}
