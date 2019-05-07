@@ -15,7 +15,7 @@ pipeline {
     }
     environment {
         TF_LOG="INFO"
-        GOCACHE=".cache"
+        GOPATH="/go"
         PUREPORT_ENDPOINT="https://dev1-api.pureportdev.com"
         PUREPORT_API_KEY="mKBkM3l1ScUHW"
         PUREPORT_API_SECRET="JMzOfGAbLRcrNziGO"
