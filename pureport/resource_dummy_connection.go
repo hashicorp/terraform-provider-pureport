@@ -25,6 +25,7 @@ func resourceDummyConnection() *schema.Resource {
 			Type:         schema.TypeString,
 			Description:  "The peering configuration to use for this connection Public/Private",
 			Default:      "PRIVATE",
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
 			Optional:     true,
 		},

@@ -40,6 +40,7 @@ func resourceAWSConnection() *schema.Resource {
 			Description:  "The peering configuration to use for this connection Public/Private",
 			Default:      "PRIVATE",
 			Optional:     true,
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
 		},
 	}
