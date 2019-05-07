@@ -95,13 +95,11 @@ func resourceSiteVPNConnection() *schema.Resource {
 		},
 		"primary_customer_router_ip": {
 			Type:     schema.TypeString,
-			Optional: true,
-			Default:  "",
+			Required: true,
 		},
 		"primary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Default:  "",
 		},
 		"routing_type": {
 			Type:     schema.TypeString,
@@ -110,12 +108,10 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"secondary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Default:  "",
 		},
 		"secondary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
-			Default:  "",
 		},
 		"traffic_selectors": {
 			Type:     schema.TypeList,
