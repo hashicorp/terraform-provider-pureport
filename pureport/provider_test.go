@@ -7,18 +7,22 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/terraform-providers/terraform-provider-google/google"
+	"github.com/terraform-providers/terraform-provider-template/template"
 )
 
 var testAccProviders map[string]terraform.ResourceProvider
 var testAccProvider *schema.Provider
 var testAccGoogleProvider *schema.Provider
+var testAccTemplateProvider *schema.Provider
 
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
 	testAccGoogleProvider = google.Provider().(*schema.Provider)
+	testAccTemplateProvider = template.Provider().(*schema.Provider)
 	testAccProviders = map[string]terraform.ResourceProvider{
 		"pureport": testAccProvider,
 		"google":   testAccGoogleProvider,
+		"template": testAccTemplateProvider,
 	}
 }
 

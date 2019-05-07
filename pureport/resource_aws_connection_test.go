@@ -44,6 +44,52 @@ resource "pureport_aws_connection" "main" {
 }
 `
 
+const testAccResourceAWSConnectionConfig_cloudServices = `
+data "pureport_accounts" "main" {
+	name_regex = "Terraform"
+}
+
+data "pureport_cloud_regions" "main" {
+	name_regex = "Oregon"
+}
+
+data "pureport_locations" "main" {
+	name_regex = "^Sea*"
+}
+
+data "pureport_cloud_services" "s3" {
+	name_regex = ".*S3"
+}
+
+data "pureport_networks" "main" {
+	account_id = "${data.pureport_accounts.main.accounts.0.id}"
+	name_regex = "Bansh.*"
+}
+
+data "template_file" "services_hrefs" {
+  count = "${length(data.pureport_cloud_services.s3.services)}"
+  template = "${lookup(data.pureport_cloud_services.s3.services[count.index], "href")}"
+}
+
+resource "pureport_aws_connection" "main" {
+	name = "AwsDirectConnectCloudServicesTest"
+	speed = "100"
+	high_availability = true
+
+	location_href = "${data.pureport_locations.main.locations.0.href}"
+	network {
+		id = "${data.pureport_networks.main.networks.0.id}"
+		href = "${data.pureport_networks.main.networks.0.href}"
+	}
+
+	cloud_services = ["${data.template_file.services_hrefs.*.rendered}"]
+	peering = "PUBLIC"
+
+	aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+	aws_account_id = "123456789012"
+}
+`
+
 func TestAWSConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.main"
@@ -60,6 +106,31 @@ func TestAWSConnection_basic(t *testing.T) {
 					testAccCheckResourceAWSConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
+					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
+				),
+			},
+		},
+	})
+}
+
+func TestAWSConnection_cloudServices(t *testing.T) {
+
+	resourceName := "pureport_aws_connection.main"
+	var instance client.AwsDirectConnectConnection
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSConnectionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceAWSConnectionConfig_cloudServices,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectCloudServicesTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),

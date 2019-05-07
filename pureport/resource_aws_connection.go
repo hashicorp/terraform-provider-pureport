@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"sort"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -180,6 +181,11 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	for _, cs := range conn.CloudServices {
 		cloudServices = append(cloudServices, cs.Href)
 	}
+
+	sort.Slice(cloudServices, func(i int, j int) bool {
+		return cloudServices[i] < cloudServices[j]
+	})
+
 	if err := d.Set("cloud_services", cloudServices); err != nil {
 		return fmt.Errorf("Error setting cloud services for %s %s: %s", awsConnectionName, d.Id(), err)
 	}

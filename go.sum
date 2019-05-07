@@ -343,6 +343,7 @@ github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f
 github.com/terraform-providers/terraform-provider-openstack v1.15.0/go.mod h1:2aQ6n/BtChAl1y2S60vebhyJyZXBsuAI5G4+lHrT1Ew=
 github.com/terraform-providers/terraform-provider-random v2.0.0+incompatible h1:4wuExSWk/NHYS95P2H4KGv22bsabuDjGk5cFikIYzuU=
 github.com/terraform-providers/terraform-provider-random v2.0.0+incompatible/go.mod h1:1U2balY0mfjMnO5iotT60EuFqDJxqP433wJcybviCTw=
+github.com/terraform-providers/terraform-provider-template v1.0.0 h1:g2pyFaAJu369iAb7qGWmVwtQ15/35lRAfW91Je8wLjE=
 github.com/terraform-providers/terraform-provider-template v1.0.0/go.mod h1:/J+B8me5DCMa0rEBH5ic2aKPjhtpWNeScmxFJWxB1EU=
 github.com/terraform-providers/terraform-provider-tls v1.2.0/go.mod h1:Mxe/v5u31LDW4m32O1z6Ursdh95dpc9Puq6otkYg7tU=
 github.com/ugorji/go v0.0.0-20170107133203-ded73eae5db7/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=

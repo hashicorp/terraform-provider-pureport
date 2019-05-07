@@ -58,6 +58,10 @@ func dataSourceCloudServices() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+						"href": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
 					},
 				},
 			},
@@ -124,6 +128,7 @@ func flattenServices(services []client.CloudService) (out []map[string]interface
 
 		s := map[string]interface{}{
 			"id":                cs.Id,
+			"href":              cs.Href,
 			"name":              cs.Name,
 			"provider":          cs.Provider,
 			"service":           cs.Service,

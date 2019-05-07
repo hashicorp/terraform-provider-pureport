@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sort"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -310,12 +311,13 @@ func AddCloudServices(d *schema.ResourceData) []client.Link {
 	if data, ok := d.GetOk("cloud_services"); ok {
 
 		cloudServices := []client.Link{}
-		for _, cs := range data.([]map[string]string) {
-			new := client.Link{
-				Href: cs["href"],
-			}
-			cloudServices = append(cloudServices, new)
+		for _, cs := range data.([]interface{}) {
+			cloudServices = append(cloudServices, client.Link{Href: cs.(string)})
 		}
+
+		sort.Slice(cloudServices, func(i int, j int) bool {
+			return cloudServices[i].Href < cloudServices[j].Href
+		})
 
 		return cloudServices
 	}
