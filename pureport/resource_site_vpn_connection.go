@@ -37,65 +37,11 @@ func resourceSiteVPNConnection() *schema.Resource {
 			Required:     true,
 			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
 		},
-		"ikev1_config": {
-			Type:          schema.TypeList,
-			Optional:      true,
-			Computed:      true,
-			MaxItems:      1,
-			ConflictsWith: []string{"ikev2_config"},
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"esp": {
-						Type:     schema.TypeList,
-						MaxItems: 1,
-						Required: true,
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"dh_group": {
-									Type:     schema.TypeString,
-									Required: true,
-								},
-								"encryption": {
-									Type:     schema.TypeString,
-									Required: true,
-								},
-								"integrity": {
-									Type:     schema.TypeString,
-									Optional: true,
-								},
-							},
-						},
-					},
-					"ike": {
-						Type:     schema.TypeList,
-						MaxItems: 1,
-						Required: true,
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"dh_group": {
-									Type:     schema.TypeString,
-									Required: true,
-								},
-								"encryption": {
-									Type:     schema.TypeString,
-									Required: true,
-								},
-								"integrity": {
-									Type:     schema.TypeString,
-									Required: true,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		"ikev2_config": {
-			Type:          schema.TypeList,
-			Optional:      true,
-			Computed:      true,
-			MaxItems:      1,
-			ConflictsWith: []string{"ikev1_config"},
+		"ike_config": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Computed: true,
+			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"esp": {
@@ -231,7 +177,7 @@ func addIkeVersion1(d *schema.ResourceData) *client.Ikev1Config {
 
 	config := &client.Ikev1Config{}
 
-	if data, ok := d.GetOk("ikev1_config"); ok {
+	if data, ok := d.GetOk("ike_config"); ok {
 
 		raw_config := data.(map[string]interface{})
 		esp := raw_config["esp"].(map[string]interface{})
@@ -272,7 +218,7 @@ func addIkeVersion2(d *schema.ResourceData) *client.Ikev2Config {
 
 	config := &client.Ikev2Config{}
 
-	if data, ok := d.GetOk("ikev2_config"); ok {
+	if data, ok := d.GetOk("ike_config"); ok {
 
 		raw_config := data.(map[string]interface{})
 		esp := raw_config["esp"].(map[string]interface{})
@@ -359,7 +305,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 	// SiteVPN Optionals
 	connection.TrafficSelectors = addTrafficSelectorMappings(d)
 
-	if connection.IkeVersion == "1" {
+	if connection.IkeVersion == "V1" {
 		connection.IkeV1 = addIkeVersion1(d)
 	} else {
 		connection.IkeV2 = addIkeVersion2(d)
@@ -491,7 +437,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	d.Set("ike_version", conn.IkeVersion)
 
 	if conn.IkeVersion == "V1" {
-		if err := d.Set("ikev1_config", []map[string]interface{}{
+		if err := d.Set("ike_config", []map[string]interface{}{
 			{
 				"esp": []map[string]string{
 					{
@@ -514,7 +460,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if conn.IkeVersion == "V2" {
-		if err := d.Set("ikev2_config", []map[string]interface{}{
+		if err := d.Set("ike_config", []map[string]interface{}{
 			{
 				"esp": []map[string]string{
 					{
