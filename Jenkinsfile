@@ -34,7 +34,10 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh "make"
+
+                retry(3) {
+                  sh "make"
+                }
             }
         }
         stage('Run Terraform Tests') {
