@@ -21,6 +21,8 @@ pipeline {
         PUREPORT_API_KEY="mKBkM3l1ScUHW"
         PUREPORT_API_SECRET="JMzOfGAbLRcrNziGO"
         GOOGLE_CREDENTIALS="~/.gcloud/pureport-customer1-77ed8775b5f4.json"
+        GOOGLE_PROJECT="pureport-customer1"
+        GOOGLE_REGION="us-west2"
     }
     parameters {
       booleanParam(
