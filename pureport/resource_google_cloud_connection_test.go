@@ -17,7 +17,7 @@ data "google_compute_network" "default" {
 }
 
 resource "google_compute_router" "main" {
-  name    = "terrafrom-acc-router-${count.index + 1}"
+  name    = "terraform-acc-router-${count.index + 1}"
   network = "${data.google_compute_network.default.name}"
 
   bgp {
