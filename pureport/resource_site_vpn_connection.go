@@ -38,9 +38,11 @@ func resourceSiteVPNConnection() *schema.Resource {
 			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
 		},
 		"ikev1_config": {
-			Type:     schema.TypeList,
-			Optional: true,
-			MaxItems: 1,
+			Type:          schema.TypeList,
+			Optional:      true,
+			Computed:      true,
+			MaxItems:      1,
+			ConflictsWith: []string{"ikev2_config"},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"esp": {
@@ -89,9 +91,11 @@ func resourceSiteVPNConnection() *schema.Resource {
 			},
 		},
 		"ikev2_config": {
-			Type:     schema.TypeList,
-			Optional: true,
-			MaxItems: 1,
+			Type:          schema.TypeList,
+			Optional:      true,
+			Computed:      true,
+			MaxItems:      1,
+			ConflictsWith: []string{"ikev1_config"},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"esp": {
@@ -170,6 +174,7 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"traffic_selectors": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"customer_side": {

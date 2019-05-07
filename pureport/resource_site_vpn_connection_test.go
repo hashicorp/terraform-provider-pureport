@@ -40,6 +40,7 @@ resource "pureport_site_vpn_connection" "main" {
 	}
 
 	ike_version = "V2"
+	
 	routing_type = "ROUTE_BASED_BGP"
 	customer_asn = 30000
 
