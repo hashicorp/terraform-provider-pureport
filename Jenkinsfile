@@ -36,7 +36,7 @@ pipeline {
             steps {
 
                 retry(3) {
-                  sh "env"
+                  sh "echo $GOOGLE_CREDENTIALS"
                   sh "make"
                 }
             }
