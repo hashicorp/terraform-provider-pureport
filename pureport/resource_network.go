@@ -38,6 +38,7 @@ func resourceNetwork() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				MaxItems: 1,
+				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"id": {
@@ -55,19 +56,23 @@ func resourceNetwork() *schema.Resource {
 	}
 }
 
-func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
-
-	sess := m.(*session.Session)
+func expandNetwork(d *schema.ResourceData) client.Network {
 
 	name := d.Get("name").(string)
 	description := d.Get("description").(string)
-	accountId := d.Get("account_id").(string)
 
-	network := client.Network{
+	return client.Network{
 		Name:        name,
 		Description: description,
 	}
+}
 
+func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
+
+	network := expandNetwork(d)
+	accountId := d.Get("account_id").(string)
+
+	sess := m.(*session.Session)
 	ctx := sess.GetSessionContext()
 
 	opts := client.AddNetworkOpts{
@@ -157,6 +162,53 @@ func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceNetworkUpdate(d *schema.ResourceData, m interface{}) error {
+
+	n := expandNetwork(d)
+
+	d.Partial(true)
+
+	if d.HasChange("name") {
+		n.Name = d.Get("name").(string)
+	}
+
+	if d.HasChange("description") {
+		n.Description = d.Get("description").(string)
+	}
+
+	sess := m.(*session.Session)
+	ctx := sess.GetSessionContext()
+
+	opts := client.UpdateNetworkOpts{
+		Body: optional.NewInterface(n),
+	}
+
+	_, resp, err := sess.Client.NetworksApi.UpdateNetwork(
+		ctx,
+		d.Id(),
+		&opts,
+	)
+
+	if err != nil {
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error updating Network: %v", err)
+		} else {
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error updating Network: %d\n", statusCode)
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
+		return fmt.Errorf("Error while updating Network: err=%s", err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("Error Response while updating Network : code=%v", resp.StatusCode)
+	}
+
+	d.Partial(false)
 	return resourceNetworkRead(d, m)
 }
 

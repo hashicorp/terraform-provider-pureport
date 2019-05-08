@@ -27,10 +27,18 @@ var (
 
 func getBaseConnectionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"customer_asn": {
+		"name": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"description": {
+			Type:     schema.TypeString,
+			Optional: true,
+		},
+		"speed": {
 			Type:         schema.TypeInt,
-			Optional:     true,
-			ValidateFunc: validation.IntBetween(0, 65535),
+			Required:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 		"customer_networks": {
 			Type:     schema.TypeList,
@@ -48,23 +56,6 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 					},
 				},
 			},
-		},
-		"description": {
-			Type:     schema.TypeString,
-			Optional: true,
-		},
-		"high_availability": {
-			Type:     schema.TypeBool,
-			Optional: true,
-		},
-		"location_href": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
-		"billing_term": {
-			Type:     schema.TypeString,
-			Optional: true,
-			Default:  "HOURLY",
 		},
 		"nat_config": {
 			Type:     schema.TypeList,
@@ -105,13 +96,31 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"name": {
+		"billing_term": {
+			Type:     schema.TypeString,
+			Optional: true,
+			Default:  "HOURLY",
+		},
+		"customer_asn": {
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntBetween(0, 65535),
+		},
+		"high_availability": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			ForceNew: true,
+		},
+		"location_href": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"network": {
 			Type:     schema.TypeList,
 			Required: true,
+			ForceNew: true,
 			MaxItems: 1,
 			MinItems: 1,
 			Elem: &schema.Resource{
@@ -127,11 +136,6 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
-		},
 	}
 }
 
@@ -139,11 +143,11 @@ func flattenConnection(connection client.Connection) map[string]interface{} {
 	return map[string]interface{}{
 		"customer_asn":      connection.CustomerASN,
 		"customer_networks": flattenCustomerNetworks(connection.CustomerNetworks),
-		"description":       connection.Description,
 		"high_availability": connection.HighAvailability,
 		"location":          flattenLink(connection.Location),
-		"name":              connection.Name,
 		"network":           flattenLink(connection.Network),
+		"name":              connection.Name,
+		"description":       connection.Description,
 		"speed":             connection.Speed,
 	}
 }
@@ -260,8 +264,8 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 	return backoff.Retry(wait_for_delete, b)
 }
 
-// AddCustomerNetworks to decode the customer network information
-func AddCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
+// ExpandCustomerNetworks to decode the customer network information
+func ExpandCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
 
 	if data, ok := d.GetOk("customer_networks"); ok {
 
@@ -283,7 +287,7 @@ func AddCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
 	return nil
 }
 
-func AddNATConfiguration(d *schema.ResourceData) *client.NatConfig {
+func ExpandNATConfiguration(d *schema.ResourceData) *client.NatConfig {
 
 	if data, ok := d.GetOk("nat_config"); ok {
 
@@ -306,7 +310,7 @@ func AddNATConfiguration(d *schema.ResourceData) *client.NatConfig {
 	return nil
 }
 
-func AddCloudServices(d *schema.ResourceData) []client.Link {
+func ExpandCloudServices(d *schema.ResourceData) []client.Link {
 
 	if data, ok := d.GetOk("cloud_services"); ok {
 
@@ -325,7 +329,7 @@ func AddCloudServices(d *schema.ResourceData) []client.Link {
 	return nil
 }
 
-func AddPeeringType(d *schema.ResourceData) *client.PeeringConfiguration {
+func ExpandPeeringType(d *schema.ResourceData) *client.PeeringConfiguration {
 
 	peeringConfig := &client.PeeringConfiguration{}
 

@@ -46,9 +46,7 @@ func resourceDummyConnection() *schema.Resource {
 	}
 }
 
-func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error {
-
-	sess := m.(*session.Session)
+func expandDummyConnection(d *schema.ResourceData) client.DummyConnection {
 
 	// Generic Connection values
 	network := d.Get("network").([]interface{})
@@ -58,7 +56,7 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	location_href := d.Get("location_href").(string)
 
 	// Create the body of the request
-	connection := client.DummyConnection{
+	c := client.DummyConnection{
 		Type_: "DUMMY",
 		Name:  name,
 		Speed: int32(speed),
@@ -73,18 +71,26 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	}
 
 	// Generic Optionals
-	connection.CustomerNetworks = AddCustomerNetworks(d)
-	connection.Nat = AddNATConfiguration(d)
-	connection.Peering = AddPeeringType(d)
+	c.CustomerNetworks = ExpandCustomerNetworks(d)
+	c.Nat = ExpandNATConfiguration(d)
+	c.Peering = ExpandPeeringType(d)
 
 	if description, ok := d.GetOk("description"); ok {
-		connection.Description = description.(string)
+		c.Description = description.(string)
 	}
 
 	if highAvailability, ok := d.GetOk("high_availability"); ok {
-		connection.HighAvailability = highAvailability.(bool)
+		c.HighAvailability = highAvailability.(bool)
 	}
 
+	return c
+}
+
+func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error {
+
+	connection := expandDummyConnection(d)
+
+	sess := m.(*session.Session)
 	ctx := sess.GetSessionContext()
 
 	opts := client.AddConnectionOpts{
@@ -93,7 +99,7 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
-		network[0].(map[string]interface{})["id"].(string),
+		connection.Network.Id,
 		&opts,
 	)
 
@@ -193,6 +199,72 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceDummyConnectionUpdate(d *schema.ResourceData, m interface{}) error {
+
+	c := expandDummyConnection(d)
+
+	d.Partial(true)
+
+	sess := m.(*session.Session)
+	ctx := sess.GetSessionContext()
+
+	if d.HasChange("name") {
+		c.Name = d.Get("name").(string)
+		d.SetPartial("name")
+	}
+
+	if d.HasChange("description") {
+		c.Description = d.Get("description").(string)
+		d.SetPartial("description")
+	}
+
+	if d.HasChange("speed") {
+		c.Speed = int32(d.Get("speed").(int))
+		d.SetPartial("speed")
+	}
+
+	if d.HasChange("customer_networks") {
+		c.CustomerNetworks = ExpandCustomerNetworks(d)
+	}
+
+	if d.HasChange("nat_config") {
+		c.Nat = ExpandNATConfiguration(d)
+	}
+
+	if d.HasChange("billing_term") {
+		c.BillingTerm = d.Get("billing_term").(string)
+	}
+
+	opts := client.UpdateConnectionOpts{
+		Body: optional.NewInterface(c),
+	}
+
+	_, resp, err := sess.Client.ConnectionsApi.UpdateConnection(
+		ctx,
+		d.Id(),
+		&opts,
+	)
+
+	if err != nil {
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error Creating new %s: %v", dummyConnectionName, err)
+		} else {
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error updating %s: %d\n", dummyConnectionName, statusCode)
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
+		return fmt.Errorf("Error while updating %s: err=%s", dummyConnectionName, err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("Error Response while updating %s: code=%v", dummyConnectionName, resp.StatusCode)
+	}
+
+	d.Partial(false)
 	return resourceDummyConnectionRead(d, m)
 }
 
