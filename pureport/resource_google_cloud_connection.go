@@ -194,10 +194,7 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 	}
 
 	d.Set("primary_pairing_key", conn.PrimaryPairingKey)
-
-	if spk := conn.SecondaryPairingKey; spk != "" {
-		d.Set("secondary_pairing_key", spk)
-	}
+	d.Set("secondary_pairing_key", conn.SecondaryPairingKey)
 
 	return nil
 }
