@@ -36,6 +36,7 @@ pipeline {
             steps {
 
                 retry(3) {
+                  sh "env"
                   sh "make"
                 }
             }
