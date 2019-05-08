@@ -54,7 +54,7 @@ pipeline {
                   sh "mv terraform-provider-pureport terraform-provider-pureport_v${version}"
 
                   archiveArtifacts(
-                      artifacts: "terraform-provider-pureport-v${version}"
+                      artifacts: "terraform-provider-pureport_v${version}"
                       )
                 }
             }
