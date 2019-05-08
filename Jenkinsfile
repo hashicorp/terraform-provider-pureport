@@ -20,7 +20,7 @@ pipeline {
         PUREPORT_ENDPOINT="https://dev1-api.pureportdev.com"
         PUREPORT_API_KEY="mKBkM3l1ScUHW"
         PUREPORT_API_SECRET="JMzOfGAbLRcrNziGO"
-        GOOGLE_APPLICATION_CREDENTIALS="/var/lib/jenkins/.gcloud/pureport-customer1-77ed8775b5f4.json"
+        GOOGLE_APPLICATION_CREDENTIALS= credentials('terraform-google-credentials-id')
         GOOGLE_PROJECT="pureport-customer1"
         GOOGLE_REGION="us-west2"
     }
