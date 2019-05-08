@@ -48,6 +48,11 @@ pipeline {
 
                 retry(3) {
                   sh "make"
+                  sh "make plugin"
+
+                  archiveArtifacts(
+                      artifacts: 'terraform-provider-pureport'
+                      )
                 }
             }
         }

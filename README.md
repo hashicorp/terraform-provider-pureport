@@ -31,23 +31,30 @@ provider "template" {
 Building The Provider
 ---------------------
 
-Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-template`
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-pureport`
 
 ```sh
 $ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
-$ git clone git@github.com:terraform-providers/terraform-provider-template
+$ git clone git@github.com:terraform-providers/terraform-provider-pureport
 ```
 
 Enter the provider directory and build the provider
 
 ```sh
-$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-template
+$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-pureport
 $ make build
 ```
 
 Using the provider
 ----------------------
 ## Fill in for each provider
+
+Copy the terraform-provider-pureport plugin in to the terraform third-party plugins directory.
+
+Windows - %APPDATA%\terraform.d\plugins
+All other systems - ~/.terraform.d/plugins
+
+More information about this can be found [here](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins).
 
 Developing the Provider
 ---------------------------
@@ -59,7 +66,7 @@ To compile the provider, run `make build`. This will build the provider and put 
 ```sh
 $ make build
 ...
-$ $GOPATH/bin/terraform-provider-template
+$ $GOPATH/bin/terraform-provider-pureport
 ...
 ```
 
