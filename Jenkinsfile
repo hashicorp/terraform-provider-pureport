@@ -4,6 +4,8 @@
 
 def utils = new com.pureport.Utils()
 
+def version = "0.1.0"
+
 pipeline {
     agent {
       docker {
@@ -49,9 +51,10 @@ pipeline {
                 retry(3) {
                   sh "make"
                   sh "make plugin"
+                  sh "mv terraform-provider-pureport terraform-provider-pureport_v${version}"
 
                   archiveArtifacts(
-                      artifacts: 'terraform-provider-pureport'
+                      artifacts: "terraform-provider-pureport-${version}"
                       )
                 }
             }
