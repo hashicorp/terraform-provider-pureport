@@ -32,7 +32,7 @@ resource "google_compute_interconnect_attachment" "main" {
   router = "${element(google_compute_router.main.*.self_link, count.index)}"
   type   = "PARTNER"
   edge_availability_domain = "AVAILABILITY_DOMAIN_${count.index + 1}"
-
+  vlan_tag8021q = "${count.index + 395}"
 
   count = 2
 }
