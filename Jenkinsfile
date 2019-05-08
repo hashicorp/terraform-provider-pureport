@@ -65,7 +65,7 @@ pipeline {
 
                 archiveArtifacts(
                     allowEmptyArchive: true,
-                    artifacts: 'tf_log.log'
+                    artifacts: 'pureport/tf_log.log'
                     )
             }
         }
