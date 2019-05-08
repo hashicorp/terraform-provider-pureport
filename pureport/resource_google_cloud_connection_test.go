@@ -89,7 +89,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "primary_pairing_key"),
-					resource.TestCheckNoResourceAttr(resourceName, "secondary_pairing_key"),
+					resource.TestCheckResourceAttr(resourceName, "secondary_pairing_key", ""),
 				),
 			},
 		},
@@ -107,7 +107,7 @@ func testAccCheckResourceGoogleCloudConnection(name string, instance *client.Goo
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find Dummy Connection resource: %s", name)
+			return fmt.Errorf("Can't find Google Cloud Connection resource: %s", name)
 		}
 
 		if rs.Primary.ID == "" {
