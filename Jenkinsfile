@@ -27,7 +27,6 @@ pipeline {
       choice(
           name: 'ACCEPTANCE_TESTS_LOG_LEVEL',
           choices: ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'],
-          defaultValue: 'TRACE',
           description: 'The Terraform Debug Level'
           )
     }
