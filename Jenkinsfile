@@ -13,8 +13,27 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
+    parameters {
+      booleanParam(
+          name: 'ACCEPTANCE_TESTS_RUN',
+          defaultValue: false,
+          description: 'Should we run the acceptance tests as part of run?'
+          )
+      booleanParam(
+          name: 'ACCEPTANCE_TESTS_LOG_TO_FILE',
+          defaultValue: true,
+          description: 'Should debug logs be written to a separate file?'
+          )
+      choice(
+          name: 'ACCEPTANCE_TESTS_LOG_LEVEL',
+          choices: ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'],
+          defaultValue: 'TRACE',
+          description: 'The Terraform Debug Level'
+          )
+    }
     environment {
-        TF_LOG              = "INFO"
+        TF_LOG              = "${params.ACCEPTANCE_TESTS_LOG_LEVEL}"
+        TF_LOG_PATH         = "${params.ACCEPTANCE_TESTS_LOG_TO_FILE ? 'tf_log.log' : '' }"
         GOPATH              = "/go"
         GOCACHE             = "/tmp/go/.cache"
         PUREPORT_ENDPOINT   = "https://dev1-api.pureportdev.com"
@@ -24,19 +43,11 @@ pipeline {
         GOOGLE_PROJECT      = "pureport-customer1"
         GOOGLE_REGION       = "us-west2"
     }
-    parameters {
-      booleanParam(
-          name: 'RUN_ACCEPTANCE_TESTS',
-          defaultValue: false,
-          description: 'Should we run the acceptance tests as part of run?'
-          )
-    }
     stages {
         stage('Build') {
             steps {
 
                 retry(3) {
-                  sh "env"
                   sh "make"
                 }
             }
@@ -47,7 +58,7 @@ pipeline {
                 // This can take a long time so we may only want to do this on develop
                 anyOf {
                   branch 'develop'
-                  expression { return params.RUN_ACCEPTANCE_TESTS } 
+                  expression { return params.ACCEPTANCE_TESTS_RUN }
                 }
             }
             steps {
