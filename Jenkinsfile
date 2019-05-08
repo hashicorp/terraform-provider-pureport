@@ -74,11 +74,7 @@ pipeline {
 
                     // Don't fail if the test fall. Just setting this until we can get our issues
                     // resolved with the Google Provider.
-                    try {
-                      sh "make testacc"
-                    } catch (e) {
-                      echo e
-                    }
+                    sh "make testacc"
 
                     archiveArtifacts(
                         allowEmptyArchive: true,
