@@ -26,11 +26,7 @@ data "pureport_accounts" "main" {
   name_regex = "Terraform"
 }
 
-data "pureport_cloud_regions" "main" {
-  name_regex = "Los.*"
-}
-
-data "pureport_locations" "main" {
+data "pureport_locations" "seattle" {
   name_regex = "^Sea.*"
 }
 
@@ -39,11 +35,15 @@ data "pureport_networks" "main" {
   name_regex = "Bansh.*"
 }
 
+data "pureport_cloud_regions" "oregon" {
+  name_regex = "Oregon"
+}
+
 resource "pureport_google_cloud_connection" "main" {
   name  = "GoogleCloudTest"
   speed = "50"
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
+  location_href = "${data.pureport_locations.seattle.locations.0.href}"
 
   network {
     id   = "${data.pureport_networks.main.networks.0.id}"
@@ -51,4 +51,55 @@ resource "pureport_google_cloud_connection" "main" {
   }
 
   primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
+}
+
+resource "pureport_aws_connection" "main" {
+  name              = "AwsDirectConnectTest"
+  speed             = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.seattle.locations.0.href}"
+
+  network {
+    id   = "${data.pureport_networks.main.networks.0.id}"
+    href = "${data.pureport_networks.main.networks.0.href}"
+  }
+
+  aws_region     = "${data.pureport_cloud_regions.oregon.regions.0.identifier}"
+  aws_account_id = "123456789012"
+}
+
+resource "pureport_azure_connection" "main" {
+  name              = "AzureExpressRouteTest"
+  description       = "Some random description"
+  speed             = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.seattle.locations.0.href}"
+
+  network {
+    id   = "${data.pureport_networks.main.networks.0.id}"
+    href = "${data.pureport_networks.main.networks.0.href}"
+  }
+
+  service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
+}
+
+resource "pureport_dummy_connection" "main" {
+  name              = "DummyTest"
+  speed             = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.seattle.locations.0.href}"
+
+  network {
+    id   = "${data.pureport_networks.main.networks.0.id}"
+    href = "${data.pureport_networks.main.networks.0.href}"
+  }
+}
+
+resource "pureport_network" "main" {
+  name        = "NetworkTest"
+  description = "Network Terraform Test"
+  account_id  = "${data.pureport_accounts.main.accounts.0.id}"
 }
