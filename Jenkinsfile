@@ -62,6 +62,11 @@ pipeline {
             }
             steps {
                 sh "make testacc"
+
+                archiveArtifacts(
+                    allowEmptyArchive: true,
+                    artifacts: 'tf_log.log'
+                    )
             }
         }
     }
