@@ -105,7 +105,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:         schema.TypeInt,
 			Optional:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.IntBetween(0, 65535),
+			ValidateFunc: validation.IntBetween(0, 4294967295),
 		},
 		"high_availability": {
 			Type:     schema.TypeBool,
