@@ -84,6 +84,14 @@ pipeline {
             }
         }
         stage('Copy plugin to Nexus') {
+            when {
+
+                // This can take a long time so we may only want to do this on develop
+                anyOf {
+                  branch 'develop'
+                  branch 'master'
+                }
+            }
             steps {
                 script {
                     withCredentials([
