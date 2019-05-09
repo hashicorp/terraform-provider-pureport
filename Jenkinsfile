@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "0.1.0"
+def version = "0.1"
 
 pipeline {
     agent {
@@ -51,10 +51,10 @@ pipeline {
                 retry(3) {
                   sh "make"
                   sh "make plugin"
-                  sh "mv terraform-provider-pureport terraform-provider-pureport_v${version}"
+                  sh "mv terraform-provider-pureport terraform-provider-pureport_v${version}.${env.BUILD_NUMBER}"
 
                   archiveArtifacts(
-                      artifacts: "terraform-provider-pureport_v${version}"
+                      artifacts: "terraform-provider-pureport_v${version}.${env.BUILD_NUMBER}"
                       )
                 }
             }
@@ -80,6 +80,25 @@ pipeline {
                         allowEmptyArchive: true,
                         artifacts: 'pureport/tf_log.log'
                         )
+                }
+            }
+        }
+        stage('Copy plugin to Nexus') {
+            steps {
+                script {
+                    withCredentials([
+                        usernamePassword(
+                          credentialsId: 'nexus_credentials',
+                          usernameVariable: 'nexusUsername',
+                          passwordVariable: 'nexusPassword'
+                          )
+                    ]) {
+
+                      def nexus_url = "https://nexus.dev.pureport.com/repository/terraform-provider-pureport/${env.BRANCH_NAME}/"
+                      def plugin = "terraform-provider-pureport_v${version}.${env.BUILD_NUMBER}"
+
+                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin} ${nexus_url}"
+                    }
                 }
             }
         }
