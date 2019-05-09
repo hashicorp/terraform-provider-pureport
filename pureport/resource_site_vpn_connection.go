@@ -25,22 +25,26 @@ func resourceSiteVPNConnection() *schema.Resource {
 			Type:         schema.TypeString,
 			Optional:     true,
 			Default:      "PSK",
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"psk"}, true),
 		},
 		"enable_bgp_password": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  false,
+			ForceNew: true,
 		},
 		"ike_version": {
 			Type:         schema.TypeString,
 			Required:     true,
+			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
 		},
 		"ike_config": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
+			ForceNew: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -96,27 +100,33 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"primary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"primary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 		},
 		"routing_type": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"secondary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 		},
 		"secondary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
+			ForceNew: true,
 		},
 		"traffic_selectors": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
+			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"customer_side": {
@@ -147,7 +157,7 @@ func resourceSiteVPNConnection() *schema.Resource {
 	}
 }
 
-func addTrafficSelectorMappings(d *schema.ResourceData) []client.TrafficSelectorMapping {
+func expandTrafficSelectorMappings(d *schema.ResourceData) []client.TrafficSelectorMapping {
 
 	if data, ok := d.GetOk("traffic_selectors"); ok {
 
@@ -169,7 +179,7 @@ func addTrafficSelectorMappings(d *schema.ResourceData) []client.TrafficSelector
 	return nil
 }
 
-func addIkeVersion1(d *schema.ResourceData) *client.Ikev1Config {
+func expandIkeVersion1(d *schema.ResourceData) *client.Ikev1Config {
 
 	config := &client.Ikev1Config{}
 
@@ -210,7 +220,7 @@ func addIkeVersion1(d *schema.ResourceData) *client.Ikev1Config {
 
 }
 
-func addIkeVersion2(d *schema.ResourceData) *client.Ikev2Config {
+func expandIkeVersion2(d *schema.ResourceData) *client.Ikev2Config {
 
 	config := &client.Ikev2Config{}
 
@@ -251,9 +261,7 @@ func addIkeVersion2(d *schema.ResourceData) *client.Ikev2Config {
 	return config
 }
 
-func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) error {
-
-	sess := m.(*session.Session)
+func expandSiteVPNConnection(d *schema.ResourceData) client.SiteIpSecVpnConnection {
 
 	// Generic Connection values
 	network := d.Get("network").([]interface{})
@@ -263,7 +271,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 	location_href := d.Get("location_href").(string)
 
 	// Create the body of the request
-	connection := client.SiteIpSecVpnConnection{
+	c := client.SiteIpSecVpnConnection{
 		Type_:       "SITE_IPSEC_VPN",
 		Name:        name,
 		Speed:       int32(speed),
@@ -283,49 +291,58 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 	}
 
 	// Generic Optionals
-	connection.CustomerNetworks = AddCustomerNetworks(d)
-	connection.Nat = AddNATConfiguration(d)
+	c.CustomerNetworks = ExpandCustomerNetworks(d)
+	c.Nat = ExpandNATConfiguration(d)
 
 	if description, ok := d.GetOk("description"); ok {
-		connection.Description = description.(string)
+		c.Description = description.(string)
 	}
 
 	if highAvailability, ok := d.GetOk("high_availability"); ok {
-		connection.HighAvailability = highAvailability.(bool)
+		c.HighAvailability = highAvailability.(bool)
 	}
 
 	if customerASN, ok := d.GetOk("customer_asn"); ok {
-		connection.CustomerASN = int64(customerASN.(int))
+		c.CustomerASN = int64(customerASN.(int))
 	}
 
 	// SiteVPN Optionals
-	connection.TrafficSelectors = addTrafficSelectorMappings(d)
+	c.TrafficSelectors = expandTrafficSelectorMappings(d)
 
-	if connection.IkeVersion == "V1" {
-		connection.IkeV1 = addIkeVersion1(d)
+	if c.IkeVersion == "V1" {
+		c.IkeV1 = expandIkeVersion1(d)
 	} else {
-		connection.IkeV2 = addIkeVersion2(d)
+		c.IkeV2 = expandIkeVersion2(d)
 	}
 
 	if authType, ok := d.GetOk("auth_type"); ok {
-		connection.AuthType = authType.(string)
+		c.AuthType = authType.(string)
 	}
 
 	if enableBGPPassword, ok := d.GetOk("enable_bgp_password"); ok {
-		connection.EnableBGPPassword = enableBGPPassword.(bool)
+		c.EnableBGPPassword = enableBGPPassword.(bool)
 	}
 
 	if primaryCustomerRouterIP, ok := d.GetOk("primary_customer_router_ip"); ok {
-		connection.PrimaryCustomerRouterIP = primaryCustomerRouterIP.(string)
+		c.PrimaryCustomerRouterIP = primaryCustomerRouterIP.(string)
 	}
 
 	if secondaryCustomerRouterIP, ok := d.GetOk("secondary_customer_router_ip"); ok {
-		connection.SecondaryCustomerRouterIP = secondaryCustomerRouterIP.(string)
+		c.SecondaryCustomerRouterIP = secondaryCustomerRouterIP.(string)
 	}
 
 	if secondaryKey, ok := d.GetOk("secondary_key"); ok {
-		connection.SecondaryKey = secondaryKey.(string)
+		c.SecondaryKey = secondaryKey.(string)
 	}
+
+	return c
+}
+
+func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) error {
+
+	connection := expandSiteVPNConnection(d)
+
+	sess := m.(*session.Session)
 
 	ctx := sess.GetSessionContext()
 
@@ -335,7 +352,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 
 	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
-		network[0].(map[string]interface{})["id"].(string),
+		connection.Network.Id,
 		&opts,
 	)
 
@@ -501,6 +518,72 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 }
 
 func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) error {
+
+	c := expandSiteVPNConnection(d)
+
+	d.Partial(true)
+
+	sess := m.(*session.Session)
+	ctx := sess.GetSessionContext()
+
+	if d.HasChange("name") {
+		c.Name = d.Get("name").(string)
+		d.SetPartial("name")
+	}
+
+	if d.HasChange("description") {
+		c.Description = d.Get("description").(string)
+		d.SetPartial("description")
+	}
+
+	if d.HasChange("speed") {
+		c.Speed = int32(d.Get("speed").(int))
+		d.SetPartial("speed")
+	}
+
+	if d.HasChange("customer_networks") {
+		c.CustomerNetworks = ExpandCustomerNetworks(d)
+	}
+
+	if d.HasChange("nat_config") {
+		c.Nat = ExpandNATConfiguration(d)
+	}
+
+	if d.HasChange("billing_term") {
+		c.BillingTerm = d.Get("billing_term").(string)
+	}
+
+	opts := client.UpdateConnectionOpts{
+		Body: optional.NewInterface(c),
+	}
+
+	_, resp, err := sess.Client.ConnectionsApi.UpdateConnection(
+		ctx,
+		d.Id(),
+		&opts,
+	)
+
+	if err != nil {
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error updating %s: %v", sitevpnConnectionName, err)
+		} else {
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error updating %s: %d\n", sitevpnConnectionName, statusCode)
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
+		return fmt.Errorf("Error while updating %s: err=%s", sitevpnConnectionName, err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("Error Response while updating %s: code=%v", sitevpnConnectionName, resp.StatusCode)
+	}
+
+	d.Partial(false)
 	return resourceSiteVPNConnectionRead(d, m)
 }
 

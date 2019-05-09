@@ -31,41 +31,44 @@ resource "google_compute_interconnect_attachment" "main" {
   name   = "terraform-acc-interconnect-${count.index + 1}"
   router = "${element(google_compute_router.main.*.self_link, count.index)}"
   type   = "PARTNER"
-	edge_availability_domain = "AVAILABILITY_DOMAIN_${count.index + 1}"
+  edge_availability_domain = "AVAILABILITY_DOMAIN_${count.index + 1}"
 
+  lifecycle {
+    ignore_changes = ["vlan_tag8021q"]
+  }
 
   count = 2
 }
 
 
 data "pureport_accounts" "main" {
-	name_regex = "Terraform"
+  name_regex = "Terraform"
 }
 
 data "pureport_cloud_regions" "main" {
-	name_regex = "Los.*"
+  name_regex = "Los.*"
 }
 
 data "pureport_locations" "main" {
-	name_regex = "^Sea.*"
+  name_regex = "^Sea.*"
 }
 
 data "pureport_networks" "main" {
-	account_id = "${data.pureport_accounts.main.accounts.0.id}"
-	name_regex = "Bansh.*"
+  account_id = "${data.pureport_accounts.main.accounts.0.id}"
+  name_regex = "Bansh.*"
 }
 
 resource "pureport_google_cloud_connection" "main" {
-	name = "GoogleCloudTest"
-	speed = "50"
+  name = "GoogleCloudTest"
+  speed = "50"
 
-	location_href = "${data.pureport_locations.main.locations.0.href}"
-	network {
-		id = "${data.pureport_networks.main.networks.0.id}"
-		href = "${data.pureport_networks.main.networks.0.href}"
-	}
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network {
+    id = "${data.pureport_networks.main.networks.0.id}"
+    href = "${data.pureport_networks.main.networks.0.href}"
+  }
 
-	primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
+  primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
 }
 `
 
@@ -89,7 +92,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "primary_pairing_key"),
-					resource.TestNoCheckResourceAttr(resourceName, "secondary_pairing_key"),
+					resource.TestCheckResourceAttr(resourceName, "secondary_pairing_key", ""),
 				),
 			},
 		},
@@ -107,7 +110,7 @@ func testAccCheckResourceGoogleCloudConnection(name string, instance *client.Goo
 		// Find the state object
 		rs, ok := s.RootModule().Resources[name]
 		if !ok {
-			return fmt.Errorf("Can't find Dummy Connection resource: %s", name)
+			return fmt.Errorf("Can't find Google Cloud Connection resource: %s", name)
 		}
 
 		if rs.Primary.ID == "" {

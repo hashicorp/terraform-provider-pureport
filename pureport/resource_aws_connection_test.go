@@ -82,7 +82,7 @@ resource "pureport_aws_connection" "main" {
 		href = "${data.pureport_networks.main.networks.0.href}"
 	}
 
-	cloud_services = ["${data.template_file.services_hrefs.*.rendered}"]
+	cloud_service_hrefs = ["${data.template_file.services_hrefs.*.rendered}"]
 	peering = "PUBLIC"
 
 	aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"

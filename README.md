@@ -15,8 +15,8 @@ This provider plugin is maintained by the Terraform team at [HashiCorp](https://
 Requirements
 ------------
 
--	[Terraform](https://www.terraform.io/downloads.html) 0.10.x
--	[Go](https://golang.org/doc/install) 1.11 (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) 0.11.x
+- [Go](https://golang.org/doc/install) 1.12 (to build the provider plugin)
 
 Usage
 ---------------------
@@ -31,17 +31,18 @@ provider "template" {
 Building The Provider
 ---------------------
 
-Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-template`
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-pureport`
 
 ```sh
-$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
-$ git clone git@github.com:terraform-providers/terraform-provider-template
+$ mkdir -p $GOPATH/src/github.com/terraform-providers
+$ cd $GOPATH/src/github.com/terraform-providers
+$ git clone git@github.com:terraform-providers/terraform-provider-pureport
 ```
 
 Enter the provider directory and build the provider
 
 ```sh
-$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-template
+$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-pureport
 $ make build
 ```
 
@@ -49,17 +50,25 @@ Using the provider
 ----------------------
 ## Fill in for each provider
 
+Copy the terraform-provider-pureport plugin in to the terraform third-party plugins directory.
+
+Windows - %APPDATA%\terraform.d\plugins
+All other systems - ~/.terraform.d/plugins
+
+More information about this can be found [here](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins).
+
 Developing the Provider
 ---------------------------
 
-If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.11+ is *required*). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.12+ is *required*).
+You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
 
 To compile the provider, run `make build`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 ```sh
 $ make build
 ...
-$ $GOPATH/bin/terraform-provider-template
+$ $GOPATH/bin/terraform-provider-pureport
 ...
 ```
 

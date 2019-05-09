@@ -24,6 +24,7 @@ func resourceAzureConnection() *schema.Resource {
 		"service_key": {
 			Type:     schema.TypeString,
 			Required: true,
+			ForceNew: true,
 		},
 		"peering": {
 			Type:         schema.TypeString,
@@ -50,9 +51,7 @@ func resourceAzureConnection() *schema.Resource {
 	}
 }
 
-func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error {
-
-	sess := m.(*session.Session)
+func expandAzureConnection(d *schema.ResourceData) client.AzureExpressRouteConnection {
 
 	// Generic Connection values
 	network := d.Get("network").([]interface{})
@@ -65,7 +64,7 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	serviceKey := d.Get("service_key").(string)
 
 	// Create the body of the request
-	connection := client.AzureExpressRouteConnection{
+	c := client.AzureExpressRouteConnection{
 		Type_: "AZURE_EXPRESS_ROUTE",
 		Name:  name,
 		Speed: int32(speed),
@@ -81,19 +80,28 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 	}
 
 	// Generic Optionals
-	connection.CustomerNetworks = AddCustomerNetworks(d)
-	connection.Nat = AddNATConfiguration(d)
+	c.CustomerNetworks = ExpandCustomerNetworks(d)
+	c.Nat = ExpandNATConfiguration(d)
 
 	if description, ok := d.GetOk("description"); ok {
-		connection.Description = description.(string)
+		c.Description = description.(string)
 	}
 
 	if highAvailability, ok := d.GetOk("high_availability"); ok {
-		connection.HighAvailability = highAvailability.(bool)
+		c.HighAvailability = highAvailability.(bool)
 	}
 
 	// Azure Optionals
-	connection.Peering = AddPeeringType(d)
+	c.Peering = ExpandPeeringType(d)
+
+	return c
+}
+
+func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error {
+
+	connection := expandAzureConnection(d)
+
+	sess := m.(*session.Session)
 
 	ctx := sess.GetSessionContext()
 
@@ -103,7 +111,7 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
-		network[0].(map[string]interface{})["id"].(string),
+		connection.Network.Id,
 		&opts,
 	)
 
@@ -202,6 +210,72 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error {
+
+	c := expandAzureConnection(d)
+
+	d.Partial(true)
+
+	sess := m.(*session.Session)
+	ctx := sess.GetSessionContext()
+
+	if d.HasChange("name") {
+		c.Name = d.Get("name").(string)
+		d.SetPartial("name")
+	}
+
+	if d.HasChange("description") {
+		c.Description = d.Get("description").(string)
+		d.SetPartial("description")
+	}
+
+	if d.HasChange("speed") {
+		c.Speed = int32(d.Get("speed").(int))
+		d.SetPartial("speed")
+	}
+
+	if d.HasChange("customer_networks") {
+		c.CustomerNetworks = ExpandCustomerNetworks(d)
+	}
+
+	if d.HasChange("nat_config") {
+		c.Nat = ExpandNATConfiguration(d)
+	}
+
+	if d.HasChange("billing_term") {
+		c.BillingTerm = d.Get("billing_term").(string)
+	}
+
+	opts := client.UpdateConnectionOpts{
+		Body: optional.NewInterface(c),
+	}
+
+	_, resp, err := sess.Client.ConnectionsApi.UpdateConnection(
+		ctx,
+		d.Id(),
+		&opts,
+	)
+
+	if err != nil {
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error updating %s: %v", azureConnectionName, err)
+		} else {
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error updating %s: %d\n", azureConnectionName, statusCode)
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
+		return fmt.Errorf("Error while updating %s: err=%s", azureConnectionName, err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("Error Response while updating %s: code=%v", azureConnectionName, resp.StatusCode)
+	}
+
+	d.Partial(false)
 	return resourceAzureConnectionRead(d, m)
 }
 

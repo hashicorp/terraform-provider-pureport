@@ -1,4 +1,4 @@
-TEST?=$$(go list ./... |grep -v 'vendor')
+TEST?=$$(go list ./... |grep -v 'vendor'|grep -v 'pureport/disabled')
 TESTARGS?=$("-parallel=2","-timeout=120m")
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website

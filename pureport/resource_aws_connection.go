@@ -22,15 +22,7 @@ const (
 func resourceAWSConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
-		"aws_account_id": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
-		"aws_region": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
-		"cloud_services": {
+		"cloud_service_hrefs": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
@@ -42,6 +34,16 @@ func resourceAWSConnection() *schema.Resource {
 			Optional:     true,
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
+		},
+		"aws_account_id": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"aws_region": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
 		},
 	}
 
@@ -60,9 +62,7 @@ func resourceAWSConnection() *schema.Resource {
 	}
 }
 
-func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
-
-	sess := m.(*session.Session)
+func expandAWSConnection(d *schema.ResourceData) client.AwsDirectConnectConnection {
 
 	// Generic Connection values
 	network := d.Get("network").([]interface{})
@@ -72,7 +72,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 	location_href := d.Get("location_href").(string)
 
 	// Create the body of the request
-	connection := client.AwsDirectConnectConnection{
+	c := client.AwsDirectConnectConnection{
 		Type_: "AWS_DIRECT_CONNECT",
 		Name:  name,
 		Speed: int32(speed),
@@ -88,20 +88,27 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		BillingTerm:  billingTerm,
 	}
 
-	// Generic Optionals
-	connection.CustomerNetworks = AddCustomerNetworks(d)
-	connection.Nat = AddNATConfiguration(d)
-	connection.CloudServices = AddCloudServices(d)
-	connection.Peering = AddPeeringType(d)
+	c.CustomerNetworks = ExpandCustomerNetworks(d)
+	c.Nat = ExpandNATConfiguration(d)
+	c.CloudServices = ExpandCloudServices(d)
+	c.Peering = ExpandPeeringType(d)
 
 	if description, ok := d.GetOk("description"); ok {
-		connection.Description = description.(string)
+		c.Description = description.(string)
 	}
 
 	if highAvailability, ok := d.GetOk("high_availability"); ok {
-		connection.HighAvailability = highAvailability.(bool)
+		c.HighAvailability = highAvailability.(bool)
 	}
 
+	return c
+}
+
+func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
+
+	connection := expandAWSConnection(d)
+
+	sess := m.(*session.Session)
 	ctx := sess.GetSessionContext()
 
 	opts := client.AddConnectionOpts{
@@ -110,7 +117,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
 	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
-		network[0].(map[string]interface{})["id"].(string),
+		connection.Network.Id,
 		&opts,
 	)
 
@@ -132,7 +139,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new %s: code=%v", awsConnectionName, resp.StatusCode)
+		log.Printf("Error Response while updating %s: code=%v", awsConnectionName, resp.StatusCode)
 		d.SetId("")
 		return nil
 	}
@@ -178,16 +185,16 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("aws_account_id", conn.AwsAccountId)
 	d.Set("aws_region", conn.AwsRegion)
 
-	var cloudServices []string
+	var cloudServiceHrefs []string
 	for _, cs := range conn.CloudServices {
-		cloudServices = append(cloudServices, cs.Href)
+		cloudServiceHrefs = append(cloudServiceHrefs, cs.Href)
 	}
 
-	sort.Slice(cloudServices, func(i int, j int) bool {
-		return cloudServices[i] < cloudServices[j]
+	sort.Slice(cloudServiceHrefs, func(i int, j int) bool {
+		return cloudServiceHrefs[i] < cloudServiceHrefs[j]
 	})
 
-	if err := d.Set("cloud_services", cloudServices); err != nil {
+	if err := d.Set("cloud_service_hrefs", cloudServiceHrefs); err != nil {
 		return fmt.Errorf("Error setting cloud services for %s %s: %s", awsConnectionName, d.Id(), err)
 	}
 
@@ -225,6 +232,77 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceAWSConnectionUpdate(d *schema.ResourceData, m interface{}) error {
+
+	c := expandAWSConnection(d)
+
+	d.Partial(true)
+
+	sess := m.(*session.Session)
+	ctx := sess.GetSessionContext()
+
+	if d.HasChange("name") {
+		c.Name = d.Get("name").(string)
+		d.SetPartial("name")
+	}
+
+	if d.HasChange("description") {
+		c.Description = d.Get("description").(string)
+		d.SetPartial("description")
+	}
+
+	if d.HasChange("speed") {
+		c.Speed = int32(d.Get("speed").(int))
+		d.SetPartial("speed")
+	}
+
+	if d.HasChange("customer_networks") {
+		c.CustomerNetworks = ExpandCustomerNetworks(d)
+	}
+
+	if d.HasChange("nat_config") {
+		c.Nat = ExpandNATConfiguration(d)
+	}
+
+	if d.HasChange("billing_term") {
+		c.BillingTerm = d.Get("billing_term").(string)
+	}
+
+	if d.HasChange("cloud_services") {
+		c.CloudServices = ExpandCloudServices(d)
+	}
+
+	opts := client.UpdateConnectionOpts{
+		Body: optional.NewInterface(c),
+	}
+
+	_, resp, err := sess.Client.ConnectionsApi.UpdateConnection(
+		ctx,
+		d.Id(),
+		&opts,
+	)
+
+	if err != nil {
+
+		json_response := string(err.(client.GenericSwaggerError).Body()[:])
+		response, err := structure.ExpandJsonFromString(json_response)
+		if err != nil {
+			log.Printf("Error updating %s: %v", awsConnectionName, err)
+		} else {
+			statusCode := int(response["status"].(float64))
+			log.Printf("Error updating %s: %d\n", awsConnectionName, statusCode)
+			log.Printf("  %s\n", response["code"])
+			log.Printf("  %s\n", response["message"])
+		}
+
+		return fmt.Errorf("Error while updating %s: err=%s", awsConnectionName, err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("Error Response while updating %s: code=%v", awsConnectionName, resp.StatusCode)
+	}
+
+	d.Partial(false)
+
 	return resourceAWSConnectionRead(d, m)
 }
 
