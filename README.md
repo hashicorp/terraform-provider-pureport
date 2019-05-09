@@ -22,8 +22,8 @@ Usage
 ---------------------
 
 ```
-# For example, restrict template version in 0.1.x
-provider "template" {
+# For example, restrict pureport version in 0.1.x
+provider "pureport" {
   version = "~> 0.1"
 }
 ```
@@ -52,8 +52,10 @@ Using the provider
 
 Copy the terraform-provider-pureport plugin in to the terraform third-party plugins directory.
 
-Windows - %APPDATA%\terraform.d\plugins
-All other systems - ~/.terraform.d/plugins
+| OS                | Location                        |
+|-------------------|:--------------------------------|
+| Windows           | %APPDATA%\terraform.d\plugins   |
+| All other systems | ~/.terraform.d/plugins          |
 
 More information about this can be found [here](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins).
 
