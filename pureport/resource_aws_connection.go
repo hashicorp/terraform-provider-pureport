@@ -22,7 +22,7 @@ const (
 func resourceAWSConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
-		"cloud_services": {
+		"cloud_service_hrefs": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Elem:     &schema.Schema{Type: schema.TypeString},
@@ -185,16 +185,16 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("aws_account_id", conn.AwsAccountId)
 	d.Set("aws_region", conn.AwsRegion)
 
-	var cloudServices []string
+	var cloudServiceHrefs []string
 	for _, cs := range conn.CloudServices {
-		cloudServices = append(cloudServices, cs.Href)
+		cloudServiceHrefs = append(cloudServiceHrefs, cs.Href)
 	}
 
-	sort.Slice(cloudServices, func(i int, j int) bool {
-		return cloudServices[i] < cloudServices[j]
+	sort.Slice(cloudServiceHrefs, func(i int, j int) bool {
+		return cloudServiceHrefs[i] < cloudServiceHrefs[j]
 	})
 
-	if err := d.Set("cloud_services", cloudServices); err != nil {
+	if err := d.Set("cloud_service_hrefs", cloudServiceHrefs); err != nil {
 		return fmt.Errorf("Error setting cloud services for %s %s: %s", awsConnectionName, d.Id(), err)
 	}
 

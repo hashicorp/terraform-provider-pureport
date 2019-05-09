@@ -312,7 +312,7 @@ func ExpandNATConfiguration(d *schema.ResourceData) *client.NatConfig {
 
 func ExpandCloudServices(d *schema.ResourceData) []client.Link {
 
-	if data, ok := d.GetOk("cloud_services"); ok {
+	if data, ok := d.GetOk("cloud_service_hrefs"); ok {
 
 		cloudServices := []client.Link{}
 		for _, cs := range data.([]interface{}) {
