@@ -106,6 +106,10 @@ pipeline {
                       def plugin = "terraform-provider-pureport_v${version}.${env.BUILD_NUMBER}"
 
                       sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin} ${nexus_url}"
+
+                      // Set the description text for the job
+                      currentBuild.description = "Version: ${plugin}"
+
                     }
                 }
             }
