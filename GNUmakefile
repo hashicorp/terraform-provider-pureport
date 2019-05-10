@@ -9,6 +9,10 @@ default: build
 build: fmtcheck
 	go install
 
+install: plugin
+	mkdir -p $(HOME)/.terraform.d/plugins
+	mv terraform-provider-pureport $(HOME)/.terraform.d/plugins/
+
 plugin: fmtcheck
 	go build -o terraform-provider-pureport
 
