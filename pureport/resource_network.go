@@ -34,6 +34,10 @@ func resourceNetwork() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"href": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"account": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -148,6 +152,7 @@ func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("account_id", n.Account.Id)
 	d.Set("name", n.Name)
 	d.Set("description", n.Description)
+	d.Set("href", n.Href)
 
 	if err := d.Set("account", []map[string]string{
 		{
