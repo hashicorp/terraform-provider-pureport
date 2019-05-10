@@ -34,6 +34,10 @@ func resourceNetwork() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"href": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"account": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -99,20 +103,18 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 		}
 
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating Network: err=%s", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new Network: code=%v", resp.StatusCode)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: code=%v", awsConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
 	u, err := url.Parse(loc)
 	if err != nil {
-		log.Printf("Error when decoding Network ID")
-		return nil
+		return fmt.Errorf("Error when decoding Network ID")
 	}
 
 	id := filepath.Base(u.Path)
@@ -120,7 +122,7 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 	if id == "" {
 		log.Printf("Error when decoding location header")
-		return nil
+		return fmt.Errorf("Error when decoding Network ID")
 	}
 
 	return resourceNetworkRead(d, m)
@@ -148,6 +150,7 @@ func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("account_id", n.Account.Id)
 	d.Set("name", n.Name)
 	d.Set("description", n.Description)
+	d.Set("href", n.Href)
 
 	if err := d.Set("account", []map[string]string{
 		{

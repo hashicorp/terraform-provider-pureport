@@ -127,20 +127,18 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		}
 
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: err=%s", googleConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new %s: code=%v", googleConnectionName, resp.StatusCode)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: code=%v", googleConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
 	u, err := url.Parse(loc)
 	if err != nil {
-		log.Printf("Error when decoding Connection ID")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	id := filepath.Base(u.Path)
@@ -148,7 +146,7 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 
 	if id == "" {
 		log.Printf("Error when decoding location header")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	return resourceGoogleCloudConnectionRead(d, m)

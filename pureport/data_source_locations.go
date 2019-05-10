@@ -3,7 +3,6 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 
@@ -75,15 +74,13 @@ func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 
 	locations, resp, err := sess.Client.LocationsApi.FindLocations(ctx)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Pureport Location data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error when Reading Pureport Location data: %v", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while Reading Pureport Location data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error Response while Reading Pureport Location data")
 	}
 
 	// Filter the results

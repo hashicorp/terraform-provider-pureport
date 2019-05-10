@@ -3,7 +3,6 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 
@@ -78,15 +77,13 @@ func dataSourceCloudServicesRead(d *schema.ResourceData, m interface{}) error {
 
 	services, resp, err := sess.Client.CloudServicesApi.GetCloudServices(ctx)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Cloud Services data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error when Reading Cloud Services data: %v", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while Reading Cloud Services data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error Response while Reading Cloud Services data")
 	}
 
 	// Filter the results

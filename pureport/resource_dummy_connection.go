@@ -117,20 +117,18 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		}
 
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: err=%s", dummyConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new %s: code=%v", dummyConnectionName, resp.StatusCode)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: code=%v", dummyConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
 	u, err := url.Parse(loc)
 	if err != nil {
-		log.Printf("Error when decoding Connection ID")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	id := filepath.Base(u.Path)
@@ -138,7 +136,7 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	if id == "" {
 		log.Printf("Error when decoding location header")
-		return nil
+		return fmt.Errorf("Error decoding Connection ID")
 	}
 
 	return resourceDummyConnectionRead(d, m)

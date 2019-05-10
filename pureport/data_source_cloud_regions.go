@@ -3,7 +3,6 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 
@@ -62,15 +61,13 @@ func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 
 	regions, resp, err := sess.Client.CloudRegionsApi.GetCloudRegions(ctx)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Cloud Region data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error when Reading Cloud Region data: %v", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while Reading Cloud Region data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error Response while Reading Cloud Region data")
 	}
 
 	// Filter the results

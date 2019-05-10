@@ -370,20 +370,18 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		}
 
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: err=%s", sitevpnConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
 	u, err := url.Parse(loc)
 	if err != nil {
-		log.Printf("Error when decoding Connection ID")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	id := filepath.Base(u.Path)
@@ -391,7 +389,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 
 	if id == "" {
 		log.Printf("Error when decoding location header")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	return resourceSiteVPNConnectionRead(d, m)
