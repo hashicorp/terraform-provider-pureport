@@ -75,7 +75,7 @@ func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 
 	locations, resp, err := sess.Client.LocationsApi.FindLocations(ctx)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Pureport Location data")
+		log.Printf("[Error] Error when Reading Pureport Location data: %v", err)
 		d.SetId("")
 		return nil
 	}

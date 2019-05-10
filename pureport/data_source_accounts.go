@@ -63,7 +63,7 @@ func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 
 	accounts, resp, err := sess.Client.AccountsApi.FindAllAccounts(ctx, nil)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Pureport Account data")
+		log.Printf("[Error] Error when Reading Pureport Account data: %v", err)
 		d.SetId("")
 		return nil
 	}

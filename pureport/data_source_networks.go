@@ -72,7 +72,7 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
 	networks, resp, err := sess.Client.NetworksApi.FindNetworks(ctx, accountId.(string))
 	if err != nil {
-		log.Printf("Error when Reading Pureport Network data")
+		log.Printf("Error when Reading Pureport Network data: %v", err)
 		d.SetId("")
 		return nil
 	}

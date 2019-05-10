@@ -78,7 +78,7 @@ func dataSourceCloudServicesRead(d *schema.ResourceData, m interface{}) error {
 
 	services, resp, err := sess.Client.CloudServicesApi.GetCloudServices(ctx)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Cloud Services data")
+		log.Printf("[Error] Error when Reading Cloud Services data: %v", err)
 		d.SetId("")
 		return nil
 	}

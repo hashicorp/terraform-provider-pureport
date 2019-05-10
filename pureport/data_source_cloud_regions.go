@@ -62,7 +62,7 @@ func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 
 	regions, resp, err := sess.Client.CloudRegionsApi.GetCloudRegions(ctx)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Cloud Region data")
+		log.Printf("[Error] Error when Reading Cloud Region data: %v", err)
 		d.SetId("")
 		return nil
 	}
