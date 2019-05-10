@@ -3,7 +3,6 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 
@@ -72,15 +71,13 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
 	networks, resp, err := sess.Client.NetworksApi.FindNetworks(ctx, accountId.(string))
 	if err != nil {
-		log.Printf("Error when Reading Pureport Network data: %v", err)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error when Reading Pureport Network data: %v", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while Reading Pureport Network data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error Response while Reading Pureport Network data")
 	}
 
 	// Filter the results

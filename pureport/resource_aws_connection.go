@@ -125,30 +125,31 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
 		json_response := string(err.(client.GenericSwaggerError).Body()[:])
 		response, err := structure.ExpandJsonFromString(json_response)
+
 		if err != nil {
 			log.Printf("Error Creating new %s: %v", awsConnectionName, err)
+
 		} else {
 			statusCode := int(response["status"].(float64))
+
 			log.Printf("Error Creating new %s: %d\n", awsConnectionName, statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}
 
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: err=%s", awsConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while updating %s: code=%v", awsConnectionName, resp.StatusCode)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: code=%v", awsConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
 	u, err := url.Parse(loc)
 	if err != nil {
-		log.Printf("Error when decoding Connection ID")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	id := filepath.Base(u.Path)
@@ -156,7 +157,7 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
 	if id == "" {
 		log.Printf("Error when decoding location header")
-		return nil
+		return fmt.Errorf("Error decoding Connection ID")
 	}
 
 	return resourceAWSConnectionRead(d, m)

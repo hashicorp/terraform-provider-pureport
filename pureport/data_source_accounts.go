@@ -3,7 +3,6 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 
@@ -63,15 +62,13 @@ func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 
 	accounts, resp, err := sess.Client.AccountsApi.FindAllAccounts(ctx, nil)
 	if err != nil {
-		log.Printf("[Error] Error when Reading Pureport Account data: %v", err)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error when Reading Pureport Account data: %v", err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("[Error] Error Response while Reading Pureport Account data")
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error Response while Reading Pureport Account data")
 	}
 
 	// Filter the results

@@ -121,27 +121,27 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		response, err := structure.ExpandJsonFromString(json_response)
 		if err != nil {
 			log.Printf("Error Creating new %s: %v", azureConnectionName, err)
+
 		} else {
 			statusCode := int(response["status"].(float64))
+
 			log.Printf("Error Creating new %s: %d\n", azureConnectionName, statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: err=%s", azureConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		log.Printf("Error Response while creating new %s: code=%v", azureConnectionName, resp.StatusCode)
 		d.SetId("")
-		return nil
+		return fmt.Errorf("Error while creating %s: code=%v", azureConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
 	u, err := url.Parse(loc)
 	if err != nil {
-		log.Printf("Error when decoding Connection ID")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	id := filepath.Base(u.Path)
@@ -149,7 +149,7 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	if id == "" {
 		log.Printf("Error when decoding location header")
-		return nil
+		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
 	return resourceAzureConnectionRead(d, m)
