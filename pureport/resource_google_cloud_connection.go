@@ -163,6 +163,7 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 		if resp.StatusCode == 404 {
 			log.Printf("Error Response while reading %s: code=%v", googleConnectionName, resp.StatusCode)
 			d.SetId("")
+			return nil
 		}
 		return fmt.Errorf("Error reading data for %s: %s", googleConnectionName, err)
 	}
