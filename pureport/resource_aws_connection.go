@@ -174,6 +174,7 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 		if resp.StatusCode == 404 {
 			log.Printf("Error Response while reading %s: code=%v", awsConnectionName, resp.StatusCode)
 			d.SetId("")
+			return nil
 		}
 		return fmt.Errorf("Error reading data for %s: %s", awsConnectionName, err)
 	}

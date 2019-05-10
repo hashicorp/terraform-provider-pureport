@@ -67,7 +67,14 @@ func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if resp.StatusCode >= 300 {
+
 		d.SetId("")
+
+		if resp.StatusCode == 404 {
+			// Need to gracefully handle 404, for refresh
+			return nil
+		}
+
 		return fmt.Errorf("Error Response while Reading Pureport Account data")
 	}
 
