@@ -275,7 +275,7 @@ func ExpandCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
 
 			new := client.CustomerNetwork{
 				Name:    cn["name"],
-				Address: cn["Address"],
+				Address: cn["address"],
 			}
 
 			customerNetworks = append(customerNetworks, new)
