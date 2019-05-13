@@ -14,7 +14,7 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_networks" "empty" {
-	account_id = "${data.pureport_accounts.main.accounts.0.id}"
+	account_href = "${data.pureport_accounts.main.accounts.0.href}"
 }
 `
 
@@ -24,7 +24,7 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_networks" "name_regex" {
-	account_id = "${data.pureport_accounts.main.accounts.0.id}"
+	account_href = "${data.pureport_accounts.main.accounts.0.href}"
 	name_regex = "Clash.*"
 }
 `
@@ -46,12 +46,12 @@ func TestNetworks_empty(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "networks.0.href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "Siouxsie & The Banshees"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Test Network #2"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.account_id", "ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestCheckResourceAttr(resourceName, "networks.0.account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.id", "network-fN6NX6utBCoE5L_H261P4A"),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.href", "/networks/network-fN6NX6utBCoE5L_H261P4A"),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.name", "The Clash"),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.description", "Test Network #1"),
-					resource.TestCheckResourceAttr(resourceName, "networks.1.account_id", "ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestCheckResourceAttr(resourceName, "networks.1.account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
 				),
 			},
 		},
@@ -75,7 +75,7 @@ func TestNetworks_name_regex(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "networks.0.href", "/networks/network-fN6NX6utBCoE5L_H261P4A"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "The Clash"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Test Network #1"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.account_id", "ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestCheckResourceAttr(resourceName, "networks.0.account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
 				),
 			},
 		},

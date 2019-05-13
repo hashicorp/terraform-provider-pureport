@@ -50,11 +50,7 @@ func resourceGoogleCloudConnection() *schema.Resource {
 func expandGoogleCloudConnection(d *schema.ResourceData) client.GoogleCloudInterconnectConnection {
 
 	// Generic Connection values
-	network := d.Get("network").([]interface{})
 	speed := d.Get("speed").(int)
-	name := d.Get("name").(string)
-	billingTerm := d.Get("billing_term").(string)
-	location_href := d.Get("location_href").(string)
 
 	// Google specific values
 	primaryPairingKey := d.Get("primary_pairing_key").(string)
@@ -62,16 +58,15 @@ func expandGoogleCloudConnection(d *schema.ResourceData) client.GoogleCloudInter
 	// Create the body of the request
 	c := client.GoogleCloudInterconnectConnection{
 		Type_: "GOOGLE_CLOUD_INTERCONNECT",
-		Name:  name,
+		Name:  d.Get("name").(string),
 		Speed: int32(speed),
 		Location: &client.Link{
-			Href: location_href,
+			Href: d.Get("location_href").(string),
 		},
 		Network: &client.Link{
-			Id:   network[0].(map[string]interface{})["id"].(string),
-			Href: network[0].(map[string]interface{})["href"].(string),
+			Href: d.Get("network_href").(string),
 		},
-		BillingTerm:       billingTerm,
+		BillingTerm:       d.Get("billing_term").(string),
 		PrimaryPairingKey: primaryPairingKey,
 	}
 
@@ -109,12 +104,13 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 
 	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
-		connection.Network.Id,
+		filepath.Base(connection.Network.Href),
 		&opts,
 	)
 
 	if err != nil {
 
+		http_err := err
 		json_response := string(err.(client.GenericSwaggerError).Body()[:])
 		response, err := structure.ExpandJsonFromString(json_response)
 		if err != nil {
@@ -127,7 +123,7 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		}
 
 		d.SetId("")
-		return fmt.Errorf("Error while creating %s: err=%s", googleConnectionName, err)
+		return fmt.Errorf("Error while creating %s: err=%s", googleConnectionName, http_err)
 	}
 
 	if resp.StatusCode >= 300 {
@@ -191,13 +187,7 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 	if err := d.Set("location_href", conn.Location.Href); err != nil {
 		return fmt.Errorf("Error setting location for %s %s: %s", googleConnectionName, d.Id(), err)
 	}
-
-	if err := d.Set("network", []map[string]string{
-		{
-			"id":   conn.Network.Id,
-			"href": conn.Network.Href,
-		},
-	}); err != nil {
+	if err := d.Set("network_href", conn.Network.Href); err != nil {
 		return fmt.Errorf("Error setting network for %s %s: %s", googleConnectionName, d.Id(), err)
 	}
 

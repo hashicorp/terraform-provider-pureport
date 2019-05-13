@@ -47,7 +47,7 @@ func dataSourceLocations() *schema.Resource {
 							Computed: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"location_id": {
+									"location_href": {
 										Type:     schema.TypeString,
 										Computed: true,
 									},
@@ -143,8 +143,8 @@ func flattenLinks(links []client.LocationLinkConnection) (out []map[string]inter
 	for _, link := range links {
 
 		l := map[string]interface{}{
-			"location_id": link.Location.Id,
-			"speed":       link.Speed,
+			"location_href": link.Location.Href,
+			"speed":         link.Speed,
 		}
 
 		out = append(out, l)

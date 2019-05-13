@@ -29,32 +29,13 @@ func resourceNetwork() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"account_id": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
-			},
 			"href": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"account": {
-				Type:     schema.TypeList,
-				Computed: true,
-				MaxItems: 1,
-				ForceNew: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"id": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-						"href": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
-				},
+			"account_href": {
+				Type:     schema.TypeString,
+				Required: true,
 			},
 		},
 	}
@@ -62,19 +43,17 @@ func resourceNetwork() *schema.Resource {
 
 func expandNetwork(d *schema.ResourceData) client.Network {
 
-	name := d.Get("name").(string)
-	description := d.Get("description").(string)
-
 	return client.Network{
-		Name:        name,
-		Description: description,
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
 	}
 }
 
 func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 	network := expandNetwork(d)
-	accountId := d.Get("account_id").(string)
+	accountHref := d.Get("account_href").(string)
+	accountId := filepath.Base(accountHref)
 
 	sess := m.(*session.Session)
 	ctx := sess.GetSessionContext()
@@ -91,6 +70,7 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 	if err != nil {
 
+		http_err := err
 		json_response := string(err.(client.GenericSwaggerError).Body()[:])
 		response, err := structure.ExpandJsonFromString(json_response)
 		if err != nil {
@@ -103,7 +83,7 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 		}
 
 		d.SetId("")
-		return fmt.Errorf("Error while creating Network: err=%s", err)
+		return fmt.Errorf("Error while creating Network: err=%s", http_err)
 	}
 
 	if resp.StatusCode >= 300 {
@@ -148,19 +128,10 @@ func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error Response while reading Network: code=%v", resp.StatusCode)
 	}
 
-	d.Set("account_id", n.Account.Id)
 	d.Set("name", n.Name)
 	d.Set("description", n.Description)
 	d.Set("href", n.Href)
-
-	if err := d.Set("account", []map[string]string{
-		{
-			"id":   n.Account.Id,
-			"href": n.Account.Href,
-		},
-	}); err != nil {
-		return fmt.Errorf("Error while setting Network: code=%v", resp.StatusCode)
-	}
+	d.Set("account_href", n.Account.Href)
 
 	return nil
 }

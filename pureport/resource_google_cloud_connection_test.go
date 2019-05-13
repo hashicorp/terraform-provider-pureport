@@ -54,7 +54,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-  account_id = "${data.pureport_accounts.main.accounts.0.id}"
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
   name_regex = "Bansh.*"
 }
 
@@ -63,10 +63,7 @@ resource "pureport_google_cloud_connection" "main" {
   speed = "50"
 
   location_href = "${data.pureport_locations.main.locations.0.href}"
-  network {
-    id = "${data.pureport_networks.main.networks.0.id}"
-    href = "${data.pureport_networks.main.networks.0.href}"
-  }
+  network_href = "${data.pureport_networks.main.networks.0.href}"
 
   primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
 }
