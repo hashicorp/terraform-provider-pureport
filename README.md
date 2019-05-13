@@ -10,7 +10,7 @@ Terraform Provider
 Maintainers
 -----------
 
-This provider plugin is maintained by the Terraform team at [HashiCorp](https://www.hashicorp.com/).
+This provider plugin is maintained by the Pureport Inc, team at [Pureport](https://www.pureport.com).
 
 Requirements
 ------------
@@ -48,7 +48,8 @@ $ make build
 
 Using the provider
 ----------------------
-## Fill in for each provider
+
+## 3rd Party plugin installation
 
 Copy the terraform-provider-pureport plugin in to the terraform third-party plugins directory.
 
