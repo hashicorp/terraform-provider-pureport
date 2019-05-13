@@ -333,7 +333,7 @@ func ExpandPeeringType(d *schema.ResourceData) *client.PeeringConfiguration {
 
 	peeringConfig := &client.PeeringConfiguration{}
 
-	if data, ok := d.GetOk("peering"); ok {
+	if data, ok := d.GetOk("peering_type"); ok {
 		peeringConfig.Type_ = data.(string)
 	} else {
 		peeringConfig.Type_ = "Private"

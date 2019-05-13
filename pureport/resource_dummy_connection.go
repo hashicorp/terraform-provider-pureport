@@ -21,9 +21,9 @@ const (
 func resourceDummyConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
-		"peering": {
+		"peering_type": {
 			Type:         schema.TypeString,
-			Description:  "The peering configuration to use for this connection Public/Private",
+			Description:  "The peering type to use for this connection Public/Private",
 			Default:      "PRIVATE",
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
@@ -164,7 +164,7 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 
 	conn := c.(client.DummyConnection)
 
-	d.Set("peering", conn.Peering.Type_)
+	d.Set("peering_type", conn.Peering.Type_)
 	d.Set("speed", conn.Speed)
 
 	var customerNetworks []map[string]string

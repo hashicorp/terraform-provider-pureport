@@ -26,9 +26,9 @@ func resourceAzureConnection() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
-		"peering": {
+		"peering_type": {
 			Type:         schema.TypeString,
-			Description:  "The peering configuration to use for this connection Public/Private",
+			Description:  "The peering type to use for this connection Public/Private",
 			Default:      "PRIVATE",
 			Optional:     true,
 			ForceNew:     true,
@@ -177,7 +177,7 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 
 	conn := c.(client.AzureExpressRouteConnection)
 	d.Set("service_key", conn.ServiceKey)
-	d.Set("peering", conn.Peering.Type_)
+	d.Set("peering_type", conn.Peering.Type_)
 	d.Set("speed", conn.Speed)
 
 	var customerNetworks []map[string]string
