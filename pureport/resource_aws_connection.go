@@ -45,6 +45,15 @@ func resourceAWSConnection() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
+		"gateways": {
+			Computed: true,
+			Type:     schema.TypeList,
+			MinItems: 1,
+			MaxItems: 2,
+			Elem: &schema.Resource{
+				Schema: StandardGatewaySchema,
+			},
+		},
 	}
 
 	// Add the base items
@@ -208,6 +217,18 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	}
 	if err := d.Set("customer_networks", customerNetworks); err != nil {
 		return fmt.Errorf("Error setting customer networks for %s %s: %s", awsConnectionName, d.Id(), err)
+	}
+
+	// Add Gateway information
+	var gateways []map[string]interface{}
+	if g := conn.PrimaryGateway; g != nil {
+		gateways = append(gateways, FlattenStandardGateway(g))
+	}
+	if g := conn.SecondaryGateway; g != nil {
+		gateways = append(gateways, FlattenStandardGateway(g))
+	}
+	if err := d.Set("gateways", gateways); err != nil {
+		return fmt.Errorf("Error setting gateway information for %s %s: %s", awsConnectionName, d.Id(), err)
 	}
 
 	d.Set("description", conn.Description)

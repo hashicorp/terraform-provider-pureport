@@ -140,6 +140,15 @@ func resourceSiteVPNConnection() *schema.Resource {
 				},
 			},
 		},
+		"gateways": {
+			Computed: true,
+			Type:     schema.TypeList,
+			MinItems: 1,
+			MaxItems: 2,
+			Elem: &schema.Resource{
+				Schema: VpnGatewaySchema,
+			},
+		},
 	}
 
 	// Add the base items
@@ -413,6 +422,19 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 
 	conn := c.(client.SiteIpSecVpnConnection)
 	d.Set("speed", conn.Speed)
+
+	// Add Gateway information
+	var gateways []map[string]interface{}
+	if g := conn.PrimaryGateway; g != nil {
+		gateways = append(gateways, FlattenVpnGateway(g))
+	}
+	if g := conn.SecondaryGateway; g != nil {
+		gateways = append(gateways, FlattenVpnGateway(g))
+	}
+	if err := d.Set("gateways", gateways); err != nil {
+		return fmt.Errorf("Error setting gateway information for %s %s: %s", awsConnectionName, d.Id(), err)
+	}
+
 	d.Set("description", conn.Description)
 	d.Set("high_availability", conn.HighAvailability)
 

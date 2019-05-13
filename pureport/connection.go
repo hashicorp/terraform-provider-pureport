@@ -15,6 +15,130 @@ import (
 )
 
 var (
+	StandardGatewaySchema = map[string]*schema.Schema{
+		"availability_domain": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"name": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"description": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"link_state": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"customer_asn": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		"customer_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"pureport_asn": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		"pureport_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"bgp_password": {
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
+		},
+		"peering_subnet": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"public_nat_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"vlan": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+	}
+
+	VpnGatewaySchema = map[string]*schema.Schema{
+		"availability_domain": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"name": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"description": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"link_state": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"customer_asn": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		"customer_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"pureport_asn": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		"pureport_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"bgp_password": {
+			Type:      schema.TypeString,
+			Computed:  true,
+			Sensitive: true,
+		},
+		"peering_subnet": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"public_nat_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"customer_gateway_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"customer_vti_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"pureport_gateway_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"pureport_vti_ip": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"vpn_auth_type": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"vpn_auth_key": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+	}
+
 	DeletableState = map[string]bool{
 		"FAILED_TO_PROVISION": true,
 		"ACTIVE":              true,
@@ -134,6 +258,47 @@ func flattenConnection(connection client.Connection) map[string]interface{} {
 		"name":              connection.Name,
 		"description":       connection.Description,
 		"speed":             connection.Speed,
+	}
+}
+
+// FlattenGateway flattens the provide gateway to a map for use with terraform
+func FlattenStandardGateway(gateway *client.StandardGateway) map[string]interface{} {
+	return map[string]interface{}{
+		"availability_domain": gateway.AvailabilityDomain,
+		"name":                gateway.Name,
+		"description":         gateway.Description,
+		"link_state":          gateway.LinkState,
+		"vlan":                gateway.Vlan,
+		"customer_asn":        gateway.BgpConfig.CustomerASN,
+		"customer_ip":         gateway.BgpConfig.CustomerIP,
+		"pureport_asn":        gateway.BgpConfig.PureportASN,
+		"pureport_ip":         gateway.BgpConfig.PureportIP,
+		"bgp_password":        gateway.BgpConfig.Password,
+		"peering_subnet":      gateway.BgpConfig.PeeringSubnet,
+		"public_nat_ip":       gateway.BgpConfig.PublicNatIp,
+	}
+}
+
+// FlattenGateway flattens the provide gateway to a map for use with terraform
+func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
+	return map[string]interface{}{
+		"availability_domain": gateway.AvailabilityDomain,
+		"name":                gateway.Name,
+		"description":         gateway.Description,
+		"link_state":          gateway.LinkState,
+		"customer_gateway_ip": gateway.CustomerGatewayIP,
+		"customer_vti_ip":     gateway.CustomerVtiIP,
+		"pureport_gateway_ip": gateway.PureportGatewayIP,
+		"pureport_vti_ip":     gateway.PureportVtiIP,
+		"vpn_auth_type":       gateway.Auth.Type_,
+		"vpn_auth_key":        gateway.Auth.Key,
+		"customer_asn":        gateway.BgpConfig.CustomerASN,
+		"customer_ip":         gateway.BgpConfig.CustomerIP,
+		"pureport_asn":        gateway.BgpConfig.PureportASN,
+		"pureport_ip":         gateway.BgpConfig.PureportIP,
+		"bgp_password":        gateway.BgpConfig.Password,
+		"peering_subnet":      gateway.BgpConfig.PeeringSubnet,
+		"public_nat_ip":       gateway.BgpConfig.PublicNatIp,
 	}
 }
 

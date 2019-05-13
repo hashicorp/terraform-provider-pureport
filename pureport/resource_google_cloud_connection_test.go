@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -90,6 +91,20 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "primary_pairing_key"),
 					resource.TestCheckResourceAttr(resourceName, "secondary_pairing_key", ""),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "GOOGLE_CLOUD_INTERCONNECT"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "64512"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.1.2/30"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_ip", "169.254.1.1/30"),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.bgp_password"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
 				),
 			},
 		},
