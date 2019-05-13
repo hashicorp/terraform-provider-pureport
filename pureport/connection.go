@@ -117,24 +117,9 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Required: true,
 			ForceNew: true,
 		},
-		"network": {
-			Type:     schema.TypeList,
+		"network_href": {
+			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
-			MaxItems: 1,
-			MinItems: 1,
-			Elem: &schema.Resource{
-				Schema: map[string]*schema.Schema{
-					"id": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-					"href": {
-						Type:     schema.TypeString,
-						Required: true,
-					},
-				},
-			},
 		},
 	}
 }
@@ -144,19 +129,16 @@ func flattenConnection(connection client.Connection) map[string]interface{} {
 		"customer_asn":      connection.CustomerASN,
 		"customer_networks": flattenCustomerNetworks(connection.CustomerNetworks),
 		"high_availability": connection.HighAvailability,
-		"location":          flattenLink(connection.Location),
-		"network":           flattenLink(connection.Network),
+		"location_href":     flattenLink(connection.Location),
+		"network_href":      flattenLink(connection.Network),
 		"name":              connection.Name,
 		"description":       connection.Description,
 		"speed":             connection.Speed,
 	}
 }
 
-func flattenLink(link *client.Link) map[string]interface{} {
-	return map[string]interface{}{
-		"id":   link.Id,
-		"href": link.Href,
-	}
+func flattenLink(link *client.Link) string {
+	return link.Href
 }
 
 func flattenCustomerNetworks(networks []client.CustomerNetwork) (out []map[string]interface{}) {
@@ -275,7 +257,7 @@ func ExpandCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
 
 			new := client.CustomerNetwork{
 				Name:    cn["name"],
-				Address: cn["Address"],
+				Address: cn["address"],
 			}
 
 			customerNetworks = append(customerNetworks, new)
@@ -333,7 +315,7 @@ func ExpandPeeringType(d *schema.ResourceData) *client.PeeringConfiguration {
 
 	peeringConfig := &client.PeeringConfiguration{}
 
-	if data, ok := d.GetOk("peering"); ok {
+	if data, ok := d.GetOk("peering_type"); ok {
 		peeringConfig.Type_ = data.(string)
 	} else {
 		peeringConfig.Type_ = "Private"

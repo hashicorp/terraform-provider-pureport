@@ -24,7 +24,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-	account_id = "${data.pureport_accounts.main.accounts.0.id}"
+	account_href = "${data.pureport_accounts.main.accounts.0.href}"
 	name_regex = "Bansh.*"
 }
 
@@ -34,10 +34,7 @@ resource "pureport_dummy_connection" "main" {
 	high_availability = true
 
 	location_href = "${data.pureport_locations.main.locations.0.href}"
-	network {
-		id = "${data.pureport_networks.main.networks.0.id}"
-		href = "${data.pureport_networks.main.networks.0.href}"
-	}
+	network_href = "${data.pureport_networks.main.networks.0.href}"
 }
 `
 

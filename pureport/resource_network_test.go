@@ -18,7 +18,7 @@ data "pureport_accounts" "main" {
 resource "pureport_network" "main" {
 	name = "NetworkTest"
 	description = "Network Terraform Test"
-	account_id = "${data.pureport_accounts.main.accounts.0.id}"
+	account_href = "${data.pureport_accounts.main.accounts.0.href}"
 }
 `
 
@@ -40,6 +40,7 @@ func TestNetwork_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "href", &instance.Href),
 					resource.TestCheckResourceAttr(resourceName, "name", "NetworkTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Network Terraform Test"),
+					resource.TestCheckResourceAttr(resourceName, "account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
 				),
 			},
 		},

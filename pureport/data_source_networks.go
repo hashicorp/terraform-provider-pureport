@@ -3,6 +3,7 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"sort"
 
@@ -24,7 +25,7 @@ func dataSourceNetworks() *schema.Resource {
 				ForceNew:     true,
 				ValidateFunc: validation.ValidateRegexp,
 			},
-			"account_id": {
+			"account_href": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
@@ -51,7 +52,7 @@ func dataSourceNetworks() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"account_id": {
+						"account_href": {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -65,11 +66,12 @@ func dataSourceNetworks() *schema.Resource {
 func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
 	sess := m.(*session.Session)
-	accountId := d.Get("account_id")
+	accountHref := d.Get("account_href").(string)
+	accountId := filepath.Base(accountHref)
 
 	ctx := sess.GetSessionContext()
 
-	networks, resp, err := sess.Client.NetworksApi.FindNetworks(ctx, accountId.(string))
+	networks, resp, err := sess.Client.NetworksApi.FindNetworks(ctx, accountId)
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("Error when Reading Pureport Network data: %v", err)
@@ -125,11 +127,11 @@ func flattenNetworks(networks []client.Network) (out []map[string]interface{}) {
 	for _, network := range networks {
 
 		l := map[string]interface{}{
-			"id":          network.Id,
-			"href":        network.Href,
-			"name":        network.Name,
-			"description": network.Description,
-			"account_id":  network.Account.Id,
+			"id":           network.Id,
+			"href":         network.Href,
+			"name":         network.Name,
+			"description":  network.Description,
+			"account_href": network.Account.Href,
 		}
 
 		out = append(out, l)

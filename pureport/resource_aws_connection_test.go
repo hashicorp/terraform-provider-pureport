@@ -24,7 +24,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-	account_id = "${data.pureport_accounts.main.accounts.0.id}"
+	account_href = "${data.pureport_accounts.main.accounts.0.href}"
 	name_regex = "Bansh.*"
 }
 
@@ -34,10 +34,7 @@ resource "pureport_aws_connection" "main" {
 	high_availability = true
 
 	location_href = "${data.pureport_locations.main.locations.0.href}"
-	network {
-		id = "${data.pureport_networks.main.networks.0.id}"
-		href = "${data.pureport_networks.main.networks.0.href}"
-	}
+	network_href = "${data.pureport_networks.main.networks.0.href}"
 
 	aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
 	aws_account_id = "123456789012"
@@ -62,7 +59,7 @@ data "pureport_cloud_services" "s3" {
 }
 
 data "pureport_networks" "main" {
-	account_id = "${data.pureport_accounts.main.accounts.0.id}"
+	account_href = "${data.pureport_accounts.main.accounts.0.href}"
 	name_regex = "Bansh.*"
 }
 
@@ -77,13 +74,10 @@ resource "pureport_aws_connection" "main" {
 	high_availability = true
 
 	location_href = "${data.pureport_locations.main.locations.0.href}"
-	network {
-		id = "${data.pureport_networks.main.networks.0.id}"
-		href = "${data.pureport_networks.main.networks.0.href}"
-	}
+	network_href = "${data.pureport_networks.main.networks.0.href}"
 
 	cloud_service_hrefs = ["${data.template_file.services_hrefs.*.rendered}"]
-	peering = "PUBLIC"
+	peering_type = "PUBLIC"
 
 	aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
 	aws_account_id = "123456789012"
@@ -109,6 +103,8 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
+					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
+					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
 				),
 			},
 		},
@@ -134,6 +130,8 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
+					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
+					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
 				),
 			},
 		},

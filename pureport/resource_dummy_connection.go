@@ -21,9 +21,9 @@ const (
 func resourceDummyConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
-		"peering": {
+		"peering_type": {
 			Type:         schema.TypeString,
-			Description:  "The peering configuration to use for this connection Public/Private",
+			Description:  "The peering type to use for this connection: [PUBLIC, PRIVATE]",
 			Default:      "PRIVATE",
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
@@ -49,25 +49,20 @@ func resourceDummyConnection() *schema.Resource {
 func expandDummyConnection(d *schema.ResourceData) client.DummyConnection {
 
 	// Generic Connection values
-	network := d.Get("network").([]interface{})
 	speed := d.Get("speed").(int)
-	name := d.Get("name").(string)
-	billingTerm := d.Get("billing_term").(string)
-	location_href := d.Get("location_href").(string)
 
 	// Create the body of the request
 	c := client.DummyConnection{
 		Type_: "DUMMY",
-		Name:  name,
+		Name:  d.Get("name").(string),
 		Speed: int32(speed),
 		Location: &client.Link{
-			Href: location_href,
+			Href: d.Get("location_href").(string),
 		},
 		Network: &client.Link{
-			Id:   network[0].(map[string]interface{})["id"].(string),
-			Href: network[0].(map[string]interface{})["href"].(string),
+			Href: d.Get("network_href").(string),
 		},
-		BillingTerm: billingTerm,
+		BillingTerm: d.Get("billing_term").(string),
 	}
 
 	// Generic Optionals
@@ -99,12 +94,13 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 	resp, err := sess.Client.ConnectionsApi.AddConnection(
 		ctx,
-		connection.Network.Id,
+		filepath.Base(connection.Network.Href),
 		&opts,
 	)
 
 	if err != nil {
 
+		http_err := err
 		json_response := string(err.(client.GenericSwaggerError).Body()[:])
 		response, err := structure.ExpandJsonFromString(json_response)
 		if err != nil {
@@ -117,7 +113,7 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		}
 
 		d.SetId("")
-		return fmt.Errorf("Error while creating %s: err=%s", dummyConnectionName, err)
+		return fmt.Errorf("Error while creating %s: err=%s", dummyConnectionName, http_err)
 	}
 
 	if resp.StatusCode >= 300 {
@@ -164,7 +160,7 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 
 	conn := c.(client.DummyConnection)
 
-	d.Set("peering", conn.Peering.Type_)
+	d.Set("peering_type", conn.Peering.Type_)
 	d.Set("speed", conn.Speed)
 
 	var customerNetworks []map[string]string
@@ -185,12 +181,7 @@ func resourceDummyConnectionRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error setting location for %s %s: %s", dummyConnectionName, d.Id(), err)
 	}
 
-	if err := d.Set("network", []map[string]string{
-		{
-			"id":   conn.Network.Id,
-			"href": conn.Network.Href,
-		},
-	}); err != nil {
+	if err := d.Set("network_href", conn.Network.Href); err != nil {
 		return fmt.Errorf("Error setting network for %s %s: %s", dummyConnectionName, d.Id(), err)
 	}
 
