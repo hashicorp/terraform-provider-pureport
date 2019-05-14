@@ -97,7 +97,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "GOOGLE_CLOUD_INTERCONNECT"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
-					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "64512"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "16550"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.1.2/30"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_ip", "169.254.1.1/30"),
