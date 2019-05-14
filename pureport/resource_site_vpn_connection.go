@@ -578,15 +578,17 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 	if err != nil {
 
-		json_response := string(err.(client.GenericSwaggerError).Body()[:])
-		response, err := structure.ExpandJsonFromString(json_response)
-		if err != nil {
-			log.Printf("Error updating %s: %v", sitevpnConnectionName, err)
-		} else {
-			statusCode := int(response["status"].(float64))
-			log.Printf("Error updating %s: %d\n", sitevpnConnectionName, statusCode)
-			log.Printf("  %s\n", response["code"])
-			log.Printf("  %s\n", response["message"])
+		if swerr, ok := err.(client.GenericSwaggerError); ok {
+
+			json_response := string(swerr.Body()[:])
+			response, jerr := structure.ExpandJsonFromString(json_response)
+
+			if jerr == nil {
+				statusCode := int(response["status"].(float64))
+				log.Printf("Error updating %s: %d\n", sitevpnConnectionName, statusCode)
+				log.Printf("  %s\n", response["code"])
+				log.Printf("  %s\n", response["message"])
+			}
 		}
 
 		return fmt.Errorf("Error while updating %s: err=%s", sitevpnConnectionName, err)
