@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 func resourceNetwork() *schema.Resource {
@@ -55,14 +54,14 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 	accountHref := d.Get("account_href").(string)
 	accountId := filepath.Base(accountHref)
 
-	sess := m.(*session.Session)
-	ctx := sess.GetSessionContext()
+	config := m.(*Config)
+	ctx := config.Session.GetSessionContext()
 
 	opts := client.AddNetworkOpts{
 		Body: optional.NewInterface(network),
 	}
 
-	resp, err := sess.Client.NetworksApi.AddNetwork(
+	resp, err := config.Session.Client.NetworksApi.AddNetwork(
 		ctx,
 		accountId,
 		&opts,
@@ -110,11 +109,11 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 
-	sess := m.(*session.Session)
+	config := m.(*Config)
 	networkId := d.Id()
-	ctx := sess.GetSessionContext()
+	ctx := config.Session.GetSessionContext()
 
-	n, resp, err := sess.Client.NetworksApi.GetNetwork(ctx, networkId)
+	n, resp, err := config.Session.Client.NetworksApi.GetNetwork(ctx, networkId)
 	if err != nil {
 		if resp.StatusCode == 404 {
 			log.Printf("Error Response while reading Network: code=%v", resp.StatusCode)
@@ -150,14 +149,14 @@ func resourceNetworkUpdate(d *schema.ResourceData, m interface{}) error {
 		n.Description = d.Get("description").(string)
 	}
 
-	sess := m.(*session.Session)
-	ctx := sess.GetSessionContext()
+	config := m.(*Config)
+	ctx := config.Session.GetSessionContext()
 
 	opts := client.UpdateNetworkOpts{
 		Body: optional.NewInterface(n),
 	}
 
-	_, resp, err := sess.Client.NetworksApi.UpdateNetwork(
+	_, resp, err := config.Session.Client.NetworksApi.UpdateNetwork(
 		ctx,
 		d.Id(),
 		&opts,
@@ -189,12 +188,12 @@ func resourceNetworkUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceNetworkDelete(d *schema.ResourceData, m interface{}) error {
 
-	sess := m.(*session.Session)
-	ctx := sess.GetSessionContext()
+	config := m.(*Config)
+	ctx := config.Session.GetSessionContext()
 	networkId := d.Id()
 
 	// Delete
-	resp, err := sess.Client.NetworksApi.DeleteNetwork(ctx, networkId)
+	resp, err := config.Session.Client.NetworksApi.DeleteNetwork(ctx, networkId)
 
 	if err != nil {
 		return fmt.Errorf("Error deleting Network: %s", err)

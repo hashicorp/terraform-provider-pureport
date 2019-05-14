@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 const testAccResourceNetworkConfig_basic = `
@@ -50,7 +49,7 @@ func TestNetwork_basic(t *testing.T) {
 func testAccCheckResourceNetwork(name string, instance *client.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		sess, ok := testAccProvider.Meta().(*session.Session)
+		config, ok := testAccProvider.Meta().(*Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -67,8 +66,8 @@ func testAccCheckResourceNetwork(name string, instance *client.Network) resource
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		found, resp, err := sess.Client.NetworksApi.GetNetwork(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		found, resp, err := config.Session.Client.NetworksApi.GetNetwork(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting Network ID %s", id)
@@ -86,7 +85,7 @@ func testAccCheckResourceNetwork(name string, instance *client.Network) resource
 
 func testAccCheckNetworkDestroy(s *terraform.State) error {
 
-	sess, ok := testAccProvider.Meta().(*session.Session)
+	config, ok := testAccProvider.Meta().(*Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}
@@ -98,8 +97,8 @@ func testAccCheckNetworkDestroy(s *terraform.State) error {
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		_, resp, err := sess.Client.NetworksApi.GetNetwork(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		_, resp, err := config.Session.Client.NetworksApi.GetNetwork(ctx, id)
 
 		if err != nil && resp.StatusCode != 404 {
 			return fmt.Errorf("should not get error for Network with ID %s after delete: %s", id, err)

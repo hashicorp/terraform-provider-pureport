@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 const testAccResourceDummyConnectionConfig_basic = `
@@ -95,7 +94,7 @@ func TestDummyConnection_basic(t *testing.T) {
 func testAccCheckResourceDummyConnection(name string, instance *client.DummyConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		sess, ok := testAccProvider.Meta().(*session.Session)
+		config, ok := testAccProvider.Meta().(*Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -112,8 +111,8 @@ func testAccCheckResourceDummyConnection(name string, instance *client.DummyConn
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		found, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		found, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting Dummy Connection %s", id)
@@ -131,7 +130,7 @@ func testAccCheckResourceDummyConnection(name string, instance *client.DummyConn
 
 func testAccCheckDummyConnectionDestroy(s *terraform.State) error {
 
-	sess, ok := testAccProvider.Meta().(*session.Session)
+	config, ok := testAccProvider.Meta().(*Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}
@@ -143,8 +142,8 @@ func testAccCheckDummyConnectionDestroy(s *terraform.State) error {
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		_, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		_, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("should not get error for Dummy Connection with ID %s after delete: %s", id, err)

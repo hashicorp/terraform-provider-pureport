@@ -306,6 +306,14 @@ github.com/pureport/pureport-sdk-go v0.0.0-20190506215644-d100251c07ec h1:h5+obU
 github.com/pureport/pureport-sdk-go v0.0.0-20190506215644-d100251c07ec/go.mod h1:AnIWdRq3Y+bJsxS80lYQOze22ac7QtwjQCak/pw5a2I=
 github.com/pureport/pureport-sdk-go v0.0.0-20190513215336-8a457a0d4642 h1:XA+zq+T885IYBs1EIfGEphgiAHPLzaXt35WR0O5eGfs=
 github.com/pureport/pureport-sdk-go v0.0.0-20190513215336-8a457a0d4642/go.mod h1:j3o/Yqk2isoAurZmjZteYToDLqC2HC6dTrWzeHQtfPg=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514144703-4cade9d8d66d h1:xG9txPiJ3ScDdGzFpMwaQGiNFuEMAe/dCvGhEng29nk=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514144703-4cade9d8d66d/go.mod h1:j3o/Yqk2isoAurZmjZteYToDLqC2HC6dTrWzeHQtfPg=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514155103-bc86910431af h1:k967XldEHjYCFFUWanP8D4uzrFx/kmIdrBM6NZqQvho=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514155103-bc86910431af/go.mod h1:j3o/Yqk2isoAurZmjZteYToDLqC2HC6dTrWzeHQtfPg=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514160425-f5661025fb52 h1:kogMZvzHHm4xV9fpmNaCNyBwrCFcWQHwRmBxhtY1yWc=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514160425-f5661025fb52/go.mod h1:j3o/Yqk2isoAurZmjZteYToDLqC2HC6dTrWzeHQtfPg=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514162542-b06cce46d046 h1:kgJPhLgynLkFblsXf2HytjBcewrBsCYxcEFb986hax4=
+github.com/pureport/pureport-sdk-go v0.0.0-20190514162542-b06cce46d046/go.mod h1:j3o/Yqk2isoAurZmjZteYToDLqC2HC6dTrWzeHQtfPg=
 github.com/ryanuber/columnize v0.0.0-20161220214920-0fbbb3f0e3fb/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/satori/go.uuid v0.0.0-20160927100844-b061729afc07/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/satori/uuid v0.0.0-20160927100844-b061729afc07/go.mod h1:B8HLsPLik/YNn6KKWVMDJ8nzCL8RP5WyfsnmvnAEwIU=

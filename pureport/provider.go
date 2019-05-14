@@ -4,9 +4,6 @@ import (
 	//	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/pureport/pureport-sdk-go/pureport"
-	ppLog "github.com/pureport/pureport-sdk-go/pureport/logging"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 // Global MutexKV
@@ -84,12 +81,11 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
-	cfg := pureport.NewConfiguration()
+	config := Config{}
 
-	logCfg := ppLog.NewLogConfig()
-	ppLog.SetupLogger(logCfg)
+	if err := config.LoadAndValidate(); err != nil {
+		return nil, err
+	}
 
-	s := session.NewSession(cfg)
-
-	return s, nil
+	return &config, nil
 }

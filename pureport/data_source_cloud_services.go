@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 func dataSourceCloudServices() *schema.Resource {
@@ -70,12 +69,12 @@ func dataSourceCloudServices() *schema.Resource {
 
 func dataSourceCloudServicesRead(d *schema.ResourceData, m interface{}) error {
 
-	sess := m.(*session.Session)
+	config := m.(*Config)
 	nameRegex, nameRegexOk := d.GetOk("name_regex")
 
-	ctx := sess.GetSessionContext()
+	ctx := config.Session.GetSessionContext()
 
-	services, resp, err := sess.Client.CloudServicesApi.GetCloudServices(ctx)
+	services, resp, err := config.Session.Client.CloudServicesApi.GetCloudServices(ctx)
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("Error when Reading Cloud Services data: %v", err)

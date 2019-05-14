@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 var (
@@ -146,6 +145,24 @@ var (
 		"FAILED_TO_UPDATE":    true,
 		"FAILED_TO_DELETE":    true,
 		"DELETED":             true,
+	}
+
+	FailedState = map[string]bool{
+		"FAILED_TO_PROVISION": true,
+		"FAILED_TO_UPDATE":    true,
+		"FAILED_TO_DELETE":    true,
+	}
+
+	ActiveState = map[string]bool{
+		"ACTIVE":  true,
+		"DOWN":    true,
+		"DELETED": true,
+	}
+
+	PendingState = map[string]bool{
+		"INITIALIZING": true,
+		"PROVISIONING": true,
+		"UPDATING":     true,
 	}
 )
 
@@ -345,10 +362,61 @@ func flattenMappings(mappings []client.NatMapping) (out []map[string]interface{}
 	return
 }
 
+func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error {
+
+	config := m.(*Config)
+	ctx := config.Session.GetSessionContext()
+	connectionId := d.Id()
+
+	log.Printf("[Info] Waiting for connection to come up.")
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 3 * time.Minute
+
+	var state string
+
+	wait_for_create := func() error {
+
+		c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+		if err != nil {
+			return backoff.Permanent(
+				fmt.Errorf("Error reading data for %s: %s", name, err),
+			)
+		}
+
+		if resp.StatusCode >= 300 {
+			return backoff.Permanent(
+				fmt.Errorf("Error received while waiting for creation of %s: code=%v", name, resp.StatusCode),
+			)
+		}
+
+		conn := reflect.ValueOf(c)
+		state = conn.FieldByName("State").String()
+
+		if PendingState[state] {
+			return fmt.Errorf("Waiting ...")
+
+		} else {
+			return nil
+		}
+	}
+
+	if err := backoff.Retry(wait_for_create, b); err != nil {
+
+		if FailedState[state] {
+			return fmt.Errorf("%s in failed state: state=%s", name, state)
+		}
+
+		return fmt.Errorf("Timeout waiting for %s: state=%s", name, state)
+	}
+
+	return nil
+}
+
 func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error {
 
-	sess := m.(*session.Session)
-	ctx := sess.GetSessionContext()
+	config := m.(*Config)
+	ctx := config.Session.GetSessionContext()
 	connectionId := d.Id()
 
 	// Wait until we are in a state that we can trigger a delete from
@@ -359,7 +427,7 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 
 	wait_to_delete := func() error {
 
-		c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+		c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 		if err != nil {
 			return backoff.Permanent(
 				fmt.Errorf("Error deleting data for %s: %s", name, err),
@@ -376,7 +444,7 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 		if DeletableState[conn.FieldByName("State").String()] {
 			return nil
 		} else {
-			return fmt.Errorf("Not Completed ...")
+			return fmt.Errorf("Waiting ...")
 		}
 	}
 
@@ -385,7 +453,7 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 	}
 
 	// Delete
-	_, resp, err := sess.Client.ConnectionsApi.DeleteConnection(ctx, connectionId)
+	_, resp, err := config.Session.Client.ConnectionsApi.DeleteConnection(ctx, connectionId)
 	if err != nil {
 		return fmt.Errorf("Error deleting data for %s: %s", name, err)
 	}
@@ -398,13 +466,13 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 	wait_for_delete := func() error {
 
 		log.Printf("Retrying ...%+v", b.GetElapsedTime())
-		_, resp, _ := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+		_, resp, _ := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 
 		if resp.StatusCode == 404 {
 			d.SetId("")
 			return nil
 		} else {
-			return fmt.Errorf("Not Completed ...")
+			return fmt.Errorf("Waiting ...")
 		}
 	}
 

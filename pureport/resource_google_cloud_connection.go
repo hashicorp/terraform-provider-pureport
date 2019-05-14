@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 const (
@@ -103,15 +102,14 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 
 	connection := expandGoogleCloudConnection(d)
 
-	sess := m.(*session.Session)
-
-	ctx := sess.GetSessionContext()
+	config := m.(*Config)
+	ctx := config.Session.GetSessionContext()
 
 	opts := client.AddConnectionOpts{
 		Body: optional.NewInterface(connection),
 	}
 
-	resp, err := sess.Client.ConnectionsApi.AddConnection(
+	resp, err := config.Session.Client.ConnectionsApi.AddConnection(
 		ctx,
 		filepath.Base(connection.Network.Href),
 		&opts,
@@ -154,16 +152,18 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
+	WaitForConnection(googleConnectionName, d, m)
+
 	return resourceGoogleCloudConnectionRead(d, m)
 }
 
 func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) error {
 
-	sess := m.(*session.Session)
+	config := m.(*Config)
 	connectionId := d.Id()
-	ctx := sess.GetSessionContext()
+	ctx := config.Session.GetSessionContext()
 
-	c, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+	c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
 			log.Printf("Error Response while reading %s: code=%v", googleConnectionName, resp.StatusCode)
@@ -224,8 +224,8 @@ func resourceGoogleCloudConnectionUpdate(d *schema.ResourceData, m interface{}) 
 
 	d.Partial(true)
 
-	sess := m.(*session.Session)
-	ctx := sess.GetSessionContext()
+	config := m.(*Config)
+	ctx := config.Session.GetSessionContext()
 
 	if d.HasChange("name") {
 		c.Name = d.Get("name").(string)
@@ -258,7 +258,7 @@ func resourceGoogleCloudConnectionUpdate(d *schema.ResourceData, m interface{}) 
 		Body: optional.NewInterface(c),
 	}
 
-	_, resp, err := sess.Client.ConnectionsApi.UpdateConnection(
+	_, resp, err := config.Session.Client.ConnectionsApi.UpdateConnection(
 		ctx,
 		d.Id(),
 		&opts,
