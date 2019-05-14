@@ -395,7 +395,9 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	WaitForConnection(sitevpnConnectionName, d, m)
+	if err := WaitForConnection(sitevpnConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", sitevpnConnectionName, err)
+	}
 
 	return resourceSiteVPNConnectionRead(d, m)
 }

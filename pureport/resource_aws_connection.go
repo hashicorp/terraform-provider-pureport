@@ -164,7 +164,9 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error decoding Connection ID")
 	}
 
-	WaitForConnection(awsConnectionName, d, m)
+	if err := WaitForConnection(awsConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", awsConnectionName, err)
+	}
 
 	return resourceAWSConnectionRead(d, m)
 }

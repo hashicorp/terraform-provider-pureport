@@ -152,7 +152,9 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	WaitForConnection(googleConnectionName, d, m)
+	if err := WaitForConnection(googleConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", googleConnectionName, err)
+	}
 
 	return resourceGoogleCloudConnectionRead(d, m)
 }

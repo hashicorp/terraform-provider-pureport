@@ -143,7 +143,9 @@ func resourceDummyConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error decoding Connection ID")
 	}
 
-	WaitForConnection(dummyConnectionName, d, m)
+	if err := WaitForConnection(dummyConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", dummyConnectionName, err)
+	}
 
 	return resourceDummyConnectionRead(d, m)
 }

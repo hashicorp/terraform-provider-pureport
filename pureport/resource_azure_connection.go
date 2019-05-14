@@ -157,7 +157,9 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	WaitForConnection(azureConnectionName, d, m)
+	if err := WaitForConnection(azureConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", azureConnectionName, err)
+	}
 
 	return resourceAzureConnectionRead(d, m)
 }
