@@ -2,12 +2,12 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 const testAccResourceAzureConnectionConfig_basic = `
@@ -61,6 +61,34 @@ func TestAzureConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "service_key", "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AZURE_EXPRESS_ROUTE"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "12076"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.1.2/30"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_ip", "169.254.1.1/30"),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.bgp_password"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AZURE_EXPRESS_ROUTE 2"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "12076"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", "169.254.2.2/30"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_ip", "169.254.2.1/30"),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.bgp_password"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
 				),
 			},
 		},
@@ -70,7 +98,7 @@ func TestAzureConnection_basic(t *testing.T) {
 func testAccCheckResourceAzureConnection(name string, instance *client.AzureExpressRouteConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		sess, ok := testAccProvider.Meta().(*session.Session)
+		config, ok := testAccProvider.Meta().(*Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -87,8 +115,8 @@ func testAccCheckResourceAzureConnection(name string, instance *client.AzureExpr
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		found, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		found, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting Azure Connection %s", id)
@@ -106,7 +134,7 @@ func testAccCheckResourceAzureConnection(name string, instance *client.AzureExpr
 
 func testAccCheckAzureConnectionDestroy(s *terraform.State) error {
 
-	sess, ok := testAccProvider.Meta().(*session.Session)
+	config, ok := testAccProvider.Meta().(*Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}
@@ -118,8 +146,8 @@ func testAccCheckAzureConnectionDestroy(s *terraform.State) error {
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		_, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		_, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("should not get error for Azure Connection with ID %s after delete: %s", id, err)

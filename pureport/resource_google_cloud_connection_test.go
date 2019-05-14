@@ -2,12 +2,12 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 const testAccResourceGoogleCloudConnectionConfig_basic = `
@@ -90,6 +90,20 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "primary_pairing_key"),
 					resource.TestCheckResourceAttr(resourceName, "secondary_pairing_key", ""),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "GOOGLE_CLOUD_INTERCONNECT"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "16550"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.pureport_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.bgp_password", ""),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
 				),
 			},
 		},
@@ -99,7 +113,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 func testAccCheckResourceGoogleCloudConnection(name string, instance *client.GoogleCloudInterconnectConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		sess, ok := testAccProvider.Meta().(*session.Session)
+		config, ok := testAccProvider.Meta().(*Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -116,8 +130,8 @@ func testAccCheckResourceGoogleCloudConnection(name string, instance *client.Goo
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		found, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		found, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting Google Cloud Connection %s", id)
@@ -135,7 +149,7 @@ func testAccCheckResourceGoogleCloudConnection(name string, instance *client.Goo
 
 func testAccCheckGoogleCloudConnectionDestroy(s *terraform.State) error {
 
-	sess, ok := testAccProvider.Meta().(*session.Session)
+	config, ok := testAccProvider.Meta().(*Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}
@@ -147,8 +161,8 @@ func testAccCheckGoogleCloudConnectionDestroy(s *terraform.State) error {
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		_, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		_, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("should not get error for Google Cloud Connection with ID %s after delete: %s", id, err)

@@ -2,12 +2,12 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 const testAccResourceDummyConnectionConfig_basic = `
@@ -57,6 +57,34 @@ func TestDummyConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "DUMMY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "65000"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.100.2/30"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_ip", "169.254.100.1/30"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.bgp_password", ""),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "DUMMY 2"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "65000"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", "169.254.200.2/30"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_ip", "169.254.200.1/30"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.bgp_password", ""),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
 				),
 			},
 		},
@@ -66,7 +94,7 @@ func TestDummyConnection_basic(t *testing.T) {
 func testAccCheckResourceDummyConnection(name string, instance *client.DummyConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		sess, ok := testAccProvider.Meta().(*session.Session)
+		config, ok := testAccProvider.Meta().(*Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -83,8 +111,8 @@ func testAccCheckResourceDummyConnection(name string, instance *client.DummyConn
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		found, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		found, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("receive error when requesting Dummy Connection %s", id)
@@ -102,7 +130,7 @@ func testAccCheckResourceDummyConnection(name string, instance *client.DummyConn
 
 func testAccCheckDummyConnectionDestroy(s *terraform.State) error {
 
-	sess, ok := testAccProvider.Meta().(*session.Session)
+	config, ok := testAccProvider.Meta().(*Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}
@@ -114,8 +142,8 @@ func testAccCheckDummyConnectionDestroy(s *terraform.State) error {
 
 		id := rs.Primary.ID
 
-		ctx := sess.GetSessionContext()
-		_, resp, err := sess.Client.ConnectionsApi.GetConnection(ctx, id)
+		ctx := config.Session.GetSessionContext()
+		_, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
 
 		if err != nil {
 			return fmt.Errorf("should not get error for Dummy Connection with ID %s after delete: %s", id, err)

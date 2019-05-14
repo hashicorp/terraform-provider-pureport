@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 func dataSourceNetworks() *schema.Resource {
@@ -65,13 +64,13 @@ func dataSourceNetworks() *schema.Resource {
 
 func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
-	sess := m.(*session.Session)
+	config := m.(*Config)
 	accountHref := d.Get("account_href").(string)
 	accountId := filepath.Base(accountHref)
 
-	ctx := sess.GetSessionContext()
+	ctx := config.Session.GetSessionContext()
 
-	networks, resp, err := sess.Client.NetworksApi.FindNetworks(ctx, accountId)
+	networks, resp, err := config.Session.Client.NetworksApi.FindNetworks(ctx, accountId)
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("Error when Reading Pureport Network data: %v", err)

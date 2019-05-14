@@ -10,7 +10,6 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/pureport-sdk-go/pureport/session"
 )
 
 func dataSourceLocations() *schema.Resource {
@@ -67,12 +66,12 @@ func dataSourceLocations() *schema.Resource {
 
 func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 
-	sess := m.(*session.Session)
+	config := m.(*Config)
 	nameRegex, nameRegexOk := d.GetOk("name_regex")
 
-	ctx := sess.GetSessionContext()
+	ctx := config.Session.GetSessionContext()
 
-	locations, resp, err := sess.Client.LocationsApi.FindLocations(ctx)
+	locations, resp, err := config.Session.Client.LocationsApi.FindLocations(ctx)
 	if err != nil {
 		d.SetId("")
 		return fmt.Errorf("Error when Reading Pureport Location data: %v", err)
