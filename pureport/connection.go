@@ -402,12 +402,13 @@ func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error
 	}
 
 	if err := backoff.Retry(wait_for_create, b); err != nil {
-
-		if FailedState[state] {
-			return fmt.Errorf("%s in failed state: state=%s", name, state)
-		}
-
 		return fmt.Errorf("Timeout waiting for %s: state=%s", name, state)
+	}
+
+	log.Printf("Retry returned state: %s", state)
+
+	if FailedState[state] {
+		return fmt.Errorf("%s in failed state: state=%s", name, state)
 	}
 
 	return nil
