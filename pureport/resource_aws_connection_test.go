@@ -102,6 +102,7 @@ func TestAWSConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.main"
 	var instance client.AwsDirectConnectConnection
+	var respawn_instance client.AwsDirectConnectConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -147,6 +148,25 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "gateways.1.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
+				),
+			},
+			{
+				Config: testAccResourceAWSConnectionConfig_basic_update_no_respawn,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "Aws DirectConnect Test"),
+					resource.TestCheckResourceAttr(resourceName, "description", "AWS Basic Test"),
+				),
+			},
+			{
+				Config: testAccResourceAWSConnectionConfig_basic_update_respawn,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &respawn_instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
+					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "aws_account_id", "001234567890"),
 				),
 			},
 		},
