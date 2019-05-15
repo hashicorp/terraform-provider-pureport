@@ -37,6 +37,11 @@ func resourceDummyConnection() *schema.Resource {
 				Schema: StandardGatewaySchema,
 			},
 		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 	}
 
 	// Add the base items

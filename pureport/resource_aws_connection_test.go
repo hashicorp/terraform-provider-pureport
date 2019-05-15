@@ -43,6 +43,20 @@ resource "pureport_aws_connection" "main" {
 }
 `
 
+const testAccResourceAWSConnectionConfig_basic_update_speed = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "main" {
+  name = "AwsDirectConnectTest"
+  speed = "200"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "123456789012"
+}
+`
+
 const testAccResourceAWSConnectionConfig_basic_update_no_respawn = testAccResourceAWSConnectionConfig_common + `
 resource "pureport_aws_connection" "main" {
   name = "Aws DirectConnect Test"
@@ -167,6 +181,40 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "aws_account_id", "001234567890"),
+				),
+			},
+		},
+	})
+}
+
+func TestAWSConnection_updateSpeed(t *testing.T) {
+
+	resourceName := "pureport_aws_connection.main"
+	var instance client.AwsDirectConnectConnection
+	var respawn_instance client.AwsDirectConnectConnection
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSConnectionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceAWSConnectionConfig_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
+				),
+			},
+			{
+				Config: testAccResourceAWSConnectionConfig_basic_update_speed,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &respawn_instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
+					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestCheckResourceAttr(resourceName, "speed", "200"),
 				),
 			},
 		},

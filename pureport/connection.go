@@ -176,11 +176,6 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
-		},
 		"customer_networks": {
 			Type:     schema.TypeList,
 			Optional: true,
