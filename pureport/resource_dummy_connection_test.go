@@ -10,31 +10,33 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 )
 
-const testAccResourceDummyConnectionConfig_basic = `
+const testAccResourceDummyConnectionConfig_common = `
 data "pureport_accounts" "main" {
-	name_regex = "Terraform"
+  name_regex = "Terraform"
 }
 
 data "pureport_cloud_regions" "main" {
-	name_regex = "Oregon"
+  name_regex = "Oregon"
 }
 
 data "pureport_locations" "main" {
-	name_regex = ".*ttle.*"
+  name_regex = ".*ttle.*"
 }
 
 data "pureport_networks" "main" {
-	account_href = "${data.pureport_accounts.main.accounts.0.href}"
-	name_regex = "Bansh.*"
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  name_regex = "Bansh.*"
 }
+`
 
+const testAccResourceDummyConnectionConfig_basic = testAccResourceDummyConnectionConfig_common + `
 resource "pureport_dummy_connection" "main" {
-	name = "DummyTest"
-	speed = "100"
-	high_availability = true
+  name = "DummyTest"
+  speed = "100"
+  high_availability = true
 
-	location_href = "${data.pureport_locations.main.locations.0.href}"
-	network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
 }
 `
 

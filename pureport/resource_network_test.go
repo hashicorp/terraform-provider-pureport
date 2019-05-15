@@ -9,15 +9,17 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 )
 
-const testAccResourceNetworkConfig_basic = `
+const testAccResourceNetworkConfig_common = `
 data "pureport_accounts" "main" {
-	name_regex = "Terraform"
+  name_regex = "Terraform"
 }
+`
 
+const testAccResourceNetworkConfig_basic = testAccResourceNetworkConfig_common + `
 resource "pureport_network" "main" {
-	name = "NetworkTest"
-	description = "Network Terraform Test"
-	account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  name = "NetworkTest"
+  description = "Network Terraform Test"
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
 }
 `
 

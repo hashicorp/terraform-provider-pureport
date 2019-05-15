@@ -10,7 +10,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 )
 
-const testAccResourceAWSConnectionConfig_basic = `
+const testAccResourceAWSConnectionConfig_common = `
 data "pureport_accounts" "main" {
   name_regex = "Terraform"
 }
@@ -27,7 +27,9 @@ data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
   name_regex = "Bansh.*"
 }
+`
 
+const testAccResourceAWSConnectionConfig_basic = testAccResourceAWSConnectionConfig_common + `
 resource "pureport_aws_connection" "main" {
   name = "AwsDirectConnectTest"
   speed = "100"
@@ -41,26 +43,38 @@ resource "pureport_aws_connection" "main" {
 }
 `
 
-const testAccResourceAWSConnectionConfig_cloudServices = `
-data "pureport_accounts" "main" {
-  name_regex = "Terraform"
-}
+const testAccResourceAWSConnectionConfig_basic_update_no_respawn = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "main" {
+  name = "Aws DirectConnect Test"
+  description = "AWS Basic Test"
+  speed = "100"
+  high_availability = true
 
-data "pureport_cloud_regions" "main" {
-  name_regex = "Oregon"
-}
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
 
-data "pureport_locations" "main" {
-  name_regex = "^Sea*"
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "123456789012"
 }
+`
 
+const testAccResourceAWSConnectionConfig_basic_update_respawn = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "main" {
+  name = "AwsDirectConnectTest"
+  speed = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "001234567890"
+}
+`
+
+const testAccResourceAWSConnectionConfig_cloudServices = testAccResourceAWSConnectionConfig_common + `
 data "pureport_cloud_services" "s3" {
   name_regex = ".*S3"
-}
-
-data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
 }
 
 data "template_file" "services_hrefs" {
