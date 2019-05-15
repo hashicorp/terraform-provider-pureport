@@ -10,7 +10,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 )
 
-const testAccResourceAWSConnectionConfig_basic = `
+const testAccResourceAWSConnectionConfig_common = `
 data "pureport_accounts" "main" {
   name_regex = "Terraform"
 }
@@ -27,7 +27,9 @@ data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
   name_regex = "Bansh.*"
 }
+`
 
+const testAccResourceAWSConnectionConfig_basic = testAccResourceAWSConnectionConfig_common + `
 resource "pureport_aws_connection" "main" {
   name = "AwsDirectConnectTest"
   speed = "100"
@@ -41,26 +43,52 @@ resource "pureport_aws_connection" "main" {
 }
 `
 
-const testAccResourceAWSConnectionConfig_cloudServices = `
-data "pureport_accounts" "main" {
-  name_regex = "Terraform"
-}
+const testAccResourceAWSConnectionConfig_basic_update_speed = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "main" {
+  name = "AwsDirectConnectTest"
+  speed = "200"
+  high_availability = true
 
-data "pureport_cloud_regions" "main" {
-  name_regex = "Oregon"
-}
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
 
-data "pureport_locations" "main" {
-  name_regex = "^Sea*"
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "123456789012"
 }
+`
 
+const testAccResourceAWSConnectionConfig_basic_update_no_respawn = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "main" {
+  name = "Aws DirectConnect Test"
+  description = "AWS Basic Test"
+  speed = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "123456789012"
+}
+`
+
+const testAccResourceAWSConnectionConfig_basic_update_respawn = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "main" {
+  name = "AwsDirectConnectTest"
+  speed = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "001234567890"
+}
+`
+
+const testAccResourceAWSConnectionConfig_cloudServices = testAccResourceAWSConnectionConfig_common + `
 data "pureport_cloud_services" "s3" {
   name_regex = ".*S3"
-}
-
-data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
 }
 
 data "template_file" "services_hrefs" {
@@ -88,6 +116,7 @@ func TestAWSConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.main"
 	var instance client.AwsDirectConnectConnection
+	var respawn_instance client.AwsDirectConnectConnection
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -133,6 +162,59 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "gateways.1.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
+				),
+			},
+			{
+				Config: testAccResourceAWSConnectionConfig_basic_update_no_respawn,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "Aws DirectConnect Test"),
+					resource.TestCheckResourceAttr(resourceName, "description", "AWS Basic Test"),
+				),
+			},
+			{
+				Config: testAccResourceAWSConnectionConfig_basic_update_respawn,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &respawn_instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
+					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "aws_account_id", "001234567890"),
+				),
+			},
+		},
+	})
+}
+
+func TestAWSConnection_updateSpeed(t *testing.T) {
+
+	resourceName := "pureport_aws_connection.main"
+	var instance client.AwsDirectConnectConnection
+	var respawn_instance client.AwsDirectConnectConnection
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSConnectionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceAWSConnectionConfig_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
+				),
+			},
+			{
+				Config: testAccResourceAWSConnectionConfig_basic_update_speed,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &respawn_instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
+					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestCheckResourceAttr(resourceName, "speed", "200"),
 				),
 			},
 		},

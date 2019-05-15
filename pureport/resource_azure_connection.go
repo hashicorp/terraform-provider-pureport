@@ -42,6 +42,12 @@ func resourceAzureConnection() *schema.Resource {
 				Schema: StandardGatewaySchema,
 			},
 		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 	}
 
 	// Add the base items
@@ -157,7 +163,9 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	WaitForConnection(azureConnectionName, d, m)
+	if err := WaitForConnection(azureConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", azureConnectionName, err)
+	}
 
 	return resourceAzureConnectionRead(d, m)
 }
@@ -271,15 +279,17 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 
 	if err != nil {
 
-		json_response := string(err.(client.GenericSwaggerError).Body()[:])
-		response, err := structure.ExpandJsonFromString(json_response)
-		if err != nil {
-			log.Printf("Error updating %s: %v", azureConnectionName, err)
-		} else {
-			statusCode := int(response["status"].(float64))
-			log.Printf("Error updating %s: %d\n", azureConnectionName, statusCode)
-			log.Printf("  %s\n", response["code"])
-			log.Printf("  %s\n", response["message"])
+		if swerr, ok := err.(client.GenericSwaggerError); ok {
+
+			json_response := string(swerr.Body()[:])
+			response, jerr := structure.ExpandJsonFromString(json_response)
+
+			if jerr == nil {
+				statusCode := int(response["status"].(float64))
+				log.Printf("Error updating %s: %d\n", azureConnectionName, statusCode)
+				log.Printf("  %s\n", response["code"])
+				log.Printf("  %s\n", response["message"])
+			}
 		}
 
 		return fmt.Errorf("Error while updating %s: err=%s", azureConnectionName, err)

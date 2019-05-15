@@ -27,6 +27,12 @@ func resourceSiteVPNConnection() *schema.Resource {
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"psk"}, true),
 		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 		"enable_bgp_password": {
 			Type:     schema.TypeBool,
 			Optional: true,
@@ -395,7 +401,9 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	WaitForConnection(sitevpnConnectionName, d, m)
+	if err := WaitForConnection(sitevpnConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", sitevpnConnectionName, err)
+	}
 
 	return resourceSiteVPNConnectionRead(d, m)
 }
@@ -576,15 +584,17 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 	if err != nil {
 
-		json_response := string(err.(client.GenericSwaggerError).Body()[:])
-		response, err := structure.ExpandJsonFromString(json_response)
-		if err != nil {
-			log.Printf("Error updating %s: %v", sitevpnConnectionName, err)
-		} else {
-			statusCode := int(response["status"].(float64))
-			log.Printf("Error updating %s: %d\n", sitevpnConnectionName, statusCode)
-			log.Printf("  %s\n", response["code"])
-			log.Printf("  %s\n", response["message"])
+		if swerr, ok := err.(client.GenericSwaggerError); ok {
+
+			json_response := string(swerr.Body()[:])
+			response, jerr := structure.ExpandJsonFromString(json_response)
+
+			if jerr == nil {
+				statusCode := int(response["status"].(float64))
+				log.Printf("Error updating %s: %d\n", sitevpnConnectionName, statusCode)
+				log.Printf("  %s\n", response["code"])
+				log.Printf("  %s\n", response["message"])
+			}
 		}
 
 		return fmt.Errorf("Error while updating %s: err=%s", sitevpnConnectionName, err)

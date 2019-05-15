@@ -176,11 +176,6 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Optional: true,
 		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
-		},
 		"customer_networks": {
 			Type:     schema.TypeList,
 			Optional: true,
@@ -402,12 +397,13 @@ func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error
 	}
 
 	if err := backoff.Retry(wait_for_create, b); err != nil {
-
-		if FailedState[state] {
-			return fmt.Errorf("%s in failed state: state=%s", name, state)
-		}
-
 		return fmt.Errorf("Timeout waiting for %s: state=%s", name, state)
+	}
+
+	log.Printf("Retry returned state: %s", state)
+
+	if FailedState[state] {
+		return fmt.Errorf("%s in failed state: state=%s", name, state)
 	}
 
 	return nil

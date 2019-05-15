@@ -53,6 +53,12 @@ func resourceAWSConnection() *schema.Resource {
 				Schema: StandardGatewaySchema,
 			},
 		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 	}
 
 	// Add the base items
@@ -164,7 +170,9 @@ func resourceAWSConnectionCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error decoding Connection ID")
 	}
 
-	WaitForConnection(awsConnectionName, d, m)
+	if err := WaitForConnection(awsConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", awsConnectionName, err)
+	}
 
 	return resourceAWSConnectionRead(d, m)
 }
@@ -298,15 +306,17 @@ func resourceAWSConnectionUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if err != nil {
 
-		json_response := string(err.(client.GenericSwaggerError).Body()[:])
-		response, err := structure.ExpandJsonFromString(json_response)
-		if err != nil {
-			log.Printf("Error updating %s: %v", awsConnectionName, err)
-		} else {
-			statusCode := int(response["status"].(float64))
-			log.Printf("Error updating %s: %d\n", awsConnectionName, statusCode)
-			log.Printf("  %s\n", response["code"])
-			log.Printf("  %s\n", response["message"])
+		if swerr, ok := err.(client.GenericSwaggerError); ok {
+
+			json_response := string(swerr.Body()[:])
+			response, jerr := structure.ExpandJsonFromString(json_response)
+
+			if jerr == nil {
+				statusCode := int(response["status"].(float64))
+				log.Printf("Error updating %s: %d\n", awsConnectionName, statusCode)
+				log.Printf("  %s\n", response["code"])
+				log.Printf("  %s\n", response["message"])
+			}
 		}
 
 		return fmt.Errorf("Error while updating %s: err=%s", awsConnectionName, err)

@@ -9,6 +9,7 @@ import (
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/structure"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 )
 
@@ -37,6 +38,12 @@ func resourceGoogleCloudConnection() *schema.Resource {
 			Elem: &schema.Resource{
 				Schema: StandardGatewaySchema,
 			},
+		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 	}
 
@@ -152,7 +159,9 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	WaitForConnection(googleConnectionName, d, m)
+	if err := WaitForConnection(googleConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", googleConnectionName, err)
+	}
 
 	return resourceGoogleCloudConnectionRead(d, m)
 }
@@ -266,15 +275,17 @@ func resourceGoogleCloudConnectionUpdate(d *schema.ResourceData, m interface{}) 
 
 	if err != nil {
 
-		json_response := string(err.(client.GenericSwaggerError).Body()[:])
-		response, err := structure.ExpandJsonFromString(json_response)
-		if err != nil {
-			log.Printf("Error updating %s: %v", googleConnectionName, err)
-		} else {
-			statusCode := int(response["status"].(float64))
-			log.Printf("Error updating %s: %d\n", googleConnectionName, statusCode)
-			log.Printf("  %s\n", response["code"])
-			log.Printf("  %s\n", response["message"])
+		if swerr, ok := err.(client.GenericSwaggerError); ok {
+
+			json_response := string(swerr.Body()[:])
+			response, jerr := structure.ExpandJsonFromString(json_response)
+
+			if jerr == nil {
+				statusCode := int(response["status"].(float64))
+				log.Printf("Error updating %s: %d\n", googleConnectionName, statusCode)
+				log.Printf("  %s\n", response["code"])
+				log.Printf("  %s\n", response["message"])
+			}
 		}
 
 		return fmt.Errorf("Error while updating %s: err=%s", googleConnectionName, err)

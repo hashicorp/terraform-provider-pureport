@@ -10,8 +10,26 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 )
 
-const testAccResourceGoogleCloudConnectionConfig_basic = `
+const testAccResourceGoogleCloudConnectionConfig_common = `
+data "pureport_accounts" "main" {
+  name_regex = "Terraform"
+}
 
+data "pureport_cloud_regions" "main" {
+  name_regex = "Los.*"
+}
+
+data "pureport_locations" "main" {
+  name_regex = "^Sea.*"
+}
+
+data "pureport_networks" "main" {
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  name_regex = "Bansh.*"
+}
+`
+
+const testAccResourceGoogleCloudConnectionConfig_basic = testAccResourceGoogleCloudConnectionConfig_common + `
 data "google_compute_network" "default" {
   name = "default"
 }
@@ -38,24 +56,6 @@ resource "google_compute_interconnect_attachment" "main" {
   }
 
   count = 2
-}
-
-
-data "pureport_accounts" "main" {
-  name_regex = "Terraform"
-}
-
-data "pureport_cloud_regions" "main" {
-  name_regex = "Los.*"
-}
-
-data "pureport_locations" "main" {
-  name_regex = "^Sea.*"
-}
-
-data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
 }
 
 resource "pureport_google_cloud_connection" "main" {
