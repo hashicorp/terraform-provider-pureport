@@ -7,3 +7,24 @@ description: |-
 ---
 
 # Pureport Cloud Platform Provider
+
+## Example Usage
+
+```hcl
+# Configure the Linode provider
+provider "pureport" {
+  token = "$LINODE_TOKEN"
+}
+
+resource "pureport_account" "foobar" {
+  # ...
+}
+```
+
+## Configuration Reference
+
+The following keys can be used to configure the provider.
+
+## Pureport Guides
+
+## Debugging
