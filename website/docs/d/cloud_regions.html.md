@@ -11,6 +11,9 @@ description: |-
 ## Example Usage
 
 ```hcl
+data "pureport_cloud_regions" "name_regex" {
+  name_regex = "US East.*"
+}
 ```
 
 ## Argument Reference

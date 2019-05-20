@@ -11,6 +11,51 @@ description: |-
 ## Example Usage
 
 ```hcl
+data "pureport_accounts" "main" {
+  name_regex = "MyAccount"
+}
+
+data "pureport_locations" "main" {
+  name_regex = "Sea.*"
+}
+
+data "google_compute_network" "default" {
+  name = "default"
+}
+
+resource "google_compute_router" "main" {
+  name    = "terraform-acc-router-${count.index + 1}"
+  network = "${data.google_compute_network.default.name}"
+
+  bgp {
+    asn = "16550"
+  }
+
+  count = 2
+}
+
+resource "google_compute_interconnect_attachment" "main" {
+  name   = "terraform-acc-interconnect-${count.index + 1}"
+  router = "${element(google_compute_router.main.*.self_link, count.index)}"
+  type   = "PARTNER"
+  edge_availability_domain = "AVAILABILITY_DOMAIN_${count.index + 1}"
+
+  lifecycle {
+    ignore_changes = ["vlan_tag8021q"]
+  }
+
+  count = 2
+}
+
+resource "pureport_google_cloud_connection" "main" {
+  name = "GoogleCloudTest"
+  speed = "50"
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
+}
 ```
 
 ## Argument Reference
@@ -20,25 +65,17 @@ The following arguments are supported:
 * `name` - (Required) The name for the connection
 * `location_href` - (Required) HREF for the Pureport Location to attach the connection.
 * `network_href` - (Required) HREF for the network to associate the connection.
-* `speed` - (Required) The maximum QoS for this connection:
-    * 50 - 50 MBps
-    * 100 - 100 MBps
-    * 200 - 200 MBps
-    * 300 - 300 MBps
-    * 400 - 400 MBps
-    * 500 - 500 MBps
-    * 1000 - 1 GBps
-    * 10000 - 10 GBps
+* `speed` - (Required) The maximum QoS for this connection. Valid values are 50, 100, 200, 300, 400, 500, 1000, 10000 in MBps.
 * `primary_pairing_key` - (Required) The pairing key for the primary Google Cloud Interconnect Attachment.
 
 - - -
 * `description` - (Optional) The description for the connection.
-* `customer_networks`: ` - (Optional) A list of named CIDR block to easily identify a customer network.
-    * `name`: ` - The name for the network.
-    * `address`: ` - The CIDR block for the network
-* `nat_config`: ` - (Optional) The Network Address Translation configuration for the connection.
-    * `enabled`: ` - (Required) Is NAT enabled for this connection.
-    * `mappings`: ` - (Optional) List of NAT mapped CIDR address
+* `customer_networks` - (Optional) A list of named CIDR block to easily identify a customer network.
+    * `name` - The name for the network.
+    * `address` - The CIDR block for the network
+* `nat_config` - (Optional) The Network Address Translation configuration for the connection.
+    * `enabled` - (Required) Is NAT enabled for this connection.
+    * `mappings` - (Optional) List of NAT mapped CIDR address
         * `native_cidr` - (Required) The native CIDR block to map.
 * `billing_term` - (Optional) The billing term for the connection: (Currently only HOURLY is supported.)
 * `high_availability` - (Optional) Whether a redundant gateway is/should be provisioned for this connection.
@@ -46,9 +83,9 @@ The following arguments are supported:
 
 ## Attributes
 
-* `nat_config`: ` - The Network Address Translation configuration for the connection.
-    * `enabled`: ` - Is NAT enabled for this connection.
-    * `mappings`: ` - List of NAT mapped CIDR address
+* `nat_config` - The Network Address Translation configuration for the connection.
+    * `enabled` - Is NAT enabled for this connection.
+    * `mappings` - List of NAT mapped CIDR address
         * `native_cidr` - (Required) The native CIDR block to map.
         * `nat_cidr` - The CIDR block use for NAT to the associated subnet.
     * `blocks` - List of reserved blocks for NAT.
@@ -60,21 +97,9 @@ The following arguments are supported:
 
     * `description` - The description of the cloud gateway.
 
-    * `availability_domain` - The availability domain of the cloud gateway:
+    * `availability_domain` - The availability domain of the cloud gateway. The valid values are `PRIMARY`, `SECONDARY`.
 
-       * PRIMARY
-       * SECONDARY
-
-    * `link_state` - The current link state: States:
-       * WAITING_TO_PROVISION
-       * PROVISIONING
-       * FAILED_TO_PROVISION
-       * ACTIVE
-       * DOWN
-       * UPDATING
-       * FAILED_TO_UPDATE
-       * DELETING
-       * FAILED_TO_DELETE
+    * `link_state` - The current link state of the gateway. The valid values are `WAITING_TO_PROVISION`, `PROVISIONING`, `FAILED_TO_PROVISION`, `ACTIVE`, `DOWN`, `UPDATING`, `FAILED_TO_UPDATE`, `DELETING`, `FAILED_TO_DELETE`.
 
     * `customer_asn` - The customer ASN used for BGP Peering.
 

@@ -1,77 +1,62 @@
 <% wrap_layout :inner do %>
   <% content_for :sidebar do %>
-  <div class="docs-sidebar hidden-print affix-top" role="complementary">
-  <ul class="nav docs-sidenav">
-    <li>
-    <a class="back" href="/docs/providers/index.html">All Providers</a>
-    </li>
+    <div class="docs-sidebar hidden-print affix-top" role="complementary">
+      <ul class="nav docs-sidenav">
+        <li<%= sidebar_current("docs-home") %>>
+          <a href="/docs/providers/index.html">All Providers</a>
+        </li>
 
-    <li>
-      <a href="/docs/providers/pureport/index.html">Pureport Provider</a>
-      <ul class="nav nav-visible">
-        <li>
-          <a href="/docs/providers/pureport/index.html">Provider Info</a>
+        <li<%= sidebar_current("docs-pureport-index") %>>
+          <a href="/docs/providers/pureport/index.html">Pureport Provider</a>
         </li>
-        <li>
-          <a href="/docs/providers/pureport/provider_reference.html">Provider Configuration Reference</a>
+
+        <li<%= sidebar_current("docs-pureport-datasource") %>>
+          <a href="#">Data Sources</a>
+          <ul class="nav nav-visible">
+            <li<%= sidebar_current("docs-pureport-datasource-accounts") %>>
+              <a href="/docs/providers/pureport/d/accounts.html">pureport_accounts</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-datasource-cloud_regions") %>>
+              <a href="/docs/providers/pureport/d/cloud_regions.html">pureport_cloud_regions</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-datasource-cloud_services") %>>
+              <a href="/docs/providers/pureport/d/cloud_services.html">pureport_cloud_services</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-datasource-locations") %>>
+              <a href="/docs/providers/pureport/d/locations.html">pureport_locations</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-datasource-networks") %>>
+              <a href="/docs/providers/pureport/d/networks.html">pureport_networks</a>
+            </li>
+          </ul>
         </li>
-        <li>
-          <a href="/docs/providers/pureport/provider_versions.html">Pureport Provider Versions</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/getting_started.html">Getting Started Guide</a>
+
+        <li<%= sidebar_current("docs-pureport-resource") %>>
+          <a href="#">Resources</a>
+          <ul class="nav nav-visible">
+            <li<%= sidebar_current("docs-pureport-resource-network") %>>
+              <a href="/docs/providers/pureport/r/network.html">pureport_network</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-resource-aws_connection") %>>
+              <a href="/docs/providers/pureport/r/aws_connection.html">pureport_aws_connection</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-resource-azure_connection") %>>
+              <a href="/docs/providers/pureport/r/azure_connection.html">pureport_azure_connection</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-resource-dummy_connection") %>>
+              <a href="/docs/providers/pureport/r/dummy_connection.html">pureport_dummy_connection</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-resource-google_cloud_connection") %>>
+              <a href="/docs/providers/pureport/r/google_cloud_connection.html">pureport_google_cloud_connection</a>
+            </li>
+            <li<%= sidebar_current("docs-pureport-resource-site_vpn_connection") %>>
+              <a href="/docs/providers/pureport/r/site_vpn_connection.html">pureport_site_vpn_connection</a>
+            </li>
+          </ul>
         </li>
       </ul>
-    </li>
-
-    <li>
-      <a href="#">Data Sources</a>
-      <ul class="nav">
-        <li>
-          <a href="/docs/providers/pureport/d/accounts.html">pureport_accounts</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/d/cloud_regions.html">pureport_regions</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/d/cloud_services.html">pureport_cloud_services</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/d/locations.html">pureport_locations</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/d/networks.html">pureport_networks</a>
-        </li>
-      </ul>
-    </li>
-
-    <li>
-      <a href="#">Resources</a>
-      <ul class="nav">
-        <li>
-          <a href="/docs/providers/pureport/r/network.html">pureport_network</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/r/aws_connection.html">pureport_aws_connection</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/r/azure_connection.html">pureport_azure_connection</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/r/dummy_connection.html">pureport_dummy_connection</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/r/google_cloud_connection.html">pureport_google_cloud_connection</a>
-        </li>
-        <li>
-          <a href="/docs/providers/pureport/r/site_vpn_connection.html">pureport_site_vpn_connection</a>
-        </li>
-      </ul>
-    </li>
-
-  </ul>
-  </div>
+    </div>
   <% end %>
 
-<%= yield %>
-  <% end %>
+  <%= yield %>
+<% end %>

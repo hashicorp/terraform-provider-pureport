@@ -11,6 +11,16 @@ description: |-
 ## Example Usage
 
 ```hcl
+
+data "pureport_accounts" "main" {
+  name_regex = "MyAccount"
+}
+
+resource "pureport_network" "main" {
+  name = "MyNetwork"
+  description = "My Custom Network"
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+}
 ```
 
 ## Argument Reference

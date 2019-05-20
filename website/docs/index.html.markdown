@@ -1,7 +1,7 @@
 ---
 layout: "pureport"
 page_title: "Provider: Pureport Cloud Platform"
-sidebar_current: "docs-pureport-provider-x"
+sidebar_current: "docs-pureport-index"
 description: |-
    The Pureport provider is used to configure your Pureport Cloud Platform infrastructure
 ---

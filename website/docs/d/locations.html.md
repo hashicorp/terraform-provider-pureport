@@ -11,6 +11,9 @@ description: |-
 ## Example Usage
 
 ```hcl
+data "pureport_locations" "name_regex" {
+	name_regex = "^Sea*"
+}
 ```
 
 ## Argument Reference

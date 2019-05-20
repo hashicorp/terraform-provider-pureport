@@ -15,10 +15,6 @@ data "pureport_accounts" "main" {
   name_regex = "Terraform"
 }
 
-data "pureport_cloud_regions" "main" {
-  name_regex = "Oregon"
-}
-
 data "pureport_locations" "main" {
   name_regex = ".*ttle.*"
 }

@@ -1,7 +1,7 @@
 ---
 layout: "pureport"
-page_title: "Pureport: pureport_account"
-sidebar_current: "docs-pureport-datasource-account"
+page_title: "Pureport: pureport_accounts"
+sidebar_current: "docs-pureport-datasource-accounts"
 description: |-
   Provides details about an existing Pureport account.
 ---
@@ -11,6 +11,12 @@ description: |-
 ## Example Usage
 
 ```hcl
+data "pureport_accounts" "empty" {
+}
+
+data "pureport_accounts" "name_regex" {
+  name_regex = "My Name.*"
+}
 ```
 
 ## Argument Reference
