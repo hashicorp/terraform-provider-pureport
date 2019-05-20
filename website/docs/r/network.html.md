@@ -17,10 +17,15 @@ description: |-
 
 The following arguments are supported:
 
-* `required` - (Required) The domain this Domain represents. These must be unique in our system; you cannot have two Domains representing the same domain.
+* `name` - (Required) The name used for the Network.
+* `account_href` - (Required) HREF for the Account associated with the Network.
+
 - - -
-* `optional` - (Optional) The domain this Domain represents. These must be unique in our system; you cannot have two Domains representing the same domain.
+
+* `description` - (Optional) The description for the Network.
 
 ## Attributes
+
+* `href` - The HREF to reference this Network.
 
 The Pureport Guide, []()
