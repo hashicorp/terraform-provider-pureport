@@ -9,6 +9,10 @@ default: build
 build: fmtcheck
 	go install
 
+sweep:
+	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
+	go test $(TEST) -v -sweep=$(SWEEP) $(SWEEPARGS)
+
 install: plugin
 	mkdir -p $(HOME)/.terraform.d/plugins
 	mv terraform-provider-pureport $(HOME)/.terraform.d/plugins/
@@ -45,6 +49,14 @@ fmtcheck:
 errcheck:
 	@sh -c "'$(CURDIR)/scripts/errcheck.sh'"
 
+lint:
+	@echo "==> Checking source code against linters..."
+	@GOGC=30 golangci-lint run ./$(PKG_NAME)
+
+tools:
+	GO111MODULE=on go install github.com/client9/misspell/cmd/misspell
+	GO111MODULE=on go install github.com/golangci/golangci-lint/cmd/golangci-lint
+
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \
 		echo "ERROR: Set TEST to a specific package. For example,"; \
@@ -52,6 +64,10 @@ test-compile:
 		exit 1; \
 	fi
 	go test -c $(TEST) $(TESTARGS)
+
+website-lint:
+	@echo "==> Checking website against linters..."
+	@misspell -error -source=text website/
 
 website:
 ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
@@ -67,5 +83,5 @@ ifeq (,$(wildcard $(GOPATH)/src/$(WEBSITE_REPO)))
 endif
 	@$(MAKE) -C $(GOPATH)/src/$(WEBSITE_REPO) website-provider-test PROVIDER_PATH=$(shell pwd) PROVIDER_NAME=$(PKG_NAME)
 
-.PHONY: build test testacc vet fmt fmtcheck errcheck test-compile website website-test
+.PHONY: build sweep test testacc vet fmt fmtcheck errcheck lint tools test-compile website website-test
 
