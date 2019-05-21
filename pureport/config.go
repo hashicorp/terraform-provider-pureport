@@ -16,6 +16,7 @@ type Config struct {
 	APIKey                string
 	APISecret             string
 	AuthenticationProfile string
+	EndPoint              string
 
 	userAgent string
 }
@@ -31,6 +32,7 @@ func (c *Config) LoadAndValidate() error {
 	cfg.APIKey = c.APIKey
 	cfg.APISecret = c.APISecret
 	cfg.AuthenticationProfile = c.AuthenticationProfile
+	cfg.EndPoint = c.EndPoint
 
 	logCfg := ppLog.NewLogConfig()
 
