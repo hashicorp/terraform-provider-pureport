@@ -13,12 +13,24 @@ import (
 type Config struct {
 	Session *session.Session
 
+	APIKey                string
+	APISecret             string
+	AuthenticationProfile string
+
 	userAgent string
 }
 
 func (c *Config) LoadAndValidate() error {
 
+	// Validate that if the API Key was specified that a secret was specified as well.
+	if (c.APIKey == "") != (c.APISecret == "") {
+		return fmt.Errorf("API Key and Secret both need to be specified for successful authentication.")
+	}
+
 	cfg := pureport.NewConfiguration()
+	cfg.APIKey = c.APIKey
+	cfg.APISecret = c.APISecret
+	cfg.AuthenticationProfile = c.AuthenticationProfile
 
 	logCfg := ppLog.NewLogConfig()
 

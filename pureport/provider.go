@@ -13,11 +13,9 @@ var descriptions map[string]string
 
 func init() {
 	descriptions = map[string]string{
-		"access_key":  "",
-		"secret_key":  "",
-		"profile":     "",
-		"token":       "",
-		"max_retries": "",
+		"api_key":      "Pureport API Key",
+		"api_secret":   "Pureport API Secret",
+		"auth_profile": "The authentication profile in your local Pureport configuration file.",
 	}
 }
 
@@ -25,39 +23,25 @@ func init() {
 func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"access_key": {
+			"api_key": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
-				Description: descriptions["access_key"],
+				Description: descriptions["api_key"],
 			},
 
-			"secret_key": {
+			"api_secret": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
 				Description: descriptions["secret_key"],
 			},
 
-			"profile": {
+			"auth_profile": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "",
-				Description: descriptions["profile"],
-			},
-
-			"token": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "",
-				Description: descriptions["token"],
-			},
-
-			"max_retries": {
-				Type:        schema.TypeInt,
-				Optional:    true,
-				Default:     25,
-				Description: descriptions["max_retries"],
+				Description: descriptions["auth_profile"],
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
@@ -82,6 +66,18 @@ func Provider() terraform.ResourceProvider {
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	config := Config{}
+
+	if v, ok := d.GetOk("auth_profile"); ok {
+		config.AuthenticationProfile = v.(string)
+	}
+
+	if v, ok := d.GetOk("api_key"); ok {
+		config.APIKey = v.(string)
+	}
+
+	if v, ok := d.GetOk("api_secret"); ok {
+		config.APISecret = v.(string)
+	}
 
 	if err := config.LoadAndValidate(); err != nil {
 		return nil, err
