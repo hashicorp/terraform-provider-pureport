@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-version v1.2.0
 	github.com/hashicorp/terraform v0.11.13
 	github.com/hashicorp/vault v1.0.1
-	github.com/pureport/pureport-sdk-go v0.1.2
+	github.com/pureport/pureport-sdk-go v0.0.0-20190521184739-599e4694d1d3
 	github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
 	github.com/terraform-providers/terraform-provider-template v1.0.0
 	google.golang.org/api v0.4.0 // indirect
