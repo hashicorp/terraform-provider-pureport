@@ -12,11 +12,11 @@ description: |-
 
 ```hcl
 data "pureport_accounts" "main" {
-	name_regex = "My Account.*"
+  name_regex = "My Account.*"
 }
 
 data "pureport_networks" "empty" {
-	account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
 }
 ```
 
