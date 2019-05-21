@@ -15,7 +15,7 @@ func init() {
 	descriptions = map[string]string{
 		"api_key":      "Pureport API Key",
 		"api_secret":   "Pureport API Secret",
-		"api_endpoint": "Pureport API Endpoint to execute against",
+		"api_url":      "Pureport API URL to execute against",
 		"auth_profile": "The authentication profile in your local Pureport configuration file.",
 	}
 }
@@ -38,11 +38,11 @@ func Provider() terraform.ResourceProvider {
 				Description: descriptions["secret_key"],
 			},
 
-			"api_endpoint": {
+			"api_url": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "https://api.pureport.com",
-				Description: descriptions["api_endpoint"],
+				Description: descriptions["api_url"],
 			},
 
 			"auth_profile": {
@@ -87,7 +87,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		config.APISecret = v.(string)
 	}
 
-	if v, ok := d.GetOk("api_endpoint"); ok {
+	if v, ok := d.GetOk("api_url"); ok {
 		config.EndPoint = v.(string)
 	}
 
