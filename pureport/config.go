@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/terraform/httpclient"
 	"github.com/pureport/pureport-sdk-go/pureport"
@@ -35,6 +36,7 @@ func (c *Config) LoadAndValidate() error {
 	cfg.EndPoint = c.EndPoint
 
 	logCfg := ppLog.NewLogConfig()
+	logCfg.Level = os.Getenv("TF_LOG")
 
 	ppLog.SetupLogger(logCfg)
 
