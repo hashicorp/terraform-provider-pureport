@@ -29,6 +29,9 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				Default:     "",
 				Description: descriptions["api_key"],
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"PUREPORT_API_KEY",
+				}, nil),
 			},
 
 			"api_secret": {
@@ -36,13 +39,18 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				Default:     "",
 				Description: descriptions["secret_key"],
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"PUREPORT_API_SECRET",
+				}, nil),
 			},
 
 			"api_url": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "https://api.pureport.com",
 				Description: descriptions["api_url"],
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"PUREPORT_ENDPOINT",
+				}, nil),
 			},
 
 			"auth_profile": {
@@ -50,6 +58,9 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				Default:     "",
 				Description: descriptions["auth_profile"],
+				DefaultFunc: schema.MultiEnvDefaultFunc([]string{
+					"PUREPORT_PROFILE",
+				}, nil),
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
