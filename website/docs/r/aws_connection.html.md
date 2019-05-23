@@ -103,6 +103,8 @@ The following arguments are supported:
 
     * `public_nat_ip` - The public facing IP Address for NAT used by this connection.
 
+    * `remote_id` - The ID of the AWS Direct Connect Connection.
+
     * `vlan` - The VLAN id for the connection to cloud services.
 
 The Pureport Guide, []()

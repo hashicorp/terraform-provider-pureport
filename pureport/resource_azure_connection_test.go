@@ -74,6 +74,7 @@ func TestAzureConnection_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "gateways.0.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.remote_id"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AZURE_EXPRESS_ROUTE 2"),
@@ -87,6 +88,7 @@ func TestAzureConnection_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "gateways.1.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.remote_id"),
 				),
 			},
 		},
