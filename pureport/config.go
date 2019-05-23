@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/hashicorp/terraform/httpclient"
 	"github.com/pureport/pureport-sdk-go/pureport"
@@ -13,14 +14,29 @@ import (
 type Config struct {
 	Session *session.Session
 
+	APIKey                string
+	APISecret             string
+	AuthenticationProfile string
+	EndPoint              string
+
 	userAgent string
 }
 
 func (c *Config) LoadAndValidate() error {
 
+	// Validate that if the API Key was specified that a secret was specified as well.
+	if (c.APIKey == "") != (c.APISecret == "") {
+		return fmt.Errorf("API Key and Secret both need to be specified for successful authentication.")
+	}
+
 	cfg := pureport.NewConfiguration()
+	cfg.APIKey = c.APIKey
+	cfg.APISecret = c.APISecret
+	cfg.AuthenticationProfile = c.AuthenticationProfile
+	cfg.EndPoint = c.EndPoint
 
 	logCfg := ppLog.NewLogConfig()
+	logCfg.Level = os.Getenv("TF_LOG")
 
 	ppLog.SetupLogger(logCfg)
 

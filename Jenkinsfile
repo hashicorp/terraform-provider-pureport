@@ -4,7 +4,8 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "0.1.0"
+def version = "0.2.0"
+def plugin_name = "terraform-provider-pureport"
 
 pipeline {
     agent {
@@ -45,16 +46,30 @@ pipeline {
         GOOGLE_REGION       = "us-west2"
     }
     stages {
+        stage('Configure') {
+            steps {
+                script {
+
+                    plugin_name += "_v${version}"
+
+                    // Only add the build version for the develop branch
+                    if (env.BRANCH_NAME == "develop") {
+                      plugin_name += "-b${env.BUILD_NUMBER}"
+                    }
+
+                }
+            }
+        }
         stage('Build') {
             steps {
 
                 retry(3) {
                   sh "make"
                   sh "make plugin"
-                  sh "mv terraform-provider-pureport terraform-provider-pureport_v${version}-b${env.BUILD_NUMBER}"
+                  sh "mv terraform-provider-pureport ${plugin_name}"
 
                   archiveArtifacts(
-                      artifacts: "terraform-provider-pureport_v${version}-b${env.BUILD_NUMBER}"
+                      artifacts: "${plugin_name}"
                       )
                 }
             }
@@ -103,17 +118,11 @@ pipeline {
                     ]) {
 
                       def nexus_url = "https://nexus.dev.pureport.com/repository/terraform-provider-pureport/${env.BRANCH_NAME}/"
-                      def plugin = "terraform-provider-pureport_v${version}"
 
-                      // Only add the build version for the develop branch
-                      if (env.BRANCH_NAME == "develop") {
-                        plugin += "-b${env.BUILD_NUMBER}"
-                      }
-
-                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin} ${nexus_url}"
+                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin_name} ${nexus_url}"
 
                       // Set the description text for the job
-                      currentBuild.description = "Version: ${plugin}"
+                      currentBuild.description = "Version: ${plugin_name}"
 
                     }
                 }

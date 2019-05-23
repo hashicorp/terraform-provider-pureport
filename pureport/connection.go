@@ -60,6 +60,10 @@ var (
 			Type:     schema.TypeString,
 			Computed: true,
 		},
+		"remote_id": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
 		"vlan": {
 			Type:     schema.TypeInt,
 			Computed: true,
@@ -280,6 +284,7 @@ func FlattenStandardGateway(gateway *client.StandardGateway) map[string]interfac
 		"name":                gateway.Name,
 		"description":         gateway.Description,
 		"link_state":          gateway.LinkState,
+		"remote_id":           gateway.RemoteId,
 		"vlan":                gateway.Vlan,
 		"customer_asn":        gateway.BgpConfig.CustomerASN,
 		"customer_ip":         gateway.BgpConfig.CustomerIP,

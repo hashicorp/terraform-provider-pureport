@@ -15,10 +15,6 @@ data "pureport_accounts" "main" {
   name_regex = "Terraform"
 }
 
-data "pureport_cloud_regions" "main" {
-  name_regex = "Los.*"
-}
-
 data "pureport_locations" "main" {
   name_regex = "^Sea.*"
 }
@@ -104,6 +100,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "gateways.0.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
+					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.remote_id"),
 				),
 			},
 		},
