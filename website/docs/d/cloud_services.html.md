@@ -3,7 +3,7 @@ layout: "pureport"
 page_title: "Pureport: pureport_cloud_services"
 sidebar_current: "docs-pureport-datasource-cloud_services"
 description: |-
-  Provides details about an existing Pureport cloud_services.
+  Provides details about existing Pureport cloud services.
 ---
 
 # Data Source: pureport\_cloud\_services
@@ -20,7 +20,7 @@ data "pureport_cloud_services" "name_regex" {
 
 The following arguments are supported:
 
-* `name_regex` - (Optional) A regex string to appy to the cloud services list returned by Pureport. This
+* `name_regex` - (Optional) A regex string to apply to the cloud services list returned by Pureport. This
   filtering is done locally on what Pureport returns, and could have a performance impact if the
   result is large.
 

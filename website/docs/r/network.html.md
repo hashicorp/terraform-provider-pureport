@@ -3,7 +3,7 @@ layout: "pureport"
 page_title: "Pureport: pureport_network"
 sidebar_current: "docs-pureport-resource-network"
 description: |-
-  Manages a Pureport AWS Direct Connect Connection.
+  Manages a Pureport Network.
 ---
 
 # Resource: pureport\_network

@@ -49,7 +49,7 @@ The following arguments are supported:
 * `name` - (Required) The name for the connection
 * `location_href` - (Required) HREF for the Pureport Location to attach the connection.
 * `network_href` - (Required) HREF for the network to associate the connection.
-* `speed` - (Required) The maximum QoS for this connection. Valid values are 50, 100, 200, 300, 400, 500, 1000, 10000 in MBps.
+* `speed` - (Required) The maximum QoS for this connection. Valid values are 50, 100, 200, 300, 400, 500, 1000, 10000 in Mbps.
 * `aws_account_id` - (Required) Your AWS Account ID.
 * `aws_region` - (Required) The AWS region to create your connection.
 

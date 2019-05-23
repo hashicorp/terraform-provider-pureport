@@ -3,7 +3,7 @@ layout: "pureport"
 page_title: "Pureport: pureport_accounts"
 sidebar_current: "docs-pureport-datasource-accounts"
 description: |-
-  Provides details about an existing Pureport account.
+  Provides details about existing Pureport accounts.
 ---
 
 # Data Source: pureport\_account
@@ -23,13 +23,13 @@ data "pureport_accounts" "name_regex" {
 
 The following arguments are supported:
 
-* `name_regex` - (Optional) A regex string to appy to the account list returned by Pureport. This
+* `name_regex` - (Optional) A regex string to apply to the account list returned by Pureport. This
   filtering is done locally on what Pureport returns, and could have a performance impact if the
   result is large.
 
 ## Attributes
 
-The Purport Account resource exports the following attributes:
+The Pureport Account resource exports the following attributes:
 
 * `accounts` - The found list of accounts.
 

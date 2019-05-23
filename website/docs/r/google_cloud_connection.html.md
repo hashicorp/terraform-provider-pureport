@@ -3,7 +3,7 @@ layout: "pureport"
 page_title: "Pureport: pureport_google_cloud_connection"
 sidebar_current: "docs-pureport-resource-google_cloud_connection"
 description: |-
-  Manages a Pureport AWS Direct Connect Connection.
+  Manages a Pureport Google Cloud Connection.
 ---
 
 # Resource: pureport\_google\_cloud\_connection
@@ -65,7 +65,7 @@ The following arguments are supported:
 * `name` - (Required) The name for the connection
 * `location_href` - (Required) HREF for the Pureport Location to attach the connection.
 * `network_href` - (Required) HREF for the network to associate the connection.
-* `speed` - (Required) The maximum QoS for this connection. Valid values are 50, 100, 200, 300, 400, 500, 1000, 10000 in MBps.
+* `speed` - (Required) The maximum QoS for this connection. Valid values are 50, 100, 200, 300, 400, 500, 1000, 10000 in Mbps.
 * `primary_pairing_key` - (Required) The pairing key for the primary Google Cloud Interconnect Attachment.
 
 - - -
@@ -113,7 +113,9 @@ The following arguments are supported:
 
     * `peering_subnet` - The BGP Config subnet assigned to establish BGP peering.
 
-    * `public_nat_ip` - The public facing IP Address for NAT used by this connection.
+    * `public_nat_ip` - N/A
+
+    * `remote_id` - The ID of the Google Cloud Interconnect.
 
     * `remote_id` - The ID of the Google Cloud Interconnect.
 

@@ -3,7 +3,7 @@ layout: "pureport"
 page_title: "Pureport: pureport_networks"
 sidebar_current: "docs-pureport-datasource-networks"
 description: |-
-  Provides details about an existing Pureport networks.
+  Provides details about existing Pureport networks.
 ---
 
 # Data Source: pureport\_networks
@@ -28,7 +28,7 @@ The following arguments are supported:
 
 - - -
 
-* `name_regex` - (Optional) A regex string to appy to the network list returned by Pureport. This
+* `name_regex` - (Optional) A regex string to apply to the network list returned by Pureport. This
   filtering is done locally on what Pureport returns, and could have a performance impact if the
   result is large.
 

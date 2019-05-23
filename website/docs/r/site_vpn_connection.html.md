@@ -3,7 +3,7 @@ layout: "pureport"
 page_title: "Pureport: pureport_site_vpn_connection"
 sidebar_current: "docs-pureport-resource-site_vpn_connection"
 description: |-
-  Manages a Pureport AWS Direct Connect Connection.
+  Manages a Pureport Site VPN Connection.
 ---
 
 # Resource: pureport\_site\_vpn\_connection
@@ -72,7 +72,7 @@ The following arguments are supported:
 * `name` - (Required) The name for the connection
 * `location_href` - (Required) HREF for the Pureport Location to attach the connection.
 * `network_href` - (Required) HREF for the network to associate the connection.
-* `speed` - (Required) The maximum QoS for this connection. Valid values are 50, 100, 200, 300, 400, 500, 1000, 10000 in MBps.
+* `speed` - (Required) The maximum QoS for this connection. Valid values are 50, 100, 200, 300, 400, 500, 1000, 10000 in Mbps.
 
 - - -
 * `description` - (Optional) The description for the connection.

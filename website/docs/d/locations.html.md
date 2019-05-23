@@ -3,7 +3,7 @@ layout: "pureport"
 page_title: "Pureport: pureport_locations"
 sidebar_current: "docs-pureport-datasource-locations"
 description: |-
-  Provides details about an existing Pureport locations.
+  Provides details about existing Pureport locations.
 ---
 
 # Data Source: pureport\_locations
