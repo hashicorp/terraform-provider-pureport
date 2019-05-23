@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/hashicorp/terraform v0.11.13
-	github.com/pureport/pureport-sdk-go v0.0.0-20190522143819-7f5e67325b26
+	github.com/pureport/pureport-sdk-go v0.2.0
 	github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
 	github.com/terraform-providers/terraform-provider-template v1.0.0
 	golang.org/x/crypto v0.0.0-20190313024323-a1f597ede03a // indirect
