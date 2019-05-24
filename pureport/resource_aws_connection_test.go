@@ -91,11 +91,6 @@ data "pureport_cloud_services" "s3" {
   name_regex = ".*S3"
 }
 
-data "template_file" "services_hrefs" {
-  count = "${length(data.pureport_cloud_services.s3.services)}"
-  template = "${lookup(data.pureport_cloud_services.s3.services[count.index], "href")}"
-}
-
 resource "pureport_aws_connection" "main" {
   name = "AwsDirectConnectCloudServicesTest"
   speed = "100"
@@ -104,7 +99,7 @@ resource "pureport_aws_connection" "main" {
   location_href = "${data.pureport_locations.main.locations.0.href}"
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
-  cloud_service_hrefs = ["${data.template_file.services_hrefs.*.rendered}"]
+  cloud_service_hrefs = data.pureport_cloud_services.s3.services.*.href
   peering_type = "PUBLIC"
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
