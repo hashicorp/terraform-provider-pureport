@@ -44,6 +44,40 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
+const testAccResourceSiteVPNConnectionConfig_with_ike_config = testAccResourceSiteVPNConnectionConfig_common + `
+resource "pureport_site_vpn_connection" "main" {
+  name = "SiteVPNTest"
+  speed = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  ike_version = "V2"
+
+  ike_config {
+    esp {
+      dh_group   = "MODP_2048"
+      encryption = "AES_128"
+      integrity  = "SHA256_HMAC"
+    }
+
+    ike {
+      dh_group   = "MODP_2048"
+      encryption = "AES_128"
+      integrity  = "SHA256_HMAC"
+    }
+  }
+	
+
+  routing_type = "ROUTE_BASED_BGP"
+  customer_asn = 30000
+
+  primary_customer_router_ip = "123.123.123.123"
+  secondary_customer_router_ip = "124.124.124.124"
+}
+`
+
 func TestSiteVPNConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_site_vpn_connection.main"
@@ -56,6 +90,67 @@ func TestSiteVPNConnection_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: testAccResourceSiteVPNConnectionConfig_basic,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPNTest"),
+					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
+					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "30000"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.pureport_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.bgp_password", ""),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_gateway_ip", "123.123.123.123"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_vti_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.pureport_gateway_ip", regexp.MustCompile("45.56.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.pureport_vti_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.0.vpn_auth_type", "PSK"),
+
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "30000"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.pureport_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.bgp_password", ""),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.peering_subnet", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_gateway_ip", "124.124.124.124"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_vti_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.pureport_gateway_ip", regexp.MustCompile("45.56.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.pureport_vti_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
+					resource.TestCheckResourceAttr(resourceName, "gateways.1.vpn_auth_type", "PSK"),
+				),
+			},
+		},
+	})
+}
+
+func TestSiteVPNConnection_with_ikeconfig(t *testing.T) {
+
+	resourceName := "pureport_site_vpn_connection.main"
+	var instance client.SiteIpSecVpnConnection
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceSiteVPNConnectionConfig_with_ike_config,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),

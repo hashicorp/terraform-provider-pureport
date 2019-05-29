@@ -199,9 +199,14 @@ func expandIkeVersion1(d *schema.ResourceData) *client.Ikev1Config {
 
 	if data, ok := d.GetOk("ike_config"); ok {
 
-		raw_config := data.(map[string]interface{})
-		esp := raw_config["esp"].(map[string]interface{})
-		ike := raw_config["ike"].(map[string]interface{})
+		tmp_config := data.([]interface{})
+		raw_config := tmp_config[0].(map[string]interface{})
+
+		tmp_esp := raw_config["esp"].([]interface{})
+		esp := tmp_esp[0].(map[string]interface{})
+
+		tmp_ike := raw_config["ike"].([]interface{})
+		ike := tmp_ike[0].(map[string]interface{})
 
 		config.Esp = &client.Ikev1EspConfig{
 			DhGroup:    esp["dh_group"].(string),
@@ -240,9 +245,14 @@ func expandIkeVersion2(d *schema.ResourceData) *client.Ikev2Config {
 
 	if data, ok := d.GetOk("ike_config"); ok {
 
-		raw_config := data.(map[string]interface{})
-		esp := raw_config["esp"].(map[string]interface{})
-		ike := raw_config["ike"].(map[string]interface{})
+		tmp_config := data.([]interface{})
+		raw_config := tmp_config[0].(map[string]interface{})
+
+		tmp_esp := raw_config["esp"].([]interface{})
+		esp := tmp_esp[0].(map[string]interface{})
+
+		tmp_ike := raw_config["ike"].([]interface{})
+		ike := tmp_ike[0].(map[string]interface{})
 
 		config.Esp = &client.Ikev2EspConfig{
 			DhGroup:    esp["dh_group"].(string),
