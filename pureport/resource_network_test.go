@@ -76,7 +76,7 @@ func testAccCheckResourceNetwork(name string, instance *client.Network) resource
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting Network ID %s: %s", id, err)
+			return fmt.Errorf("Error getting Network ID %s: %s", id, err)
 		}
 
 		*instance = found

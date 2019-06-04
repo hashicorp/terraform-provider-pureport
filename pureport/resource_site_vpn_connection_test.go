@@ -228,7 +228,7 @@ func testAccCheckResourceSiteVPNConnection(name string, instance *client.SiteIpS
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting SiteVPN Connection ID %s: %s", id, err)
+			return fmt.Errorf("Error getting SiteVPN Connection ID %s: %s", id, err)
 		}
 
 		*instance = found.(client.SiteIpSecVpnConnection)

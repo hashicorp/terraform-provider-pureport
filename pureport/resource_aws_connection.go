@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -73,6 +74,11 @@ func resourceAWSConnection() *schema.Resource {
 		Delete: resourceAWSConnectionDelete,
 
 		Schema: connection_schema,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(3 * time.Minute),
+			Delete: schema.DefaultTimeout(3 * time.Minute),
+		},
 	}
 }
 

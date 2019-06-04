@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -168,6 +169,11 @@ func resourceSiteVPNConnection() *schema.Resource {
 		Delete: resourceSiteVPNConnectionDelete,
 
 		Schema: connection_schema,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(3 * time.Minute),
+			Delete: schema.DefaultTimeout(3 * time.Minute),
+		},
 	}
 }
 
@@ -435,7 +441,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 	}
 
 	conn := c.(client.SiteIpSecVpnConnection)

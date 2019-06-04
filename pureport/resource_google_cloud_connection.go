@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -59,6 +60,11 @@ func resourceGoogleCloudConnection() *schema.Resource {
 		Delete: resourceGoogleCloudConnectionDelete,
 
 		Schema: connection_schema,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(3 * time.Minute),
+			Delete: schema.DefaultTimeout(3 * time.Minute),
+		},
 	}
 }
 

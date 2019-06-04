@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
@@ -140,33 +140,6 @@ var (
 			Type:     schema.TypeString,
 			Computed: true,
 		},
-	}
-
-	DeletableState = map[string]bool{
-		"FAILED_TO_PROVISION": true,
-		"ACTIVE":              true,
-		"DOWN":                true,
-		"FAILED_TO_UPDATE":    true,
-		"FAILED_TO_DELETE":    true,
-		"DELETED":             true,
-	}
-
-	FailedState = map[string]bool{
-		"FAILED_TO_PROVISION": true,
-		"FAILED_TO_UPDATE":    true,
-		"FAILED_TO_DELETE":    true,
-	}
-
-	ActiveState = map[string]bool{
-		"ACTIVE":  true,
-		"DOWN":    true,
-		"DELETED": true,
-	}
-
-	PendingState = map[string]bool{
-		"INITIALIZING": true,
-		"PROVISIONING": true,
-		"UPDATING":     true,
 	}
 )
 
@@ -370,45 +343,41 @@ func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error
 
 	log.Printf("[Info] Waiting for connection to come up.")
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 3 * time.Minute
+	createStateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"INITIALIZING",
+			"PROVISIONING",
+			"UPDATING",
+		},
+		Target: []string{
+			"ACTIVE",
+		},
+		Refresh: func() (interface{}, string, error) {
 
-	var state string
+			c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+			if err != nil {
+				return 0, "", fmt.Errorf("Error reading data for %s: %s", name, err)
+			}
 
-	wait_for_create := func() error {
+			if resp.StatusCode >= 300 {
+				return 0, "", fmt.Errorf("Error received while waiting for creation of %s: code=%v", name, resp.StatusCode)
+			}
 
-		c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
-		if err != nil {
-			return backoff.Permanent(
-				fmt.Errorf("Error reading data for %s: %s", name, err),
-			)
-		}
+			conn := reflect.ValueOf(c)
+			state := conn.FieldByName("State").String()
 
-		if resp.StatusCode >= 300 {
-			return backoff.Permanent(
-				fmt.Errorf("Error received while waiting for creation of %s: code=%v", name, resp.StatusCode),
-			)
-		}
+			return c, state, nil
 
-		conn := reflect.ValueOf(c)
-		state = conn.FieldByName("State").String()
-
-		if PendingState[state] {
-			return fmt.Errorf("Waiting ...")
-
-		} else {
-			return nil
-		}
+		},
+		Timeout:                   d.Timeout(schema.TimeoutCreate),
+		Delay:                     5 * time.Second,
+		MinTimeout:                5 * time.Second,
+		ContinuousTargetOccurence: 2,
 	}
 
-	if err := backoff.Retry(wait_for_create, b); err != nil {
-		return fmt.Errorf("Timeout waiting for %s: state=%s", name, state)
-	}
-
-	log.Printf("Retry returned state: %s", state)
-
-	if FailedState[state] {
-		return fmt.Errorf("%s in failed state: state=%s", name, state)
+	_, err := createStateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for connection (%s) to be created: %s", connectionId, err)
 	}
 
 	return nil
@@ -423,34 +392,47 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 	// Wait until we are in a state that we can trigger a delete from
 	log.Printf("[Info] Waiting to trigger a delete.")
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 3 * time.Minute
+	waitingStateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"INITIALIZING",
+			"PROVISIONING",
+			"UPDATING",
+			"DELETING",
+		},
+		Target: []string{
+			"FAILED_TO_PROVISION",
+			"ACTIVE",
+			"DOWN",
+			"FAILED_TO_UPDATE",
+			"FAILED_TO_DELETE",
+			"DELETED",
+		},
+		Refresh: func() (interface{}, string, error) {
 
-	wait_to_delete := func() error {
+			c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+			if err != nil {
+				return 0, "", fmt.Errorf("Error deleting data for %s: %s", name, err)
+			}
 
-		c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
-		if err != nil {
-			return backoff.Permanent(
-				fmt.Errorf("Error deleting data for %s: %s", name, err),
-			)
-		}
+			if resp.StatusCode >= 300 {
+				return 0, "", fmt.Errorf("Error Response while attempting to delete %s: code=%v", name, resp.StatusCode)
+			}
 
-		if resp.StatusCode >= 300 {
-			return backoff.Permanent(
-				fmt.Errorf("Error Response while attempting to delete %s: code=%v", name, resp.StatusCode),
-			)
-		}
+			conn := reflect.ValueOf(c)
+			state := conn.FieldByName("State").String()
 
-		conn := reflect.ValueOf(c)
-		if DeletableState[conn.FieldByName("State").String()] {
-			return nil
-		} else {
-			return fmt.Errorf("Waiting ...")
-		}
+			return c, state, nil
+
+		},
+		Timeout:                   d.Timeout(schema.TimeoutDelete),
+		Delay:                     5 * time.Second,
+		MinTimeout:                1 * time.Second,
+		ContinuousTargetOccurence: 2,
 	}
 
-	if err := backoff.Retry(wait_to_delete, b); err != nil {
-		return err
+	_, err := waitingStateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for connection (%s) to be deletable: %s", connectionId, err)
 	}
 
 	// Delete
@@ -464,20 +446,49 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 	}
 
 	log.Printf("[Info] Waiting for connection to be deleted")
-	wait_for_delete := func() error {
 
-		log.Printf("Retrying ...%+v", b.GetElapsedTime())
-		_, resp, _ := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+	deleteStateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"INITIALIZING",
+			"PROVISIONING",
+			"UPDATING",
+			"DELETING",
+		},
+		Target: []string{
+			"DELETED",
+		},
+		Refresh: func() (interface{}, string, error) {
 
-		if resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
-		} else {
-			return fmt.Errorf("Waiting ...")
-		}
+			c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+
+			if resp.StatusCode == 404 {
+				return 0, "DELETED", nil
+			}
+
+			if err != nil {
+				return 0, "", fmt.Errorf("Error Response while deleting %s: error=%s", name, err)
+			}
+
+			conn := reflect.ValueOf(c)
+			state := conn.FieldByName("State").String()
+
+			return c, state, nil
+
+		},
+		Timeout:                   d.Timeout(schema.TimeoutDelete),
+		Delay:                     5 * time.Second,
+		MinTimeout:                1 * time.Second,
+		ContinuousTargetOccurence: 2,
 	}
 
-	return backoff.Retry(wait_for_delete, b)
+	_, err = deleteStateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for connection (%s) to be created: %s", connectionId, err)
+	}
+
+	d.SetId("")
+
+	return nil
 }
 
 // ExpandCustomerNetworks to decode the customer network information

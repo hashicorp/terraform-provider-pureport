@@ -123,7 +123,7 @@ func testAccCheckResourceAzureConnection(name string, instance *client.AzureExpr
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting Azure Connection ID %s: %s", id, err)
+			return fmt.Errorf("Error getting Azure Connection ID %s: %s", id, err)
 		}
 
 		*instance = found.(client.AzureExpressRouteConnection)

@@ -302,7 +302,7 @@ func testAccCheckResourceAWSConnection(name string, instance *client.AwsDirectCo
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting AWS Connection ID %s: %s", id, err)
+			return fmt.Errorf("Error getting AWS Connection ID %s: %s", id, err)
 		}
 
 		*instance = found.(client.AwsDirectConnectConnection)

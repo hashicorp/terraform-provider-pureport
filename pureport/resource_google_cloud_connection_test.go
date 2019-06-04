@@ -135,7 +135,7 @@ func testAccCheckResourceGoogleCloudConnection(name string, instance *client.Goo
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting Google Cloud Connection ID %s: %s", id, err)
+			return fmt.Errorf("Error getting Google Cloud Connection ID %s: %s", id, err)
 		}
 
 		*instance = found.(client.GoogleCloudInterconnectConnection)
