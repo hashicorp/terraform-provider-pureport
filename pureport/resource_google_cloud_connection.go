@@ -125,15 +125,24 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 	if err != nil {
 
 		http_err := err
-		json_response := string(err.(client.GenericSwaggerError).Body()[:])
-		response, err := structure.ExpandJsonFromString(json_response)
-		if err != nil {
-			log.Printf("Error creating new %s: %v", googleConnectionName, err)
-		} else {
-			statusCode := int(response["status"].(float64))
-			log.Printf("Error creating new %s: %d\n", googleConnectionName, statusCode)
-			log.Printf("  %s\n", response["code"])
-			log.Printf("  %s\n", response["message"])
+
+		switch e := err.(type) {
+		case client.GenericSwaggerError:
+			json_response := string(e.Body()[:])
+			response, err := structure.ExpandJsonFromString(json_response)
+
+			if err != nil {
+				log.Printf("Error creating new %s: %v", googleConnectionName, err)
+			} else {
+				statusCode := int(response["status"].(float64))
+				log.Printf("Error creating new %s: %d\n", googleConnectionName, statusCode)
+				log.Printf("  %s\n", response["code"])
+				log.Printf("  %s\n", response["message"])
+			}
+		case *url.Error:
+			log.Printf("Error creating new %s: %s", googleConnectionName, e.Error())
+		default:
+			log.Printf("Error creating new %s: %v", googleConnectionName, e)
 		}
 
 		d.SetId("")
