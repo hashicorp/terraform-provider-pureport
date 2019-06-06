@@ -107,6 +107,32 @@ resource "pureport_aws_connection" "main" {
 }
 `
 
+const testAccResourceAWSConnectionConfig_nat_mapping = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "main" {
+  name = "AwsDirectConnectNatMappingTest"
+  speed = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "123456789012"
+
+  nat_config {
+    enabled = true
+
+    mappings {
+      native_cidr = "192.168.0.0/24"
+    }
+
+    mappings {
+      native_cidr = "192.200.0.0/16"
+    }
+  }
+}
+`
+
 func TestAWSConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.main"
@@ -239,6 +265,7 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
 					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.enabled", "false"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
@@ -268,6 +295,36 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.remote_id"),
+				),
+			},
+		},
+	})
+}
+
+func TestAWSConnection_nat_mappings(t *testing.T) {
+
+	resourceName := "pureport_aws_connection.main"
+	var instance client.AwsDirectConnectConnection
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckAWSConnectionDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceAWSConnectionConfig_nat_mapping,
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckResourceAWSConnection(resourceName, &instance),
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectNatMappingTest"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "true"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.#", "2"),
+					//					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.0.native_cidr", "192.168.0.0/24"),
+					//					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.mappings.0.nat_cidr"),
+					//					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.1.native_cidr", "192.200.0.0/16"),
+					//					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.mappings.1.nat_cidr"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "2"),
+					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.pnat_cidr"),
 				),
 			},
 		},

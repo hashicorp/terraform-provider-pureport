@@ -7,8 +7,8 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
 	github.com/hashicorp/go-version v1.2.0 // indirect
-	github.com/hashicorp/terraform v0.12.0
-	github.com/pureport/pureport-sdk-go v0.0.0-20190604181137-bed33a3426d5
+	github.com/hashicorp/terraform v0.12.1
+	github.com/pureport/pureport-sdk-go v0.0.0-20190605201114-9b412fedf62a
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
 	github.com/terraform-providers/terraform-provider-template v1.0.0

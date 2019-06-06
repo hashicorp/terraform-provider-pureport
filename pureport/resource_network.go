@@ -87,7 +87,7 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 	if resp.StatusCode >= 300 {
 		d.SetId("")
-		return fmt.Errorf("Error while creating %s: code=%v", awsConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error while creating network: code=%v", resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")

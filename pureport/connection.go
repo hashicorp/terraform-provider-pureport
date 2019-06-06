@@ -173,6 +173,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 		"nat_config": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -182,7 +183,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 						Default:  true,
 					},
 					"mappings": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -237,19 +238,6 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 	}
 }
 
-func flattenConnection(connection client.Connection) map[string]interface{} {
-	return map[string]interface{}{
-		"customer_asn":      connection.CustomerASN,
-		"customer_networks": flattenCustomerNetworks(connection.CustomerNetworks),
-		"high_availability": connection.HighAvailability,
-		"location_href":     flattenLink(connection.Location),
-		"network_href":      flattenLink(connection.Network),
-		"name":              connection.Name,
-		"description":       connection.Description,
-		"speed":             connection.Speed,
-	}
-}
-
 // FlattenGateway flattens the provide gateway to a map for use with terraform
 func FlattenStandardGateway(gateway *client.StandardGateway) map[string]interface{} {
 	return map[string]interface{}{
@@ -292,32 +280,30 @@ func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
 	}
 }
 
-func flattenLink(link *client.Link) string {
-	return link.Href
-}
+func flattenCustomerNetworks(customerNetworks []client.CustomerNetwork) []map[string]string {
 
-func flattenCustomerNetworks(networks []client.CustomerNetwork) (out []map[string]interface{}) {
-
-	for _, network := range networks {
-
-		n := map[string]interface{}{
-			"name":    network.Name,
-			"address": network.Address,
-		}
-
-		out = append(out, n)
+	var out []map[string]string
+	for _, cn := range customerNetworks {
+		out = append(out, map[string]string{
+			"name":    cn.Name,
+			"address": cn.Address,
+		})
 	}
 
-	return
+	return out
 }
 
-func flattenNatConfig(config client.NatConfig) map[string]interface{} {
-	return map[string]interface{}{
+func FlattenNatConfig(config *client.NatConfig) []map[string]interface{} {
+
+	output := make([]map[string]interface{}, 1)
+	output[0] = map[string]interface{}{
 		"blocks":    config.Blocks,
 		"enabled":   config.Enabled,
 		"pnat_cidr": config.PnatCidr,
 		"mappings":  flattenMappings(config.Mappings),
 	}
+
+	return output
 }
 
 func flattenMappings(mappings []client.NatMapping) (out []map[string]interface{}) {
@@ -520,13 +506,16 @@ func ExpandNATConfiguration(d *schema.ResourceData) *client.NatConfig {
 
 		natConfig := &client.NatConfig{}
 
-		config := data.(map[string]interface{})
+		tmp_config := data.([]interface{})
+		config := tmp_config[0].(map[string]interface{})
 		natConfig.Enabled = config["enabled"].(bool)
 
-		for _, m := range config["mappings"].([]map[string]string) {
+		for _, m := range config["mappings"].(*schema.Set).List() {
+
+			mapping := m.(map[string]interface{})
 
 			new := client.NatMapping{
-				NativeCidr: m["native_cidr"],
+				NativeCidr: mapping["native_cidr"].(string),
 			}
 
 			natConfig.Mappings = append(natConfig.Mappings, new)

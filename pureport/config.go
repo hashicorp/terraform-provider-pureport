@@ -18,8 +18,6 @@ type Config struct {
 	APISecret             string
 	AuthenticationProfile string
 	EndPoint              string
-
-	userAgent string
 }
 
 func (c *Config) LoadAndValidate() error {
@@ -43,9 +41,8 @@ func (c *Config) LoadAndValidate() error {
 	terraformVersion := httpclient.UserAgentString()
 	providerVersion := fmt.Sprintf("terraform-provider-pureport/%s", version.ProviderVersion)
 	terraformWebsite := "(+https://www.pureport.com)"
-	userAgent := fmt.Sprintf("%s %s %s", terraformVersion, terraformWebsite, providerVersion)
 
-	cfg.UserAgent = userAgent
+	cfg.UserAgent = fmt.Sprintf("%s %s %s", terraformVersion, terraformWebsite, providerVersion)
 	c.Session = session.NewSession(cfg)
 
 	return nil

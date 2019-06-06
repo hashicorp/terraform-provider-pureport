@@ -456,20 +456,13 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		gateways = append(gateways, FlattenVpnGateway(g))
 	}
 	if err := d.Set("gateways", gateways); err != nil {
-		return fmt.Errorf("Error setting gateway information for %s %s: %s", awsConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting gateway information for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
 	d.Set("description", conn.Description)
 	d.Set("high_availability", conn.HighAvailability)
 
-	var customerNetworks []map[string]string
-	for _, cn := range conn.CustomerNetworks {
-		customerNetworks = append(customerNetworks, map[string]string{
-			"name":    cn.Name,
-			"address": cn.Address,
-		})
-	}
-	if err := d.Set("customer_networks", customerNetworks); err != nil {
+	if err := d.Set("customer_networks", flattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
 		return fmt.Errorf("Error setting customer networks for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
