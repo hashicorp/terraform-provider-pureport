@@ -265,7 +265,7 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
 					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
-					resource.TestCheckResourceAttr(resourceName, "nat_config.enabled", "false"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "false"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),

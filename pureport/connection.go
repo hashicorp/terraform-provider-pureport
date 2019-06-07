@@ -154,7 +154,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Optional: true,
 		},
 		"customer_networks": {
-			Type:     schema.TypeList,
+			Type:     schema.TypeSet,
 			Optional: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -240,26 +240,41 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 
 // FlattenGateway flattens the provide gateway to a map for use with terraform
 func FlattenStandardGateway(gateway *client.StandardGateway) map[string]interface{} {
-	return map[string]interface{}{
+
+	out := map[string]interface{}{
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
 		"link_state":          gateway.LinkState,
 		"remote_id":           gateway.RemoteId,
 		"vlan":                gateway.Vlan,
-		"customer_asn":        gateway.BgpConfig.CustomerASN,
-		"customer_ip":         gateway.BgpConfig.CustomerIP,
-		"pureport_asn":        gateway.BgpConfig.PureportASN,
-		"pureport_ip":         gateway.BgpConfig.PureportIP,
-		"bgp_password":        gateway.BgpConfig.Password,
-		"peering_subnet":      gateway.BgpConfig.PeeringSubnet,
-		"public_nat_ip":       gateway.BgpConfig.PublicNatIp,
+		"customer_asn":        0,
+		"customer_ip":         "",
+		"pureport_asn":        0,
+		"pureport_ip":         "",
+		"bgp_password":        "",
+		"peering_subnet":      "",
+		"public_nat_ip":       "",
 	}
+
+	// If we are using BGP, include the confiuration
+	if gateway.BgpConfig != nil {
+		out["customer_asn"] = gateway.BgpConfig.CustomerASN
+		out["customer_ip"] = gateway.BgpConfig.CustomerIP
+		out["pureport_asn"] = gateway.BgpConfig.PureportASN
+		out["pureport_ip"] = gateway.BgpConfig.PureportIP
+		out["bgp_password"] = gateway.BgpConfig.Password
+		out["peering_subnet"] = gateway.BgpConfig.PeeringSubnet
+		out["public_nat_ip"] = gateway.BgpConfig.PublicNatIp
+	}
+
+	return out
 }
 
 // FlattenGateway flattens the provide gateway to a map for use with terraform
 func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
-	return map[string]interface{}{
+
+	out := map[string]interface{}{
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
@@ -270,14 +285,27 @@ func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
 		"pureport_vti_ip":     gateway.PureportVtiIP,
 		"vpn_auth_type":       gateway.Auth.Type_,
 		"vpn_auth_key":        gateway.Auth.Key,
-		"customer_asn":        gateway.BgpConfig.CustomerASN,
-		"customer_ip":         gateway.BgpConfig.CustomerIP,
-		"pureport_asn":        gateway.BgpConfig.PureportASN,
-		"pureport_ip":         gateway.BgpConfig.PureportIP,
-		"bgp_password":        gateway.BgpConfig.Password,
-		"peering_subnet":      gateway.BgpConfig.PeeringSubnet,
-		"public_nat_ip":       gateway.BgpConfig.PublicNatIp,
+		"customer_asn":        0,
+		"customer_ip":         "",
+		"pureport_asn":        0,
+		"pureport_ip":         "",
+		"bgp_password":        "",
+		"peering_subnet":      "",
+		"public_nat_ip":       "",
 	}
+
+	// If we are using BGP, include the confiuration
+	if gateway.BgpConfig != nil {
+		out["customer_asn"] = gateway.BgpConfig.CustomerASN
+		out["customer_ip"] = gateway.BgpConfig.CustomerIP
+		out["pureport_asn"] = gateway.BgpConfig.PureportASN
+		out["pureport_ip"] = gateway.BgpConfig.PureportIP
+		out["bgp_password"] = gateway.BgpConfig.Password
+		out["peering_subnet"] = gateway.BgpConfig.PeeringSubnet
+		out["public_nat_ip"] = gateway.BgpConfig.PublicNatIp
+	}
+
+	return out
 }
 
 func flattenCustomerNetworks(customerNetworks []client.CustomerNetwork) []map[string]string {
@@ -484,11 +512,13 @@ func ExpandCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
 
 		customerNetworks := []client.CustomerNetwork{}
 
-		for _, cn := range data.([]map[string]string) {
+		for _, cn := range data.(*schema.Set).List() {
+
+			network := cn.(map[string]interface{})
 
 			new := client.CustomerNetwork{
-				Name:    cn["name"],
-				Address: cn["address"],
+				Name:    network["name"].(string),
+				Address: network["address"].(string),
 			}
 
 			customerNetworks = append(customerNetworks, new)
