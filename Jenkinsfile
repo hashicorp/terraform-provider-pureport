@@ -82,6 +82,7 @@ pipeline {
                 // This can take a long time so we may only want to do this on develop
                 anyOf {
                   branch 'develop'
+                  branch 'release'
                   expression { return params.ACCEPTANCE_TESTS_RUN }
                 }
             }
