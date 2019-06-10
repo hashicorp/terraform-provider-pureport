@@ -76,6 +76,7 @@ func Provider() terraform.ResourceProvider {
 			"pureport_locations":      dataSourceLocations(),
 			"pureport_networks":       dataSourceNetworks(),
 			"pureport_accounts":       dataSourceAccounts(),
+			"pureport_connections":    dataSourceConnections(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

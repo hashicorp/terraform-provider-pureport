@@ -36,6 +36,8 @@ pipeline {
     environment {
         TF_LOG              = "${params.ACCEPTANCE_TESTS_LOG_LEVEL}"
         TF_LOG_PATH         = "${params.ACCEPTANCE_TESTS_LOG_TO_FILE ? 'tf_log.log' : '' }"
+        TF_IN_AUTOMATION    = "true"
+        TF_INPUT            = "false"
         GOPATH              = "/go"
         GOCACHE             = "/tmp/go/.cache"
         PUREPORT_ENDPOINT   = "https://dev1-api.pureportdev.com"

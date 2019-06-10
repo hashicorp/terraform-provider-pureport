@@ -239,9 +239,9 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 }
 
 // FlattenGateway flattens the provide gateway to a map for use with terraform
-func FlattenStandardGateway(gateway *client.StandardGateway) map[string]interface{} {
+func FlattenStandardGateway(gateway *client.StandardGateway) (out map[string]interface{}) {
 
-	out := map[string]interface{}{
+	out = map[string]interface{}{
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
@@ -268,13 +268,13 @@ func FlattenStandardGateway(gateway *client.StandardGateway) map[string]interfac
 		out["public_nat_ip"] = gateway.BgpConfig.PublicNatIp
 	}
 
-	return out
+	return
 }
 
 // FlattenGateway flattens the provide gateway to a map for use with terraform
-func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
+func FlattenVpnGateway(gateway *client.VpnGateway) (out map[string]interface{}) {
 
-	out := map[string]interface{}{
+	out = map[string]interface{}{
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
@@ -305,12 +305,11 @@ func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
 		out["public_nat_ip"] = gateway.BgpConfig.PublicNatIp
 	}
 
-	return out
+	return
 }
 
-func flattenCustomerNetworks(customerNetworks []client.CustomerNetwork) []map[string]string {
+func flattenCustomerNetworks(customerNetworks []client.CustomerNetwork) (out []map[string]string) {
 
-	var out []map[string]string
 	for _, cn := range customerNetworks {
 		out = append(out, map[string]string{
 			"name":    cn.Name,
@@ -318,20 +317,17 @@ func flattenCustomerNetworks(customerNetworks []client.CustomerNetwork) []map[st
 		})
 	}
 
-	return out
+	return
 }
 
-func FlattenNatConfig(config *client.NatConfig) []map[string]interface{} {
+func FlattenNatConfig(config *client.NatConfig) (out []map[string]interface{}) {
 
-	output := make([]map[string]interface{}, 1)
-	output[0] = map[string]interface{}{
+	return append(out, map[string]interface{}{
 		"blocks":    config.Blocks,
 		"enabled":   config.Enabled,
 		"pnat_cidr": config.PnatCidr,
 		"mappings":  flattenMappings(config.Mappings),
-	}
-
-	return output
+	})
 }
 
 func flattenMappings(mappings []client.NatMapping) (out []map[string]interface{}) {
@@ -362,6 +358,7 @@ func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error
 			"INITIALIZING",
 			"PROVISIONING",
 			"UPDATING",
+			"WAITING_TO_PROVISION",
 		},
 		Target: []string{
 			"ACTIVE",
@@ -412,6 +409,7 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 			"PROVISIONING",
 			"UPDATING",
 			"DELETING",
+			"WAITING_TO_PROVISION",
 		},
 		Target: []string{
 			"FAILED_TO_PROVISION",
@@ -467,6 +465,7 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 			"PROVISIONING",
 			"UPDATING",
 			"DELETING",
+			"WAITING_TO_PROVISION",
 		},
 		Target: []string{
 			"DELETED",
