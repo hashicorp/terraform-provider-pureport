@@ -411,6 +411,8 @@ github.com/pureport/pureport-sdk-go v0.0.0-20190605195053-00cd0e03ffce h1:c1WDAD
 github.com/pureport/pureport-sdk-go v0.0.0-20190605195053-00cd0e03ffce/go.mod h1:j3o/Yqk2isoAurZmjZteYToDLqC2HC6dTrWzeHQtfPg=
 github.com/pureport/pureport-sdk-go v0.0.0-20190605201114-9b412fedf62a h1:UkldillIY51fUg8ynB4rqL4/TmO0yFTB9tS23ykINd0=
 github.com/pureport/pureport-sdk-go v0.0.0-20190605201114-9b412fedf62a/go.mod h1:wk2HPIbk0MvU0o1VRyU9slh8YE6ty304tbymcWfHd6s=
+github.com/pureport/pureport-sdk-go v0.2.1 h1:pjBCYYAIWsHcpty71oUQGBWF0D4kPQHG9medplJn7/Y=
+github.com/pureport/pureport-sdk-go v0.2.1/go.mod h1:wk2HPIbk0MvU0o1VRyU9slh8YE6ty304tbymcWfHd6s=
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735/go.mod h1:807d1WSdnB0XRJzKNil9Om6lcp/3a0v4qIHxIXzX/Yc=
