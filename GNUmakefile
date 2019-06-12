@@ -1,3 +1,4 @@
+SWEEP?="tf_test,tf-test"
 TEST?=$$(go list ./... |grep -v 'vendor'|grep -v 'pureport/disabled')
 TESTARGS?=$("-parallel=2","-timeout=120m")
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)

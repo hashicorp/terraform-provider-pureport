@@ -34,18 +34,25 @@ pipeline {
           )
     }
     environment {
-        TF_LOG              = "${params.ACCEPTANCE_TESTS_LOG_LEVEL}"
-        TF_LOG_PATH         = "${params.ACCEPTANCE_TESTS_LOG_TO_FILE ? 'tf_log.log' : '' }"
-        TF_IN_AUTOMATION    = "true"
-        TF_INPUT            = "false"
-        GOPATH              = "/go"
-        GOCACHE             = "/tmp/go/.cache"
-        PUREPORT_ENDPOINT   = "https://dev1-api.pureportdev.com"
-        PUREPORT_API_KEY    = credentials('terraform-pureport-dev1-api-key')
-        PUREPORT_API_SECRET = credentials('terraform-pureport-dev1-api-secret')
-        GOOGLE_CREDENTIALS  = credentials('terraform-google-credentials-id')
-        GOOGLE_PROJECT      = "pureport-customer1"
-        GOOGLE_REGION       = "us-west2"
+        TF_LOG                = "${params.ACCEPTANCE_TESTS_LOG_LEVEL}"
+        TF_LOG_PATH           = "${params.ACCEPTANCE_TESTS_LOG_TO_FILE ? 'tf_log.log' : '' }"
+        TF_IN_AUTOMATION      = "true"
+        TF_INPUT              = "false"
+
+        GOPATH                = "/go"
+        GOCACHE               = "/tmp/go/.cache"
+
+        PUREPORT_ENDPOINT     = "https://dev1-api.pureportdev.com"
+        PUREPORT_API_KEY      = credentials('terraform-pureport-dev1-api-key')
+        PUREPORT_API_SECRET   = credentials('terraform-pureport-dev1-api-secret')
+
+        GOOGLE_CREDENTIALS    = credentials('terraform-google-credentials-id')
+        GOOGLE_PROJECT        = "pureport-customer1"
+        GOOGLE_REGION         = "us-west2"
+
+        AWS_DEFAULT_REGION    = "us-east-1"
+        AWS_ACCESS_KEY_ID     = credentials('terraform-acc-test-aws-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('terraform-acc-test-aws-secret')
     }
     stages {
         stage('Configure') {

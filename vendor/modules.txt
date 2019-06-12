@@ -21,41 +21,165 @@ github.com/apparentlymart/go-cidr/cidr
 github.com/apparentlymart/go-textseg/textseg
 # github.com/armon/go-radix v1.0.0
 github.com/armon/go-radix
-# github.com/aws/aws-sdk-go v1.19.18
+# github.com/aws/aws-sdk-go v1.19.42
 github.com/aws/aws-sdk-go/aws
+github.com/aws/aws-sdk-go/aws/arn
+github.com/aws/aws-sdk-go/aws/awserr
+github.com/aws/aws-sdk-go/aws/awsutil
+github.com/aws/aws-sdk-go/aws/endpoints
+github.com/aws/aws-sdk-go/aws/request
+github.com/aws/aws-sdk-go/aws/session
+github.com/aws/aws-sdk-go/private/protocol/json/jsonutil
+github.com/aws/aws-sdk-go/service/acm
+github.com/aws/aws-sdk-go/service/acmpca
+github.com/aws/aws-sdk-go/service/apigateway
+github.com/aws/aws-sdk-go/service/apigatewayv2
+github.com/aws/aws-sdk-go/service/applicationautoscaling
+github.com/aws/aws-sdk-go/service/appmesh
+github.com/aws/aws-sdk-go/service/appsync
+github.com/aws/aws-sdk-go/service/athena
+github.com/aws/aws-sdk-go/service/autoscaling
+github.com/aws/aws-sdk-go/service/backup
+github.com/aws/aws-sdk-go/service/batch
+github.com/aws/aws-sdk-go/service/budgets
+github.com/aws/aws-sdk-go/service/cloud9
+github.com/aws/aws-sdk-go/service/cloudformation
+github.com/aws/aws-sdk-go/service/cloudfront
+github.com/aws/aws-sdk-go/service/cloudhsmv2
+github.com/aws/aws-sdk-go/service/cloudsearch
+github.com/aws/aws-sdk-go/service/cloudtrail
+github.com/aws/aws-sdk-go/service/cloudwatch
+github.com/aws/aws-sdk-go/service/cloudwatchevents
+github.com/aws/aws-sdk-go/service/cloudwatchlogs
+github.com/aws/aws-sdk-go/service/codebuild
+github.com/aws/aws-sdk-go/service/codecommit
+github.com/aws/aws-sdk-go/service/codedeploy
+github.com/aws/aws-sdk-go/service/codepipeline
+github.com/aws/aws-sdk-go/service/cognitoidentity
+github.com/aws/aws-sdk-go/service/cognitoidentityprovider
+github.com/aws/aws-sdk-go/service/configservice
+github.com/aws/aws-sdk-go/service/costandusagereportservice
+github.com/aws/aws-sdk-go/service/databasemigrationservice
+github.com/aws/aws-sdk-go/service/datapipeline
+github.com/aws/aws-sdk-go/service/datasync
+github.com/aws/aws-sdk-go/service/dax
+github.com/aws/aws-sdk-go/service/devicefarm
+github.com/aws/aws-sdk-go/service/directconnect
+github.com/aws/aws-sdk-go/service/directoryservice
+github.com/aws/aws-sdk-go/service/dlm
+github.com/aws/aws-sdk-go/service/docdb
+github.com/aws/aws-sdk-go/service/dynamodb
+github.com/aws/aws-sdk-go/service/ec2
+github.com/aws/aws-sdk-go/service/ecr
+github.com/aws/aws-sdk-go/service/ecs
+github.com/aws/aws-sdk-go/service/efs
+github.com/aws/aws-sdk-go/service/eks
+github.com/aws/aws-sdk-go/service/elasticache
+github.com/aws/aws-sdk-go/service/elasticbeanstalk
+github.com/aws/aws-sdk-go/service/elasticsearchservice
+github.com/aws/aws-sdk-go/service/elastictranscoder
+github.com/aws/aws-sdk-go/service/elb
+github.com/aws/aws-sdk-go/service/elbv2
+github.com/aws/aws-sdk-go/service/emr
+github.com/aws/aws-sdk-go/service/firehose
+github.com/aws/aws-sdk-go/service/fms
+github.com/aws/aws-sdk-go/service/fsx
+github.com/aws/aws-sdk-go/service/gamelift
+github.com/aws/aws-sdk-go/service/glacier
+github.com/aws/aws-sdk-go/service/globalaccelerator
+github.com/aws/aws-sdk-go/service/glue
+github.com/aws/aws-sdk-go/service/guardduty
+github.com/aws/aws-sdk-go/service/iam
+github.com/aws/aws-sdk-go/service/inspector
+github.com/aws/aws-sdk-go/service/iot
+github.com/aws/aws-sdk-go/service/kafka
+github.com/aws/aws-sdk-go/service/kinesis
+github.com/aws/aws-sdk-go/service/kinesisanalytics
+github.com/aws/aws-sdk-go/service/kinesisanalyticsv2
+github.com/aws/aws-sdk-go/service/kinesisvideo
+github.com/aws/aws-sdk-go/service/kms
+github.com/aws/aws-sdk-go/service/lambda
+github.com/aws/aws-sdk-go/service/lexmodelbuildingservice
+github.com/aws/aws-sdk-go/service/licensemanager
+github.com/aws/aws-sdk-go/service/lightsail
+github.com/aws/aws-sdk-go/service/macie
+github.com/aws/aws-sdk-go/service/managedblockchain
+github.com/aws/aws-sdk-go/service/mediaconnect
+github.com/aws/aws-sdk-go/service/mediaconvert
+github.com/aws/aws-sdk-go/service/medialive
+github.com/aws/aws-sdk-go/service/mediapackage
+github.com/aws/aws-sdk-go/service/mediastore
+github.com/aws/aws-sdk-go/service/mediastoredata
+github.com/aws/aws-sdk-go/service/mq
+github.com/aws/aws-sdk-go/service/neptune
+github.com/aws/aws-sdk-go/service/opsworks
+github.com/aws/aws-sdk-go/service/organizations
+github.com/aws/aws-sdk-go/service/pinpoint
+github.com/aws/aws-sdk-go/service/pricing
+github.com/aws/aws-sdk-go/service/quicksight
+github.com/aws/aws-sdk-go/service/ram
+github.com/aws/aws-sdk-go/service/rds
+github.com/aws/aws-sdk-go/service/redshift
+github.com/aws/aws-sdk-go/service/resourcegroups
+github.com/aws/aws-sdk-go/service/route53
+github.com/aws/aws-sdk-go/service/route53resolver
+github.com/aws/aws-sdk-go/service/s3
+github.com/aws/aws-sdk-go/service/s3control
+github.com/aws/aws-sdk-go/service/sagemaker
+github.com/aws/aws-sdk-go/service/secretsmanager
+github.com/aws/aws-sdk-go/service/securityhub
+github.com/aws/aws-sdk-go/service/serverlessapplicationrepository
+github.com/aws/aws-sdk-go/service/servicecatalog
+github.com/aws/aws-sdk-go/service/servicediscovery
+github.com/aws/aws-sdk-go/service/ses
+github.com/aws/aws-sdk-go/service/sfn
+github.com/aws/aws-sdk-go/service/shield
+github.com/aws/aws-sdk-go/service/simpledb
+github.com/aws/aws-sdk-go/service/sns
+github.com/aws/aws-sdk-go/service/sqs
+github.com/aws/aws-sdk-go/service/ssm
+github.com/aws/aws-sdk-go/service/storagegateway
+github.com/aws/aws-sdk-go/service/sts
+github.com/aws/aws-sdk-go/service/swf
+github.com/aws/aws-sdk-go/service/transfer
+github.com/aws/aws-sdk-go/service/waf
+github.com/aws/aws-sdk-go/service/wafregional
+github.com/aws/aws-sdk-go/service/worklink
+github.com/aws/aws-sdk-go/service/workspaces
+github.com/aws/aws-sdk-go/service/xray
 github.com/aws/aws-sdk-go/aws/credentials
 github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds
 github.com/aws/aws-sdk-go/aws/ec2metadata
-github.com/aws/aws-sdk-go/aws/session
-github.com/aws/aws-sdk-go/service/s3
-github.com/aws/aws-sdk-go/aws/awserr
-github.com/aws/aws-sdk-go/aws/endpoints
 github.com/aws/aws-sdk-go/internal/sdkio
-github.com/aws/aws-sdk-go/internal/ini
-github.com/aws/aws-sdk-go/internal/shareddefaults
-github.com/aws/aws-sdk-go/aws/client
-github.com/aws/aws-sdk-go/internal/sdkuri
 github.com/aws/aws-sdk-go/aws/client/metadata
+github.com/aws/aws-sdk-go/aws/client
 github.com/aws/aws-sdk-go/aws/corehandlers
-github.com/aws/aws-sdk-go/aws/request
 github.com/aws/aws-sdk-go/aws/credentials/processcreds
 github.com/aws/aws-sdk-go/aws/credentials/stscreds
 github.com/aws/aws-sdk-go/aws/csm
 github.com/aws/aws-sdk-go/aws/defaults
-github.com/aws/aws-sdk-go/aws/awsutil
-github.com/aws/aws-sdk-go/aws/signer/v4
-github.com/aws/aws-sdk-go/internal/s3err
+github.com/aws/aws-sdk-go/internal/ini
+github.com/aws/aws-sdk-go/internal/shareddefaults
 github.com/aws/aws-sdk-go/private/protocol
+github.com/aws/aws-sdk-go/aws/signer/v4
+github.com/aws/aws-sdk-go/private/protocol/jsonrpc
+github.com/aws/aws-sdk-go/private/protocol/restjson
+github.com/aws/aws-sdk-go/private/protocol/query
+github.com/aws/aws-sdk-go/private/protocol/restxml
+github.com/aws/aws-sdk-go/aws/crr
+github.com/aws/aws-sdk-go/internal/sdkrand
+github.com/aws/aws-sdk-go/private/protocol/ec2query
 github.com/aws/aws-sdk-go/private/protocol/eventstream
 github.com/aws/aws-sdk-go/private/protocol/eventstream/eventstreamapi
 github.com/aws/aws-sdk-go/private/protocol/rest
-github.com/aws/aws-sdk-go/private/protocol/restxml
-github.com/aws/aws-sdk-go/internal/sdkrand
-github.com/aws/aws-sdk-go/service/sts
-github.com/aws/aws-sdk-go/aws/credentials/endpointcreds
-github.com/aws/aws-sdk-go/private/protocol/query
 github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil
+github.com/aws/aws-sdk-go/internal/s3err
+github.com/aws/aws-sdk-go/private/signer/v2
+github.com/aws/aws-sdk-go/internal/sdkuri
+github.com/aws/aws-sdk-go/aws/credentials/endpointcreds
 github.com/aws/aws-sdk-go/private/protocol/query/queryutil
+# github.com/beevik/etree v1.1.0
+github.com/beevik/etree
 # github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 github.com/bgentry/go-netrc/netrc
 # github.com/bgentry/speakeasy v0.1.0
@@ -72,6 +196,9 @@ github.com/fsnotify/fsnotify
 github.com/gammazero/deque
 # github.com/gammazero/workerpool v0.0.0-20181230203049-86a96b5d5d92
 github.com/gammazero/workerpool
+# github.com/gogo/protobuf v1.2.0
+github.com/gogo/protobuf/proto
+github.com/gogo/protobuf/sortkeys
 # github.com/golang/protobuf v1.3.0
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
@@ -89,8 +216,12 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
+# github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
+github.com/google/gofuzz
 # github.com/googleapis/gax-go/v2 v2.0.3
 github.com/googleapis/gax-go/v2
+# github.com/hashicorp/aws-sdk-go-base v0.3.0
+github.com/hashicorp/aws-sdk-go-base
 # github.com/hashicorp/errwrap v1.0.0
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-cleanhttp v0.5.1
@@ -202,6 +333,8 @@ github.com/hashicorp/vault/helper/jsonutil
 github.com/hashicorp/vault/helper/compressutil
 # github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb
 github.com/hashicorp/yamux
+# github.com/jen20/awspolicyequivalence v1.0.0
+github.com/jen20/awspolicyequivalence
 # github.com/jmespath/go-jmespath v0.0.0-20180206201540-c2b33e8439af
 github.com/jmespath/go-jmespath
 # github.com/keybase/go-crypto v0.0.0-20181127160227-255a5089e85a
@@ -218,6 +351,9 @@ github.com/keybase/go-crypto/ed25519
 github.com/keybase/go-crypto/openpgp/ecdh
 github.com/keybase/go-crypto/openpgp/elgamal
 github.com/keybase/go-crypto/ed25519/internal/edwards25519
+# github.com/kubernetes-sigs/aws-iam-authenticator v0.3.1-0.20181019024009-82544ec86140
+github.com/kubernetes-sigs/aws-iam-authenticator/pkg/token
+github.com/kubernetes-sigs/aws-iam-authenticator/pkg/arn
 # github.com/magiconair/properties v1.8.0
 github.com/magiconair/properties
 # github.com/mattn/go-colorable v0.1.1
@@ -230,7 +366,7 @@ github.com/mitchellh/cli
 github.com/mitchellh/colorstring
 # github.com/mitchellh/copystructure v1.0.0
 github.com/mitchellh/copystructure
-# github.com/mitchellh/go-homedir v1.0.0
+# github.com/mitchellh/go-homedir v1.1.0
 github.com/mitchellh/go-homedir
 # github.com/mitchellh/go-testing-interface v1.0.0
 github.com/mitchellh/go-testing-interface
@@ -276,6 +412,8 @@ github.com/spf13/pflag
 github.com/spf13/viper
 # github.com/stoewer/go-strcase v1.0.2
 github.com/stoewer/go-strcase
+# github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
+github.com/terraform-providers/terraform-provider-aws/aws
 # github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
 github.com/terraform-providers/terraform-provider-google/google
 github.com/terraform-providers/terraform-provider-google/version
@@ -450,9 +588,38 @@ google.golang.org/grpc/balancer/base
 google.golang.org/grpc/binarylog/grpc_binarylog_v1
 google.golang.org/grpc/internal/syscall
 google.golang.org/grpc/credentials/oauth
+# gopkg.in/inf.v0 v0.9.1
+gopkg.in/inf.v0
 # gopkg.in/ini.v1 v1.42.0
 gopkg.in/ini.v1
 # gopkg.in/natefinch/lumberjack.v2 v2.0.0
 gopkg.in/natefinch/lumberjack.v2
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
+# k8s.io/apimachinery v0.0.0-20190204010555-a98ff070d70e
+k8s.io/apimachinery/pkg/apis/meta/v1
+k8s.io/apimachinery/pkg/api/resource
+k8s.io/apimachinery/pkg/conversion
+k8s.io/apimachinery/pkg/fields
+k8s.io/apimachinery/pkg/labels
+k8s.io/apimachinery/pkg/runtime
+k8s.io/apimachinery/pkg/runtime/schema
+k8s.io/apimachinery/pkg/selection
+k8s.io/apimachinery/pkg/types
+k8s.io/apimachinery/pkg/util/intstr
+k8s.io/apimachinery/pkg/util/runtime
+k8s.io/apimachinery/pkg/watch
+k8s.io/apimachinery/third_party/forked/golang/reflect
+k8s.io/apimachinery/pkg/util/sets
+k8s.io/apimachinery/pkg/util/validation
+k8s.io/apimachinery/pkg/conversion/queryparams
+k8s.io/apimachinery/pkg/util/errors
+k8s.io/apimachinery/pkg/util/json
+k8s.io/apimachinery/pkg/util/naming
+k8s.io/apimachinery/pkg/util/net
+k8s.io/apimachinery/pkg/util/validation/field
+# k8s.io/client-go v10.0.0+incompatible
+k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1
+k8s.io/client-go/pkg/apis/clientauthentication
+# k8s.io/klog v0.1.0
+k8s.io/klog
