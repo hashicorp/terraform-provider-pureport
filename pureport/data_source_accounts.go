@@ -92,7 +92,7 @@ func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 
 	// Sort the list
 	sort.Slice(filteredAccounts, func(i int, j int) bool {
-		return filteredAccounts[i].Id < filteredAccounts[j].Id
+		return filteredAccounts[i].Name < filteredAccounts[j].Name
 	})
 
 	// Convert to Map

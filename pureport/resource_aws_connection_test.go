@@ -32,7 +32,6 @@ data "aws_caller_identity" "current" {}
 `
 
 const testAccResourceAWSConnectionConfig_basic = testAccResourceAWSConnectionConfig_common + `
-
 resource "pureport_aws_connection" "main" {
   name = "AwsDirectConnectTest"
   speed = "100"
@@ -151,13 +150,14 @@ func TestAWSConnection_basic(t *testing.T) {
 				Config: testAccResourceAWSConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAWSConnection(resourceName, &instance),
+
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
+					resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 
@@ -267,7 +267,7 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
+					resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "false"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),

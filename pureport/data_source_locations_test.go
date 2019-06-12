@@ -31,7 +31,9 @@ func TestLocations_empty(t *testing.T) {
 				Config: testAccDataSourceLocationsConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceLocations(resourceName),
+
 					resource.TestCheckResourceAttr(resourceName, "locations.#", "2"),
+
 					resource.TestCheckResourceAttr(resourceName, "locations.0.id", "us-ral"),
 					resource.TestCheckResourceAttr(resourceName, "locations.0.href", "/locations/us-ral"),
 					resource.TestCheckResourceAttr(resourceName, "locations.0.name", "Raleigh, NC"),
@@ -54,7 +56,9 @@ func TestLocations_name_regex(t *testing.T) {
 				Config: testAccDataSourceLocationsConfig_name_regex,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceLocations(resourceName),
+
 					resource.TestCheckResourceAttr(resourceName, "locations.#", "1"),
+
 					resource.TestCheckResourceAttr(resourceName, "locations.0.id", "us-sea"),
 					resource.TestCheckResourceAttr(resourceName, "locations.0.href", "/locations/us-sea"),
 					resource.TestCheckResourceAttr(resourceName, "locations.0.name", "Seattle, WA"),

@@ -51,6 +51,10 @@ func testAccPreCheck(t *testing.T) {
 		"AWS_SECRET_ACCESS_KEY",
 	}
 
+	azureEnvVars := []string{
+		"TF_VAR_azurerm_express_route_circuit_service_key",
+	}
+
 	// Pureport Provider Configuration
 	for _, e := range pureportEnvVars {
 		if v := os.Getenv(e); v == "" {
@@ -67,6 +71,13 @@ func testAccPreCheck(t *testing.T) {
 
 	// AWS Cloud Provider Configuration
 	for _, e := range amazonEnvVars {
+		if v := os.Getenv(e); v == "" {
+			t.Fatalf("%s must be specified for acceptance tests", e)
+		}
+	}
+
+	// Azure Cloud Provider Configuration
+	for _, e := range azureEnvVars {
 		if v := os.Getenv(e); v == "" {
 			t.Fatalf("%s must be specified for acceptance tests", e)
 		}

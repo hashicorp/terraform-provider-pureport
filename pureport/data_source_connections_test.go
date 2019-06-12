@@ -49,8 +49,8 @@ func TestConnections_empty(t *testing.T) {
 
 					resource.TestMatchResourceAttr(resourceName, "connections.0.id", regexp.MustCompile("conn-.{16}")),
 					resource.TestMatchResourceAttr(resourceName, "connections.0.href", regexp.MustCompile("/connections/conn-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.name", "ConnectionsTest-2"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.description", "ACC Test - 2"),
+					resource.TestCheckResourceAttr(resourceName, "connections.0.name", "ConnectionsTest-1"),
+					resource.TestCheckResourceAttr(resourceName, "connections.0.description", "ACC Test - 1"),
 					resource.TestCheckResourceAttr(resourceName, "connections.0.type", "AWS_DIRECT_CONNECT"),
 					resource.TestCheckResourceAttr(resourceName, "connections.0.speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "connections.0.location_href", "/locations/us-sea"),
@@ -58,8 +58,8 @@ func TestConnections_empty(t *testing.T) {
 
 					resource.TestMatchResourceAttr(resourceName, "connections.1.id", regexp.MustCompile("conn-.{16}")),
 					resource.TestMatchResourceAttr(resourceName, "connections.1.href", regexp.MustCompile("/connections/conn-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.name", "ConnectionsTest-1"),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.description", "ACC Test - 1"),
+					resource.TestCheckResourceAttr(resourceName, "connections.1.name", "ConnectionsTest-2"),
+					resource.TestCheckResourceAttr(resourceName, "connections.1.description", "ACC Test - 2"),
 					resource.TestCheckResourceAttr(resourceName, "connections.1.type", "AWS_DIRECT_CONNECT"),
 					resource.TestCheckResourceAttr(resourceName, "connections.1.speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "connections.1.location_href", "/locations/us-sea"),

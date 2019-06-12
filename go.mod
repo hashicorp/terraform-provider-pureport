@@ -12,6 +12,7 @@ require (
 	github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
 	github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
 	github.com/terraform-providers/terraform-provider-template v1.0.0
+	golang.org/x/crypto v0.0.0-20190506204251-e1dfcc566284 // indirect
 	google.golang.org/api v0.4.0 // indirect
 	sourcegraph.com/sourcegraph/go-diff v0.5.1-0.20190210232911-dee78e514455 // indirect
 )

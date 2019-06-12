@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -32,14 +33,16 @@ func TestAccounts_empty(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceAccounts(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "accounts.#", "2"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.id", "ac-8QVPmcPb_EhapbGHBMAo6Q"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.name", "Terraform Acceptance Tests"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.description", "Terraform Plugin Development"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.1.id", "ac-a05Gu7IbF9EKVol0n-vqRg"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.1.href", "/accounts/ac-a05Gu7IbF9EKVol0n-vqRg"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.1.name", "Developer"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.1.description", "Developer Account for Testing Terraform"),
+
+					resource.TestMatchResourceAttr(resourceName, "accounts.0.id", regexp.MustCompile("ac-.{16}")),
+					resource.TestMatchResourceAttr(resourceName, "accounts.0.href", regexp.MustCompile("/accounts/ac-.{16}")),
+					resource.TestCheckResourceAttr(resourceName, "accounts.0.name", "Developer"),
+					resource.TestCheckResourceAttr(resourceName, "accounts.0.description", "Developer Account for Testing Terraform"),
+
+					resource.TestMatchResourceAttr(resourceName, "accounts.1.id", regexp.MustCompile("ac-.{16}")),
+					resource.TestMatchResourceAttr(resourceName, "accounts.1.href", regexp.MustCompile("/accounts/ac-.{16}")),
+					resource.TestCheckResourceAttr(resourceName, "accounts.1.name", "Terraform Acceptance Tests"),
+					resource.TestCheckResourceAttr(resourceName, "accounts.1.description", "Terraform Plugin Development"),
 				),
 			},
 		},
@@ -59,6 +62,7 @@ func TestAccounts_name_regex(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceAccounts(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "accounts.#", "1"),
+
 					resource.TestCheckResourceAttr(resourceName, "accounts.0.id", "ac-8QVPmcPb_EhapbGHBMAo6Q"),
 					resource.TestCheckResourceAttr(resourceName, "accounts.0.href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
 					resource.TestCheckResourceAttr(resourceName, "accounts.0.name", "Terraform Acceptance Tests"),

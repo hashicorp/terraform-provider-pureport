@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -43,23 +44,23 @@ func TestNetworks_empty(t *testing.T) {
 					testAccCheckDataSourceNetworks(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "networks.#", "3"),
 
-					resource.TestCheckResourceAttr(resourceName, "networks.0.id", "network-75Vq2i2HPFX6Cb85kxcDZQ"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.href", "/networks/network-75Vq2i2HPFX6Cb85kxcDZQ"),
+					resource.TestMatchResourceAttr(resourceName, "networks.0.id", regexp.MustCompile("network-.{16}")),
+					resource.TestMatchResourceAttr(resourceName, "networks.0.href", regexp.MustCompile("/networks/network-.{16}")),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "Connections"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Data Source Testing"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestMatchResourceAttr(resourceName, "networks.0.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 
-					resource.TestCheckResourceAttrSet(resourceName, "networks.1.id"),
-					resource.TestCheckResourceAttr(resourceName, "networks.1.href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
+					resource.TestMatchResourceAttr(resourceName, "networks.1.id", regexp.MustCompile("network-.{16}")),
+					resource.TestMatchResourceAttr(resourceName, "networks.1.href", regexp.MustCompile("/networks/network-.{16}")),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.name", "Siouxsie & The Banshees"),
 					resource.TestCheckResourceAttr(resourceName, "networks.1.description", "Test Network #2"),
-					resource.TestCheckResourceAttr(resourceName, "networks.1.account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestMatchResourceAttr(resourceName, "networks.1.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 
-					resource.TestCheckResourceAttr(resourceName, "networks.2.id", "network-fN6NX6utBCoE5L_H261P4A"),
-					resource.TestCheckResourceAttr(resourceName, "networks.2.href", "/networks/network-fN6NX6utBCoE5L_H261P4A"),
+					resource.TestMatchResourceAttr(resourceName, "networks.2.id", regexp.MustCompile("network-.{16}")),
+					resource.TestMatchResourceAttr(resourceName, "networks.2.href", regexp.MustCompile("/networks/network-.{16}")),
 					resource.TestCheckResourceAttr(resourceName, "networks.2.name", "The Clash"),
 					resource.TestCheckResourceAttr(resourceName, "networks.2.description", "Test Network #1"),
-					resource.TestCheckResourceAttr(resourceName, "networks.2.account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestMatchResourceAttr(resourceName, "networks.2.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 				),
 			},
 		},
@@ -78,12 +79,14 @@ func TestNetworks_name_regex(t *testing.T) {
 				Config: testAccDataSourceNetworksConfig_name_regex,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceNetworks(resourceName),
+
 					resource.TestCheckResourceAttr(resourceName, "networks.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.id", "network-fN6NX6utBCoE5L_H261P4A"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.href", "/networks/network-fN6NX6utBCoE5L_H261P4A"),
+
+					resource.TestMatchResourceAttr(resourceName, "networks.0.id", regexp.MustCompile("network-.{16}")),
+					resource.TestMatchResourceAttr(resourceName, "networks.0.href", regexp.MustCompile("/networks/network-.{16}")),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "The Clash"),
 					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Test Network #1"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestMatchResourceAttr(resourceName, "networks.0.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 				),
 			},
 		},
