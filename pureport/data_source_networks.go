@@ -103,7 +103,7 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
 	// Sort the list
 	sort.Slice(filteredNetworks, func(i int, j int) bool {
-		return filteredNetworks[i].Id < filteredNetworks[j].Id
+		return filteredNetworks[i].Name < filteredNetworks[j].Name
 	})
 
 	// Convert to Map

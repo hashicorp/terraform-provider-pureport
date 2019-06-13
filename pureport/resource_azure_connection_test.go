@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"testing"
 
@@ -25,7 +26,9 @@ data "pureport_networks" "main" {
 }
 `
 
-const testAccResourceAzureConnectionConfig_basic = testAccResourceAzureConnectionConfig_common + `
+func testAccResourceAzureConnectionConfig(sk string) string {
+
+	return fmt.Sprintf(testAccResourceAzureConnectionConfig_common+`
 resource "pureport_azure_connection" "main" {
   name = "AzureExpressRouteTest"
   description = "Some random description"
@@ -35,12 +38,14 @@ resource "pureport_azure_connection" "main" {
   location_href = "${data.pureport_locations.main.locations.0.href}"
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
-  service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
+  service_key = "%s"
 }
-`
+`, sk)
+}
 
 func TestAzureConnection_basic(t *testing.T) {
 
+	serviceKey := os.Getenv("TF_VAR_azurerm_express_route_circuit_service_key")
 	resourceName := "pureport_azure_connection.main"
 	var instance client.AzureExpressRouteConnection
 
@@ -50,7 +55,7 @@ func TestAzureConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckAzureConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAzureConnectionConfig_basic,
+				Config: testAccResourceAzureConnectionConfig(serviceKey),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAzureConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),

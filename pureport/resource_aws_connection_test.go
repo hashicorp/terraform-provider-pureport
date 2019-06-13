@@ -27,6 +27,8 @@ data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
   name_regex = "Bansh.*"
 }
+
+data "aws_caller_identity" "current" {}
 `
 
 const testAccResourceAWSConnectionConfig_basic = testAccResourceAWSConnectionConfig_common + `
@@ -39,7 +41,7 @@ resource "pureport_aws_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "123456789012"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
 }
 `
 
@@ -53,7 +55,7 @@ resource "pureport_aws_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "123456789012"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
 }
 `
 
@@ -68,7 +70,7 @@ resource "pureport_aws_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "123456789012"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
 }
 `
 
@@ -82,7 +84,7 @@ resource "pureport_aws_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "001234567890"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
 }
 `
 
@@ -103,7 +105,7 @@ resource "pureport_aws_connection" "main" {
   peering_type = "PUBLIC"
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "123456789012"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
 }
 `
 
@@ -117,7 +119,7 @@ resource "pureport_aws_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "123456789012"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
 
   nat_config {
     enabled = true
@@ -148,13 +150,14 @@ func TestAWSConnection_basic(t *testing.T) {
 				Config: testAccResourceAWSConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAWSConnection(resourceName, &instance),
+
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
+					resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 
@@ -203,7 +206,7 @@ func TestAWSConnection_basic(t *testing.T) {
 					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
-					resource.TestCheckResourceAttr(resourceName, "aws_account_id", "001234567890"),
+					resource.TestMatchResourceAttr(resourceName, "aws_account_id", regexp.MustCompile("[0-9]{12}")),
 				),
 			},
 		},
@@ -264,7 +267,7 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "network_href", "/networks/network-EhlpJLhAcHMOmY75J91H3g"),
+					resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "false"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
