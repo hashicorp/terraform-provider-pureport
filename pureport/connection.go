@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
@@ -141,33 +141,6 @@ var (
 			Computed: true,
 		},
 	}
-
-	DeletableState = map[string]bool{
-		"FAILED_TO_PROVISION": true,
-		"ACTIVE":              true,
-		"DOWN":                true,
-		"FAILED_TO_UPDATE":    true,
-		"FAILED_TO_DELETE":    true,
-		"DELETED":             true,
-	}
-
-	FailedState = map[string]bool{
-		"FAILED_TO_PROVISION": true,
-		"FAILED_TO_UPDATE":    true,
-		"FAILED_TO_DELETE":    true,
-	}
-
-	ActiveState = map[string]bool{
-		"ACTIVE":  true,
-		"DOWN":    true,
-		"DELETED": true,
-	}
-
-	PendingState = map[string]bool{
-		"INITIALIZING": true,
-		"PROVISIONING": true,
-		"UPDATING":     true,
-	}
 )
 
 func getBaseConnectionSchema() map[string]*schema.Schema {
@@ -181,7 +154,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Optional: true,
 		},
 		"customer_networks": {
-			Type:     schema.TypeList,
+			Type:     schema.TypeSet,
 			Optional: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -200,6 +173,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 		"nat_config": {
 			Type:     schema.TypeList,
 			Optional: true,
+			Computed: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -209,7 +183,7 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 						Default:  true,
 					},
 					"mappings": {
-						Type:     schema.TypeList,
+						Type:     schema.TypeSet,
 						Optional: true,
 						Elem: &schema.Resource{
 							Schema: map[string]*schema.Schema{
@@ -264,41 +238,43 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 	}
 }
 
-func flattenConnection(connection client.Connection) map[string]interface{} {
-	return map[string]interface{}{
-		"customer_asn":      connection.CustomerASN,
-		"customer_networks": flattenCustomerNetworks(connection.CustomerNetworks),
-		"high_availability": connection.HighAvailability,
-		"location_href":     flattenLink(connection.Location),
-		"network_href":      flattenLink(connection.Network),
-		"name":              connection.Name,
-		"description":       connection.Description,
-		"speed":             connection.Speed,
-	}
-}
-
 // FlattenGateway flattens the provide gateway to a map for use with terraform
-func FlattenStandardGateway(gateway *client.StandardGateway) map[string]interface{} {
-	return map[string]interface{}{
+func FlattenStandardGateway(gateway *client.StandardGateway) (out map[string]interface{}) {
+
+	out = map[string]interface{}{
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
 		"link_state":          gateway.LinkState,
 		"remote_id":           gateway.RemoteId,
 		"vlan":                gateway.Vlan,
-		"customer_asn":        gateway.BgpConfig.CustomerASN,
-		"customer_ip":         gateway.BgpConfig.CustomerIP,
-		"pureport_asn":        gateway.BgpConfig.PureportASN,
-		"pureport_ip":         gateway.BgpConfig.PureportIP,
-		"bgp_password":        gateway.BgpConfig.Password,
-		"peering_subnet":      gateway.BgpConfig.PeeringSubnet,
-		"public_nat_ip":       gateway.BgpConfig.PublicNatIp,
+		"customer_asn":        0,
+		"customer_ip":         "",
+		"pureport_asn":        0,
+		"pureport_ip":         "",
+		"bgp_password":        "",
+		"peering_subnet":      "",
+		"public_nat_ip":       "",
 	}
+
+	// If we are using BGP, include the confiuration
+	if gateway.BgpConfig != nil {
+		out["customer_asn"] = gateway.BgpConfig.CustomerASN
+		out["customer_ip"] = gateway.BgpConfig.CustomerIP
+		out["pureport_asn"] = gateway.BgpConfig.PureportASN
+		out["pureport_ip"] = gateway.BgpConfig.PureportIP
+		out["bgp_password"] = gateway.BgpConfig.Password
+		out["peering_subnet"] = gateway.BgpConfig.PeeringSubnet
+		out["public_nat_ip"] = gateway.BgpConfig.PublicNatIp
+	}
+
+	return
 }
 
 // FlattenGateway flattens the provide gateway to a map for use with terraform
-func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
-	return map[string]interface{}{
+func FlattenVpnGateway(gateway *client.VpnGateway) (out map[string]interface{}) {
+
+	out = map[string]interface{}{
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
@@ -309,42 +285,49 @@ func FlattenVpnGateway(gateway *client.VpnGateway) map[string]interface{} {
 		"pureport_vti_ip":     gateway.PureportVtiIP,
 		"vpn_auth_type":       gateway.Auth.Type_,
 		"vpn_auth_key":        gateway.Auth.Key,
-		"customer_asn":        gateway.BgpConfig.CustomerASN,
-		"customer_ip":         gateway.BgpConfig.CustomerIP,
-		"pureport_asn":        gateway.BgpConfig.PureportASN,
-		"pureport_ip":         gateway.BgpConfig.PureportIP,
-		"bgp_password":        gateway.BgpConfig.Password,
-		"peering_subnet":      gateway.BgpConfig.PeeringSubnet,
-		"public_nat_ip":       gateway.BgpConfig.PublicNatIp,
+		"customer_asn":        0,
+		"customer_ip":         "",
+		"pureport_asn":        0,
+		"pureport_ip":         "",
+		"bgp_password":        "",
+		"peering_subnet":      "",
+		"public_nat_ip":       "",
 	}
-}
 
-func flattenLink(link *client.Link) string {
-	return link.Href
-}
-
-func flattenCustomerNetworks(networks []client.CustomerNetwork) (out []map[string]interface{}) {
-
-	for _, network := range networks {
-
-		n := map[string]interface{}{
-			"name":    network.Name,
-			"address": network.Address,
-		}
-
-		out = append(out, n)
+	// If we are using BGP, include the confiuration
+	if gateway.BgpConfig != nil {
+		out["customer_asn"] = gateway.BgpConfig.CustomerASN
+		out["customer_ip"] = gateway.BgpConfig.CustomerIP
+		out["pureport_asn"] = gateway.BgpConfig.PureportASN
+		out["pureport_ip"] = gateway.BgpConfig.PureportIP
+		out["bgp_password"] = gateway.BgpConfig.Password
+		out["peering_subnet"] = gateway.BgpConfig.PeeringSubnet
+		out["public_nat_ip"] = gateway.BgpConfig.PublicNatIp
 	}
 
 	return
 }
 
-func flattenNatConfig(config client.NatConfig) map[string]interface{} {
-	return map[string]interface{}{
+func flattenCustomerNetworks(customerNetworks []client.CustomerNetwork) (out []map[string]string) {
+
+	for _, cn := range customerNetworks {
+		out = append(out, map[string]string{
+			"name":    cn.Name,
+			"address": cn.Address,
+		})
+	}
+
+	return
+}
+
+func FlattenNatConfig(config *client.NatConfig) (out []map[string]interface{}) {
+
+	return append(out, map[string]interface{}{
 		"blocks":    config.Blocks,
 		"enabled":   config.Enabled,
 		"pnat_cidr": config.PnatCidr,
 		"mappings":  flattenMappings(config.Mappings),
-	}
+	})
 }
 
 func flattenMappings(mappings []client.NatMapping) (out []map[string]interface{}) {
@@ -370,45 +353,42 @@ func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error
 
 	log.Printf("[Info] Waiting for connection to come up.")
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 3 * time.Minute
+	createStateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"INITIALIZING",
+			"PROVISIONING",
+			"UPDATING",
+			"WAITING_TO_PROVISION",
+		},
+		Target: []string{
+			"ACTIVE",
+		},
+		Refresh: func() (interface{}, string, error) {
 
-	var state string
+			c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+			if err != nil {
+				return 0, "", fmt.Errorf("Error reading data for %s: %s", name, err)
+			}
 
-	wait_for_create := func() error {
+			if resp.StatusCode >= 300 {
+				return 0, "", fmt.Errorf("Error received while waiting for creation of %s: code=%v", name, resp.StatusCode)
+			}
 
-		c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
-		if err != nil {
-			return backoff.Permanent(
-				fmt.Errorf("Error reading data for %s: %s", name, err),
-			)
-		}
+			conn := reflect.ValueOf(c)
+			state := conn.FieldByName("State").String()
 
-		if resp.StatusCode >= 300 {
-			return backoff.Permanent(
-				fmt.Errorf("Error received while waiting for creation of %s: code=%v", name, resp.StatusCode),
-			)
-		}
+			return c, state, nil
 
-		conn := reflect.ValueOf(c)
-		state = conn.FieldByName("State").String()
-
-		if PendingState[state] {
-			return fmt.Errorf("Waiting ...")
-
-		} else {
-			return nil
-		}
+		},
+		Timeout:                   d.Timeout(schema.TimeoutCreate),
+		Delay:                     5 * time.Second,
+		MinTimeout:                5 * time.Second,
+		ContinuousTargetOccurence: 2,
 	}
 
-	if err := backoff.Retry(wait_for_create, b); err != nil {
-		return fmt.Errorf("Timeout waiting for %s: state=%s", name, state)
-	}
-
-	log.Printf("Retry returned state: %s", state)
-
-	if FailedState[state] {
-		return fmt.Errorf("%s in failed state: state=%s", name, state)
+	_, err := createStateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for connection (%s) to be created: %s", connectionId, err)
 	}
 
 	return nil
@@ -423,34 +403,48 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 	// Wait until we are in a state that we can trigger a delete from
 	log.Printf("[Info] Waiting to trigger a delete.")
 
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 3 * time.Minute
+	waitingStateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"INITIALIZING",
+			"PROVISIONING",
+			"UPDATING",
+			"DELETING",
+			"WAITING_TO_PROVISION",
+		},
+		Target: []string{
+			"FAILED_TO_PROVISION",
+			"ACTIVE",
+			"DOWN",
+			"FAILED_TO_UPDATE",
+			"FAILED_TO_DELETE",
+			"DELETED",
+		},
+		Refresh: func() (interface{}, string, error) {
 
-	wait_to_delete := func() error {
+			c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+			if err != nil {
+				return 0, "", fmt.Errorf("Error deleting data for %s: %s", name, err)
+			}
 
-		c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
-		if err != nil {
-			return backoff.Permanent(
-				fmt.Errorf("Error deleting data for %s: %s", name, err),
-			)
-		}
+			if resp.StatusCode >= 300 {
+				return 0, "", fmt.Errorf("Error Response while attempting to delete %s: code=%v", name, resp.StatusCode)
+			}
 
-		if resp.StatusCode >= 300 {
-			return backoff.Permanent(
-				fmt.Errorf("Error Response while attempting to delete %s: code=%v", name, resp.StatusCode),
-			)
-		}
+			conn := reflect.ValueOf(c)
+			state := conn.FieldByName("State").String()
 
-		conn := reflect.ValueOf(c)
-		if DeletableState[conn.FieldByName("State").String()] {
-			return nil
-		} else {
-			return fmt.Errorf("Waiting ...")
-		}
+			return c, state, nil
+
+		},
+		Timeout:                   d.Timeout(schema.TimeoutDelete),
+		Delay:                     5 * time.Second,
+		MinTimeout:                1 * time.Second,
+		ContinuousTargetOccurence: 2,
 	}
 
-	if err := backoff.Retry(wait_to_delete, b); err != nil {
-		return err
+	_, err := waitingStateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for connection (%s) to be deletable: %s", connectionId, err)
 	}
 
 	// Delete
@@ -464,20 +458,50 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 	}
 
 	log.Printf("[Info] Waiting for connection to be deleted")
-	wait_for_delete := func() error {
 
-		log.Printf("Retrying ...%+v", b.GetElapsedTime())
-		_, resp, _ := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+	deleteStateConf := &resource.StateChangeConf{
+		Pending: []string{
+			"INITIALIZING",
+			"PROVISIONING",
+			"UPDATING",
+			"DELETING",
+			"WAITING_TO_PROVISION",
+		},
+		Target: []string{
+			"DELETED",
+		},
+		Refresh: func() (interface{}, string, error) {
 
-		if resp.StatusCode == 404 {
-			d.SetId("")
-			return nil
-		} else {
-			return fmt.Errorf("Waiting ...")
-		}
+			c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
+
+			if resp.StatusCode == 404 {
+				return 0, "DELETED", nil
+			}
+
+			if err != nil {
+				return 0, "", fmt.Errorf("Error Response while deleting %s: error=%s", name, err)
+			}
+
+			conn := reflect.ValueOf(c)
+			state := conn.FieldByName("State").String()
+
+			return c, state, nil
+
+		},
+		Timeout:                   d.Timeout(schema.TimeoutDelete),
+		Delay:                     5 * time.Second,
+		MinTimeout:                1 * time.Second,
+		ContinuousTargetOccurence: 2,
 	}
 
-	return backoff.Retry(wait_for_delete, b)
+	_, err = deleteStateConf.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for connection (%s) to be created: %s", connectionId, err)
+	}
+
+	d.SetId("")
+
+	return nil
 }
 
 // ExpandCustomerNetworks to decode the customer network information
@@ -487,11 +511,13 @@ func ExpandCustomerNetworks(d *schema.ResourceData) []client.CustomerNetwork {
 
 		customerNetworks := []client.CustomerNetwork{}
 
-		for _, cn := range data.([]map[string]string) {
+		for _, cn := range data.(*schema.Set).List() {
+
+			network := cn.(map[string]interface{})
 
 			new := client.CustomerNetwork{
-				Name:    cn["name"],
-				Address: cn["address"],
+				Name:    network["name"].(string),
+				Address: network["address"].(string),
 			}
 
 			customerNetworks = append(customerNetworks, new)
@@ -509,13 +535,16 @@ func ExpandNATConfiguration(d *schema.ResourceData) *client.NatConfig {
 
 		natConfig := &client.NatConfig{}
 
-		config := data.(map[string]interface{})
+		tmp_config := data.([]interface{})
+		config := tmp_config[0].(map[string]interface{})
 		natConfig.Enabled = config["enabled"].(bool)
 
-		for _, m := range config["mappings"].([]map[string]string) {
+		for _, m := range config["mappings"].(*schema.Set).List() {
+
+			mapping := m.(map[string]interface{})
 
 			new := client.NatMapping{
-				NativeCidr: m["native_cidr"],
+				NativeCidr: mapping["native_cidr"].(string),
 			}
 
 			natConfig.Mappings = append(natConfig.Mappings, new)

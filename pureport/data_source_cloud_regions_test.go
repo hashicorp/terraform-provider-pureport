@@ -31,11 +31,13 @@ func TestCloudRegions_empty(t *testing.T) {
 				Config: testAccDataSourceCloudRegionsConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudRegions(resourceName),
+
+					resource.TestCheckResourceAttr(resourceName, "regions.#", "37"),
+
 					resource.TestCheckResourceAttr(resourceName, "regions.0.id", "aws-ap-northeast-1"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.name", "Asia Pacific (Tokyo)"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.provider", "AWS"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.identifier", "ap-northeast-1"),
-					resource.TestCheckResourceAttr(resourceName, "regions.#", "37"),
 				),
 			},
 		},
@@ -54,11 +56,14 @@ func TestCloudRegions_name_regex(t *testing.T) {
 				Config: testAccDataSourceCloudRegionsConfig_name_regex,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudRegions(resourceName),
+
 					resource.TestCheckResourceAttr(resourceName, "regions.#", "2"),
+
 					resource.TestCheckResourceAttr(resourceName, "regions.0.id", "aws-us-east-1"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.name", "US East (N. Virginia)"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.provider", "AWS"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.identifier", "us-east-1"),
+
 					resource.TestCheckResourceAttr(resourceName, "regions.1.id", "aws-us-east-2"),
 					resource.TestCheckResourceAttr(resourceName, "regions.1.name", "US East (Ohio)"),
 					resource.TestCheckResourceAttr(resourceName, "regions.1.provider", "AWS"),

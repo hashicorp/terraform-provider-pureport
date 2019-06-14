@@ -51,7 +51,7 @@ func dataSourceLocations() *schema.Resource {
 										Computed: true,
 									},
 									"speed": {
-										Type:     schema.TypeString,
+										Type:     schema.TypeInt,
 										Computed: true,
 									},
 								},

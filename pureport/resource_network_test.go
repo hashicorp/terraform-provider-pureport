@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -41,7 +42,7 @@ func TestNetwork_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "href", &instance.Href),
 					resource.TestCheckResourceAttr(resourceName, "name", "NetworkTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Network Terraform Test"),
-					resource.TestCheckResourceAttr(resourceName, "account_href", "/accounts/ac-8QVPmcPb_EhapbGHBMAo6Q"),
+					resource.TestMatchResourceAttr(resourceName, "account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 				),
 			},
 		},
@@ -76,7 +77,7 @@ func testAccCheckResourceNetwork(name string, instance *client.Network) resource
 		}
 
 		if resp.StatusCode != 200 {
-			fmt.Errorf("Error getting Network ID %s: %s", id, err)
+			return fmt.Errorf("Error getting Network ID %s: %s", id, err)
 		}
 
 		*instance = found

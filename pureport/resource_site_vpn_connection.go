@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -37,19 +38,16 @@ func resourceSiteVPNConnection() *schema.Resource {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  false,
-			ForceNew: true,
 		},
 		"ike_version": {
 			Type:         schema.TypeString,
 			Required:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
 		},
 		"ike_config": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			ForceNew: true,
 			MaxItems: 1,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
@@ -105,33 +103,27 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"primary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
 		},
 		"primary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
-			ForceNew: true,
 		},
 		"routing_type": {
 			Type:     schema.TypeString,
 			Required: true,
-			ForceNew: true,
 		},
 		"secondary_customer_router_ip": {
 			Type:     schema.TypeString,
 			Optional: true,
-			ForceNew: true,
 		},
 		"secondary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
-			ForceNew: true,
 		},
 		"traffic_selectors": {
 			Type:     schema.TypeList,
 			Optional: true,
 			Computed: true,
-			ForceNew: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"customer_side": {
@@ -168,6 +160,11 @@ func resourceSiteVPNConnection() *schema.Resource {
 		Delete: resourceSiteVPNConnectionDelete,
 
 		Schema: connection_schema,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(6 * time.Minute),
+			Delete: schema.DefaultTimeout(6 * time.Minute),
+		},
 	}
 }
 
@@ -199,9 +196,14 @@ func expandIkeVersion1(d *schema.ResourceData) *client.Ikev1Config {
 
 	if data, ok := d.GetOk("ike_config"); ok {
 
-		raw_config := data.(map[string]interface{})
-		esp := raw_config["esp"].(map[string]interface{})
-		ike := raw_config["ike"].(map[string]interface{})
+		tmp_config := data.([]interface{})
+		raw_config := tmp_config[0].(map[string]interface{})
+
+		tmp_esp := raw_config["esp"].([]interface{})
+		esp := tmp_esp[0].(map[string]interface{})
+
+		tmp_ike := raw_config["ike"].([]interface{})
+		ike := tmp_ike[0].(map[string]interface{})
 
 		config.Esp = &client.Ikev1EspConfig{
 			DhGroup:    esp["dh_group"].(string),
@@ -240,9 +242,14 @@ func expandIkeVersion2(d *schema.ResourceData) *client.Ikev2Config {
 
 	if data, ok := d.GetOk("ike_config"); ok {
 
-		raw_config := data.(map[string]interface{})
-		esp := raw_config["esp"].(map[string]interface{})
-		ike := raw_config["ike"].(map[string]interface{})
+		tmp_config := data.([]interface{})
+		raw_config := tmp_config[0].(map[string]interface{})
+
+		tmp_esp := raw_config["esp"].([]interface{})
+		esp := tmp_esp[0].(map[string]interface{})
+
+		tmp_ike := raw_config["ike"].([]interface{})
+		ike := tmp_ike[0].(map[string]interface{})
 
 		config.Esp = &client.Ikev2EspConfig{
 			DhGroup:    esp["dh_group"].(string),
@@ -425,7 +432,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if resp.StatusCode >= 300 {
-		fmt.Errorf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 	}
 
 	conn := c.(client.SiteIpSecVpnConnection)
@@ -440,21 +447,18 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		gateways = append(gateways, FlattenVpnGateway(g))
 	}
 	if err := d.Set("gateways", gateways); err != nil {
-		return fmt.Errorf("Error setting gateway information for %s %s: %s", awsConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting gateway information for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
 	d.Set("description", conn.Description)
 	d.Set("high_availability", conn.HighAvailability)
 
-	var customerNetworks []map[string]string
-	for _, cn := range conn.CustomerNetworks {
-		customerNetworks = append(customerNetworks, map[string]string{
-			"name":    cn.Name,
-			"address": cn.Address,
-		})
-	}
-	if err := d.Set("customer_networks", customerNetworks); err != nil {
+	if err := d.Set("customer_networks", flattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
 		return fmt.Errorf("Error setting customer networks for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+	}
+
+	if err := d.Set("nat_config", FlattenNatConfig(conn.Nat)); err != nil {
+		return fmt.Errorf("Error setting NAT Configuration for %s %s: %s", sitevpnConnectionName, d.Id(), err)
 	}
 
 	if err := d.Set("location_href", conn.Location.Href); err != nil {
@@ -570,6 +574,60 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 	if d.HasChange("billing_term") {
 		c.BillingTerm = d.Get("billing_term").(string)
+	}
+
+	if d.HasChange("enable_bgp_password") {
+		c.EnableBGPPassword = d.Get("enable_bgp_password").(bool)
+	}
+
+	if d.HasChange("ike_version") {
+		c.IkeVersion = d.Get("ike_version").(string)
+	}
+
+	if d.HasChange("ike_version") {
+		c.IkeVersion = d.Get("ike_version").(string)
+
+		if c.IkeVersion == "V1" {
+			c.IkeV1 = expandIkeVersion1(d)
+			c.IkeV2 = nil
+		} else {
+			c.IkeV2 = expandIkeVersion2(d)
+			c.IkeV1 = nil
+		}
+	}
+
+	if d.HasChange("ike_config") {
+		if c.IkeVersion == "V1" {
+			c.IkeV1 = expandIkeVersion1(d)
+			c.IkeV2 = nil
+		} else {
+			c.IkeV2 = expandIkeVersion2(d)
+			c.IkeV1 = nil
+		}
+	}
+
+	if d.HasChange("primary_customer_router_ip") {
+		c.PrimaryCustomerRouterIP = d.Get("primary_customer_router_ip").(string)
+	}
+
+	if d.HasChange("primary_key") {
+		c.PrimaryKey = d.Get("primary_key").(string)
+	}
+
+	if d.HasChange("routing_type") {
+		c.RoutingType = d.Get("routing_type").(string)
+	}
+
+	if d.HasChange("secondary_customer_router_ip") {
+		c.SecondaryCustomerRouterIP = d.Get("secondary_customer_router_ip").(string)
+	}
+
+	if d.HasChange("secondary_key") {
+		c.SecondaryKey = d.Get("secondary_key").(string)
+	}
+
+	if d.HasChange("traffic_selectors") {
+		c.TrafficSelectors = expandTrafficSelectorMappings(d)
 	}
 
 	opts := client.UpdateConnectionOpts{

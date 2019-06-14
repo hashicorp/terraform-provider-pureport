@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -59,6 +60,11 @@ func resourceGoogleCloudConnection() *schema.Resource {
 		Delete: resourceGoogleCloudConnectionDelete,
 
 		Schema: connection_schema,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(6 * time.Minute),
+			Delete: schema.DefaultTimeout(6 * time.Minute),
+		},
 	}
 }
 
@@ -125,15 +131,24 @@ func resourceGoogleCloudConnectionCreate(d *schema.ResourceData, m interface{}) 
 	if err != nil {
 
 		http_err := err
-		json_response := string(err.(client.GenericSwaggerError).Body()[:])
-		response, err := structure.ExpandJsonFromString(json_response)
-		if err != nil {
-			log.Printf("Error creating new %s: %v", googleConnectionName, err)
-		} else {
-			statusCode := int(response["status"].(float64))
-			log.Printf("Error creating new %s: %d\n", googleConnectionName, statusCode)
-			log.Printf("  %s\n", response["code"])
-			log.Printf("  %s\n", response["message"])
+
+		switch e := err.(type) {
+		case client.GenericSwaggerError:
+			json_response := string(e.Body()[:])
+			response, err := structure.ExpandJsonFromString(json_response)
+
+			if err != nil {
+				log.Printf("Error creating new %s: %v", googleConnectionName, err)
+			} else {
+				statusCode := int(response["status"].(float64))
+				log.Printf("Error creating new %s: %d\n", googleConnectionName, statusCode)
+				log.Printf("  %s\n", response["code"])
+				log.Printf("  %s\n", response["message"])
+			}
+		case *url.Error:
+			log.Printf("Error creating new %s: %s", googleConnectionName, e.Error())
+		default:
+			log.Printf("Error creating new %s: %v", googleConnectionName, e)
 		}
 
 		d.SetId("")
@@ -189,14 +204,7 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 	conn := c.(client.GoogleCloudInterconnectConnection)
 	d.Set("speed", conn.Speed)
 
-	var customerNetworks []map[string]string
-	for _, cn := range conn.CustomerNetworks {
-		customerNetworks = append(customerNetworks, map[string]string{
-			"name":    cn.Name,
-			"address": cn.Address,
-		})
-	}
-	if err := d.Set("customer_networks", customerNetworks); err != nil {
+	if err := d.Set("customer_networks", flattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
 		return fmt.Errorf("Error setting customer networks for %s %s: %s", googleConnectionName, d.Id(), err)
 	}
 
@@ -209,7 +217,12 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 		gateways = append(gateways, FlattenStandardGateway(g))
 	}
 	if err := d.Set("gateways", gateways); err != nil {
-		return fmt.Errorf("Error setting gateway information for %s %s: %s", awsConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting gateway information for %s %s: %s", googleConnectionName, d.Id(), err)
+	}
+
+	// NAT Configuration
+	if err := d.Set("nat_config", FlattenNatConfig(conn.Nat)); err != nil {
+		return fmt.Errorf("Error setting NAT Configuration for %s %s: %s", googleConnectionName, d.Id(), err)
 	}
 
 	d.Set("description", conn.Description)

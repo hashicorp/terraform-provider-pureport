@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -73,6 +74,11 @@ func resourceAWSConnection() *schema.Resource {
 		Delete: resourceAWSConnectionDelete,
 
 		Schema: connection_schema,
+
+		Timeouts: &schema.ResourceTimeout{
+			Create: schema.DefaultTimeout(6 * time.Minute),
+			Delete: schema.DefaultTimeout(6 * time.Minute),
+		},
 	}
 }
 
@@ -217,15 +223,13 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("peering_type", conn.Peering.Type_)
 	d.Set("speed", conn.Speed)
 
-	var customerNetworks []map[string]string
-	for _, cn := range conn.CustomerNetworks {
-		customerNetworks = append(customerNetworks, map[string]string{
-			"name":    cn.Name,
-			"address": cn.Address,
-		})
-	}
-	if err := d.Set("customer_networks", customerNetworks); err != nil {
+	if err := d.Set("customer_networks", flattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
 		return fmt.Errorf("Error setting customer networks for %s %s: %s", awsConnectionName, d.Id(), err)
+	}
+
+	// NAT Configuration
+	if err := d.Set("nat_config", FlattenNatConfig(conn.Nat)); err != nil {
+		return fmt.Errorf("Error setting NAT Configuration for %s %s: %s", awsConnectionName, d.Id(), err)
 	}
 
 	// Add Gateway information

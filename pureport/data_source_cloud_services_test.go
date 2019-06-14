@@ -31,7 +31,9 @@ func TestCloudServices_empty(t *testing.T) {
 				Config: testAccDataSourceCloudServicesConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudServices(resourceName),
+
 					resource.TestCheckResourceAttr(resourceName, "services.#", "4"),
+
 					resource.TestCheckResourceAttr(resourceName, "services.0.id", "aws-s3-us-east-1"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.href", "/cloudServices/aws-s3-us-east-1"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.name", "AWS S3 us-east-1"),
@@ -58,7 +60,9 @@ func TestCloudServices_name_regex(t *testing.T) {
 				Config: testAccDataSourceCloudServicesConfig_name_regex,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudServices(resourceName),
+
 					resource.TestCheckResourceAttr(resourceName, "services.#", "1"),
+
 					resource.TestCheckResourceAttr(resourceName, "services.0.id", "aws-s3-us-west-2"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.href", "/cloudServices/aws-s3-us-west-2"),
 					resource.TestCheckResourceAttr(resourceName, "services.0.name", "AWS S3 us-west-2"),
