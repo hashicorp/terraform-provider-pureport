@@ -42,9 +42,9 @@ pipeline {
         GOPATH                = "/go"
         GOCACHE               = "/tmp/go/.cache"
 
-        PUREPORT_ENDPOINT     = "https://dev1-api.pureportdev.com"
-        PUREPORT_API_KEY      = credentials('terraform-pureport-dev1-api-key')
-        PUREPORT_API_SECRET   = credentials('terraform-pureport-dev1-api-secret')
+        PUREPORT_ENDPOINT     = "https://api.pureport.com"
+        PUREPORT_API_KEY      = credentials('terraform-testacc-prod-key-id')
+        PUREPORT_API_SECRET   = credentials('terraform-testacc-prod-secret')
 
         GOOGLE_CREDENTIALS    = credentials('terraform-google-credentials-id')
         GOOGLE_PROJECT        = "pureport-customer1"
