@@ -73,7 +73,7 @@ resource "pureport_site_vpn_connection" "main" {
   location_href = "${data.pureport_locations.main.locations.0.href}"
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
-  ike_version = "V2"
+  ike_version = "v2"
 
   ike_config {
     esp {

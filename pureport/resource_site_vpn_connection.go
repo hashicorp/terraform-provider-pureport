@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/antihax/optional"
@@ -43,6 +44,9 @@ func resourceSiteVPNConnection() *schema.Resource {
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
+			StateFunc: func(val interface{}) string {
+				return strings.ToUpper(val.(string))
+			},
 		},
 		"ike_config": {
 			Type:     schema.TypeList,
@@ -580,10 +584,6 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 	if d.HasChange("enable_bgp_password") {
 		c.EnableBGPPassword = d.Get("enable_bgp_password").(bool)
-	}
-
-	if d.HasChange("ike_version") {
-		c.IkeVersion = d.Get("ike_version").(string)
 	}
 
 	if d.HasChange("ike_version") {
