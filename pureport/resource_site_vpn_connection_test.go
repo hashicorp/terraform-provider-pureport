@@ -44,6 +44,25 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
+const testAccResourceSiteVPNConnectionConfig_route_based_bgp_update_router_ip = testAccResourceSiteVPNConnectionConfig_common + `
+resource "pureport_site_vpn_connection" "main" {
+  name = "SiteVPN_RouteBasedBGP"
+  speed = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  ike_version = "V2"
+
+  routing_type = "ROUTE_BASED_BGP"
+  customer_asn = 30000
+
+  primary_customer_router_ip = "123.123.123.100"
+  secondary_customer_router_ip = "124.124.124.100"
+}
+`
+
 const testAccResourceSiteVPNConnectionConfig_with_ike_config = testAccResourceSiteVPNConnectionConfig_common + `
 resource "pureport_site_vpn_connection" "main" {
   name = "SiteVPN_RouteBasedBGP"
@@ -191,6 +210,16 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 					resource.TestMatchResourceAttr(resourceName, "gateways.1.pureport_vti_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.vpn_auth_type", "PSK"),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vpn_auth_key"),
+				),
+			},
+			{
+				Config: testAccResourceSiteVPNConnectionConfig_route_based_bgp_update_router_ip,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
+					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP"),
+					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "primary_customer_router_ip", "123.123.123.100"),
+					resource.TestCheckResourceAttr(resourceName, "secondary_customer_router_ip", "124.124.124.100"),
 				),
 			},
 			{

@@ -174,14 +174,16 @@ func expandTrafficSelectorMappings(d *schema.ResourceData) []client.TrafficSelec
 
 		mappings := []client.TrafficSelectorMapping{}
 
-		for _, m := range data.([]map[string]string) {
+		for _, i := range data.([]interface{}) {
 
-			new := client.TrafficSelectorMapping{
-				CustomerSide: m["customer_side"],
-				PureportSide: m["pureport_side"],
+			m := i.(map[string]interface{})
+
+			ts := client.TrafficSelectorMapping{
+				CustomerSide: m["customer_side"].(string),
+				PureportSide: m["pureport_side"].(string),
 			}
 
-			mappings = append(mappings, new)
+			mappings = append(mappings, ts)
 		}
 
 		return mappings
