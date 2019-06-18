@@ -218,7 +218,6 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 		"customer_asn": {
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.IntBetween(0, 4294967295),
 		},
 		"high_availability": {
