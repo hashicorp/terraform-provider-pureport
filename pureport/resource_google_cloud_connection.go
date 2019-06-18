@@ -308,7 +308,12 @@ func resourceGoogleCloudConnectionUpdate(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("Error Response while updating %s: code=%v", googleConnectionName, resp.StatusCode)
 	}
 
+	if err := WaitForConnection(googleConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", googleConnectionName, err)
+	}
+
 	d.Partial(false)
+
 	return resourceGoogleCloudConnectionRead(d, m)
 }
 

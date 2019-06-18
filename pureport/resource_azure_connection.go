@@ -303,7 +303,12 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error Response while updating %s: code=%v", azureConnectionName, resp.StatusCode)
 	}
 
+	if err := WaitForConnection(azureConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", azureConnectionName, err)
+	}
+
 	d.Partial(false)
+
 	return resourceAzureConnectionRead(d, m)
 }
 

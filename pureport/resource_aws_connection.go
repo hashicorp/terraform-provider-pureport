@@ -330,6 +330,10 @@ func resourceAWSConnectionUpdate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error Response while updating %s: code=%v", awsConnectionName, resp.StatusCode)
 	}
 
+	if err := WaitForConnection(awsConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", awsConnectionName, err)
+	}
+
 	d.Partial(false)
 
 	return resourceAWSConnectionRead(d, m)

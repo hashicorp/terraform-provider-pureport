@@ -664,7 +664,12 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 		return fmt.Errorf("Error Response while updating %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 	}
 
+	if err := WaitForConnection(sitevpnConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", sitevpnConnectionName, err)
+	}
+
 	d.Partial(false)
+
 	return resourceSiteVPNConnectionRead(d, m)
 }
 
