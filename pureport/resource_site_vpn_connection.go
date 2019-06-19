@@ -32,7 +32,6 @@ func resourceSiteVPNConnection() *schema.Resource {
 		"speed": {
 			Type:         schema.TypeInt,
 			Required:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 		"enable_bgp_password": {
@@ -113,8 +112,12 @@ func resourceSiteVPNConnection() *schema.Resource {
 			Optional: true,
 		},
 		"routing_type": {
-			Type:     schema.TypeString,
-			Required: true,
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"ROUTE_BASED_BGP", "ROUTE_BASED_STATIC", "POLICY_BASED"}, true),
+			StateFunc: func(val interface{}) string {
+				return strings.ToUpper(val.(string))
+			},
 		},
 		"secondary_customer_router_ip": {
 			Type:     schema.TypeString,
@@ -125,18 +128,20 @@ func resourceSiteVPNConnection() *schema.Resource {
 			Optional: true,
 		},
 		"traffic_selectors": {
-			Type:     schema.TypeList,
+			Type:     schema.TypeSet,
 			Optional: true,
 			Computed: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"customer_side": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.CIDRNetwork(16, 32),
 					},
 					"pureport_side": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.CIDRNetwork(16, 32),
 					},
 				},
 			},
@@ -178,7 +183,7 @@ func expandTrafficSelectorMappings(d *schema.ResourceData) []client.TrafficSelec
 
 		mappings := []client.TrafficSelectorMapping{}
 
-		for _, i := range data.([]interface{}) {
+		for _, i := range data.(*schema.Set).List() {
 
 			m := i.(map[string]interface{})
 
