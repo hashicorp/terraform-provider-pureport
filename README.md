@@ -15,16 +15,16 @@ This provider plugin is maintained by the Pureport Inc, team at [Pureport](https
 Requirements
 ------------
 
-- [Terraform](https://www.terraform.io/downloads.html) 0.11.x
+- [Terraform](https://www.terraform.io/downloads.html) 0.12.x
 - [Go](https://golang.org/doc/install) 1.12 (to build the provider plugin)
 
 Usage
 ---------------------
 
 ```
-# For example, restrict pureport version in 0.1.x
+# For example, restrict pureport version in 0.3.x
 provider "pureport" {
-  version = "~> 0.1"
+  version = "~> 0.3"
 }
 ```
 
@@ -75,6 +75,14 @@ $ $GOPATH/bin/terraform-provider-pureport
 ...
 ```
 
+This provider uses `golangci-lint` for checking static analysis of the source code. This needs to be
+installed separate from the other golang modules required to build the provider.
+
+```sh
+$ make tools
+$ make lint
+```
+
 In order to test the provider, you can simply run `make test`.
 
 ```sh
@@ -88,3 +96,14 @@ In order to run the full suite of Acceptance tests, run `make testacc`.
 ```sh
 $ make testacc
 ```
+
+You can also install the plugin which will build and copy the plugin to your terraform third party
+plugin directory. You'll need to re-initialize terraform in module directory after installing the
+new plugin.
+
+```sh
+$ make install
+$ cd <some_module>/
+$ terraform init
+```
+
