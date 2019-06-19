@@ -102,11 +102,15 @@ pipeline {
                     // Don't fail if the test fall. Just setting this until we can get our issues
                     // resolved with the Google Provider.
                     sh "make testacc"
+                }
+            }
+            post {
+                always {
 
                     archiveArtifacts(
                         allowEmptyArchive: true,
                         artifacts: 'pureport/tf_log.log'
-                        )
+                    )
                 }
             }
         }
