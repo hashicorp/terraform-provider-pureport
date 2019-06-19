@@ -141,7 +141,7 @@ func TestAWSConnection_basic(t *testing.T) {
 	var instance client.AwsDirectConnectConnection
 	var respawn_instance client.AwsDirectConnectConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSConnectionDestroy,
@@ -219,7 +219,7 @@ func TestAWSConnection_updateSpeed(t *testing.T) {
 	var instance client.AwsDirectConnectConnection
 	var respawn_instance client.AwsDirectConnectConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSConnectionDestroy,
@@ -252,7 +252,7 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 	resourceName := "pureport_aws_connection.main"
 	var instance client.AwsDirectConnectConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSConnectionDestroy,
@@ -309,7 +309,7 @@ func TestAWSConnection_nat_mappings(t *testing.T) {
 	resourceName := "pureport_aws_connection.main"
 	var instance client.AwsDirectConnectConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSConnectionDestroy,

@@ -9,7 +9,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/terraform v0.12.1
 	github.com/mattn/go-colorable v0.1.2 // indirect
-	github.com/pureport/pureport-sdk-go v0.2.2-0.20190617162506-d4236507baa5
+	github.com/pureport/pureport-sdk-go v0.2.2-0.20190619193955-c2367b6a2ae7
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
 	github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd

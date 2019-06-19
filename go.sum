@@ -528,6 +528,12 @@ github.com/pureport/pureport-sdk-go v0.2.1 h1:pjBCYYAIWsHcpty71oUQGBWF0D4kPQHG9m
 github.com/pureport/pureport-sdk-go v0.2.1/go.mod h1:wk2HPIbk0MvU0o1VRyU9slh8YE6ty304tbymcWfHd6s=
 github.com/pureport/pureport-sdk-go v0.2.2-0.20190617162506-d4236507baa5 h1:xRr50kU4ryGPuODe3GSFahxuaq9hC8VZU5d6LXBdOdE=
 github.com/pureport/pureport-sdk-go v0.2.2-0.20190617162506-d4236507baa5/go.mod h1:A6980P/P72JbdhXLo03o1KnXyGG2+O8ctd5HK9V25rk=
+github.com/pureport/pureport-sdk-go v0.2.2-0.20190619184653-c7316a126473 h1:ZGYNKwgcewPFFifp4K4vHMoYHuUjiHRJse7p1hI+Epo=
+github.com/pureport/pureport-sdk-go v0.2.2-0.20190619184653-c7316a126473/go.mod h1:A6980P/P72JbdhXLo03o1KnXyGG2+O8ctd5HK9V25rk=
+github.com/pureport/pureport-sdk-go v0.2.2-0.20190619185147-6580105799b9 h1:4zWJNLknk/j/RpcbZinZJvUnxkTkXJTAOYXfWq5PX/4=
+github.com/pureport/pureport-sdk-go v0.2.2-0.20190619185147-6580105799b9/go.mod h1:A6980P/P72JbdhXLo03o1KnXyGG2+O8ctd5HK9V25rk=
+github.com/pureport/pureport-sdk-go v0.2.2-0.20190619193955-c2367b6a2ae7 h1:qftfb1o8/ZORMYkW4cX/F8QuvaaSkhQFhx2fhZnrr0c=
+github.com/pureport/pureport-sdk-go v0.2.2-0.20190619193955-c2367b6a2ae7/go.mod h1:A6980P/P72JbdhXLo03o1KnXyGG2+O8ctd5HK9V25rk=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=

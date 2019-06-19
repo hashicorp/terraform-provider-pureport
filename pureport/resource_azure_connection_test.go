@@ -49,7 +49,7 @@ func TestAzureConnection_basic(t *testing.T) {
 	resourceName := "pureport_azure_connection.main"
 	var instance client.AzureExpressRouteConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAzureConnectionDestroy,

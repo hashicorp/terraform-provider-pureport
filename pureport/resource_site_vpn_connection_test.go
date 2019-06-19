@@ -160,7 +160,7 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 	var instance client.SiteIpSecVpnConnection
 	var respawn_instance client.SiteIpSecVpnConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
@@ -304,7 +304,7 @@ func TestSiteVPNConnection_with_ikeconfig(t *testing.T) {
 	resourceName := "pureport_site_vpn_connection.main"
 	var instance client.SiteIpSecVpnConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
@@ -377,7 +377,7 @@ func TestSiteVPNConnection_with_policy_based(t *testing.T) {
 	resourceName := "pureport_site_vpn_connection.main"
 	var instance client.SiteIpSecVpnConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
