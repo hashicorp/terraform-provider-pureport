@@ -149,6 +149,15 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Required: true,
 		},
+		"location_href": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"network_href": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
 		"description": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -224,15 +233,6 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Optional: true,
 			ForceNew: true,
-		},
-		"location_href": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"network_href": {
-			Type:     schema.TypeString,
-			Required: true,
 		},
 	}
 }

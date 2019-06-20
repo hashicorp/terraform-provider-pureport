@@ -26,6 +26,12 @@ func resourceGoogleCloudConnection() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 		"secondary_pairing_key": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -39,12 +45,6 @@ func resourceGoogleCloudConnection() *schema.Resource {
 			Elem: &schema.Resource{
 				Schema: StandardGatewaySchema,
 			},
-		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 	}
 

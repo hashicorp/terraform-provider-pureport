@@ -22,22 +22,10 @@ const (
 func resourceSiteVPNConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
-		"auth_type": {
-			Type:         schema.TypeString,
-			Optional:     true,
-			Default:      "PSK",
-			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"psk"}, true),
-		},
 		"speed": {
 			Type:         schema.TypeInt,
 			Required:     true,
 			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
-		},
-		"enable_bgp_password": {
-			Type:     schema.TypeBool,
-			Optional: true,
-			Default:  false,
 		},
 		"ike_version": {
 			Type:         schema.TypeString,
@@ -46,6 +34,30 @@ func resourceSiteVPNConnection() *schema.Resource {
 			StateFunc: func(val interface{}) string {
 				return strings.ToUpper(val.(string))
 			},
+		},
+		"primary_customer_router_ip": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"routing_type": {
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"ROUTE_BASED_BGP", "ROUTE_BASED_STATIC", "POLICY_BASED"}, true),
+			StateFunc: func(val interface{}) string {
+				return strings.ToUpper(val.(string))
+			},
+		},
+		"auth_type": {
+			Type:         schema.TypeString,
+			Optional:     true,
+			Default:      "PSK",
+			ForceNew:     true,
+			ValidateFunc: validation.StringInSlice([]string{"psk"}, true),
+		},
+		"enable_bgp_password": {
+			Type:     schema.TypeBool,
+			Optional: true,
+			Default:  false,
 		},
 		"ike_config": {
 			Type:     schema.TypeList,
@@ -103,21 +115,9 @@ func resourceSiteVPNConnection() *schema.Resource {
 				},
 			},
 		},
-		"primary_customer_router_ip": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
 		"primary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
-		},
-		"routing_type": {
-			Type:         schema.TypeString,
-			Required:     true,
-			ValidateFunc: validation.StringInSlice([]string{"ROUTE_BASED_BGP", "ROUTE_BASED_STATIC", "POLICY_BASED"}, true),
-			StateFunc: func(val interface{}) string {
-				return strings.ToUpper(val.(string))
-			},
 		},
 		"secondary_customer_router_ip": {
 			Type:     schema.TypeString,

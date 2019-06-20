@@ -26,6 +26,12 @@ func resourceAzureConnection() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 		"peering_type": {
 			Type:         schema.TypeString,
 			Description:  "The peering type to use for this connection: [PUBLIC, PRIVATE]",
@@ -42,12 +48,6 @@ func resourceAzureConnection() *schema.Resource {
 			Elem: &schema.Resource{
 				Schema: StandardGatewaySchema,
 			},
-		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 	}
 

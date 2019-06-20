@@ -22,6 +22,22 @@ const (
 func resourceAWSConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
+		"aws_account_id": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"aws_region": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 		"cloud_service_hrefs": {
 			Type:     schema.TypeList,
 			Optional: true,
@@ -35,16 +51,6 @@ func resourceAWSConnection() *schema.Resource {
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
 		},
-		"aws_account_id": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"aws_region": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
 		"gateways": {
 			Computed: true,
 			Type:     schema.TypeList,
@@ -53,12 +59,6 @@ func resourceAWSConnection() *schema.Resource {
 			Elem: &schema.Resource{
 				Schema: StandardGatewaySchema,
 			},
-		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 	}
 
