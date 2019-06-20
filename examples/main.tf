@@ -85,19 +85,6 @@ resource "pureport_azure_connection" "main" {
   service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
 }
 
-resource "pureport_dummy_connection" "main" {
-  name              = "DummyTest"
-  speed             = "100"
-  high_availability = true
-
-  location_href = "${data.pureport_locations.seattle.locations.0.href}"
-
-  network {
-    id   = "${data.pureport_networks.main.networks.0.id}"
-    href = "${data.pureport_networks.main.networks.0.href}"
-  }
-}
-
 resource "pureport_site_vpn_connection" "main" {
   name              = "SiteVPNTest"
   speed             = "100"
