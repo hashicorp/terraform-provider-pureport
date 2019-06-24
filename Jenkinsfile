@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "0.3.1"
+def version = "0.4.0"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
@@ -29,7 +29,7 @@ pipeline {
           )
       choice(
           name: 'ACCEPTANCE_TESTS_LOG_LEVEL',
-          choices: ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'],
+          choices: ['WARN', 'ERROR', 'DEBUG', 'INFO', 'TRACE'],
           description: 'The Terraform Debug Level'
           )
     }
