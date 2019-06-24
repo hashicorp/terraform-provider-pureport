@@ -107,3 +107,34 @@ $ cd <some_module>/
 $ terraform init
 ```
 
+Acceptance Test Setup
+---------------------------
+
+When preparing to run the acceptance tests, some initial manual setup will be required for each
+cloud provider to ensure we are able to deploy the cloud infrastructure for testing.
+
+An example environment setup script is available in this repository in
+`examples/envsetup.sh.examples`. You can modify this file with your cloud provider information
+and then source it in to your shell prior to deploying and running the acceptance tests.
+
+After the credentials have been setup, you can run Terraform Configuration in `test-infra` to deploy
+the required cloud provider resources.
+
+## Azure
+
+For Azure, you will need to create a Resource Group with the name "terraform-acceptance-tests" and
+also a Service Principle as instructed by the `azurerm` provider. Instructions can be found [here](https://www.terraform.io/docs/providers/azurerm/auth/service_principal_client_secret.html).
+
+After running the test infrastructure, please copy the service key from the output to your
+environment setup script. This will be needed for the acceptance tests.
+
+## Google Cloud
+
+For Google Cloud, you will need to have a valid account and a project created that you can deploy
+resource in to.
+
+## AWS
+
+For Amazon Web Services, you will need to have a valid IAM identity with permission to create
+resources.
+

@@ -63,7 +63,7 @@ func TestAzureConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", "Some random description"),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
-					resource.TestCheckResourceAttr(resourceName, "service_key", "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"),
+					resource.TestCheckResourceAttr(resourceName, "service_key", serviceKey),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 

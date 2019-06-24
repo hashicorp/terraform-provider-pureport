@@ -27,7 +27,7 @@ data "pureport_networks" "main" {
 
 const testAccResourceGoogleCloudConnectionConfig_basic = testAccResourceGoogleCloudConnectionConfig_common + `
 data "google_compute_network" "default" {
-  name = "default"
+  name = "terraform-acc-network"
 }
 
 resource "google_compute_router" "main" {
