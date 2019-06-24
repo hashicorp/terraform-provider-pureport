@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "0.3.1"
+def version = "0.4.0"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
