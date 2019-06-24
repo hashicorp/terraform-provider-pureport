@@ -1,13 +1,9 @@
 package pureport
 
 import (
-	//	"github.com/hashicorp/terraform/helper/mutexkv"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 )
-
-// Global MutexKV
-//var mutexKV = mutexkv.NewMutexKV()
 
 var descriptions map[string]string
 
