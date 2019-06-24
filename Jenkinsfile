@@ -54,7 +54,7 @@ pipeline {
         AWS_ACCESS_KEY_ID     = credentials('terraform-acc-test-aws-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('terraform-acc-test-aws-secret')
 
-        TF_VAR_azurerm_express_route_circuit_service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
+        TF_VAR_azurerm_express_route_circuit_service_key = "0f18c4dd-29a7-4f0c-9491-8e6419415da8"
     }
     stages {
         stage('Configure') {
