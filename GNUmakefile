@@ -57,6 +57,7 @@ lint:
 tools:
 	GO111MODULE=on go install github.com/client9/misspell/cmd/misspell
 	GO111MODULE=on go install github.com/golangci/golangci-lint/cmd/golangci-lint
+	GO111MODULE=on go install honnef.co/go/tools/cmd/staticcheck
 
 test-compile:
 	@if [ "$(TEST)" = "./..." ]; then \

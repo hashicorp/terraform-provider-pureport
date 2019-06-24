@@ -149,6 +149,15 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeString,
 			Required: true,
 		},
+		"location_href": {
+			Type:     schema.TypeString,
+			Required: true,
+			ForceNew: true,
+		},
+		"network_href": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
 		"description": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -218,22 +227,12 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 		"customer_asn": {
 			Type:         schema.TypeInt,
 			Optional:     true,
-			ForceNew:     true,
 			ValidateFunc: validation.IntBetween(0, 4294967295),
 		},
 		"high_availability": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			ForceNew: true,
-		},
-		"location_href": {
-			Type:     schema.TypeString,
-			Required: true,
-			ForceNew: true,
-		},
-		"network_href": {
-			Type:     schema.TypeString,
-			Required: true,
 		},
 	}
 }

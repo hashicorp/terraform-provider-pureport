@@ -15,16 +15,16 @@ This provider plugin is maintained by the Pureport Inc, team at [Pureport](https
 Requirements
 ------------
 
-- [Terraform](https://www.terraform.io/downloads.html) 0.11.x
+- [Terraform](https://www.terraform.io/downloads.html) 0.12.x
 - [Go](https://golang.org/doc/install) 1.12 (to build the provider plugin)
 
 Usage
 ---------------------
 
 ```
-# For example, restrict pureport version in 0.1.x
+# For example, restrict pureport version in 0.4.x
 provider "pureport" {
-  version = "~> 0.1"
+  version = "~> 0.4"
 }
 ```
 
@@ -75,6 +75,14 @@ $ $GOPATH/bin/terraform-provider-pureport
 ...
 ```
 
+This provider uses `golangci-lint` for checking static analysis of the source code. This needs to be
+installed separate from the other golang modules required to build the provider.
+
+```sh
+$ make tools
+$ make lint
+```
+
 In order to test the provider, you can simply run `make test`.
 
 ```sh
@@ -88,3 +96,45 @@ In order to run the full suite of Acceptance tests, run `make testacc`.
 ```sh
 $ make testacc
 ```
+
+You can also install the plugin which will build and copy the plugin to your terraform third party
+plugin directory. You'll need to re-initialize terraform in module directory after installing the
+new plugin.
+
+```sh
+$ make install
+$ cd <some_module>/
+$ terraform init
+```
+
+Acceptance Test Setup
+---------------------------
+
+When preparing to run the acceptance tests, some initial manual setup will be required for each
+cloud provider to ensure we are able to deploy the cloud infrastructure for testing.
+
+An example environment setup script is available in this repository in
+`examples/envsetup.sh.examples`. You can modify this file with your cloud provider information
+and then source it in to your shell prior to deploying and running the acceptance tests.
+
+After the credentials have been setup, you can run Terraform Configuration in `test-infra` to deploy
+the required cloud provider resources.
+
+## Azure
+
+For Azure, you will need to create a Resource Group with the name "terraform-acceptance-tests" and
+also a Service Principle as instructed by the `azurerm` provider. Instructions can be found [here](https://www.terraform.io/docs/providers/azurerm/auth/service_principal_client_secret.html).
+
+After running the test infrastructure, please copy the service key from the output to your
+environment setup script. This will be needed for the acceptance tests.
+
+## Google Cloud
+
+For Google Cloud, you will need to have a valid account and a project created that you can deploy
+resource in to.
+
+## AWS
+
+For Amazon Web Services, you will need to have a valid IAM identity with permission to create
+resources.
+

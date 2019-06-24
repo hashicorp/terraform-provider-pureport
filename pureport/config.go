@@ -3,12 +3,17 @@ package pureport
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/hashicorp/terraform/httpclient"
 	"github.com/pureport/pureport-sdk-go/pureport"
 	ppLog "github.com/pureport/pureport-sdk-go/pureport/logging"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
 	"github.com/pureport/terraform-provider-pureport/version"
+)
+
+var (
+	logMutex sync.Mutex
 )
 
 type Config struct {
@@ -22,6 +27,10 @@ type Config struct {
 
 func (c *Config) LoadAndValidate() error {
 
+	// Lock the configuration while we update
+	logMutex.Lock()
+	defer logMutex.Unlock()
+
 	// Validate that if the API Key was specified that a secret was specified as well.
 	if (c.APIKey == "") != (c.APISecret == "") {
 		return fmt.Errorf("API Key and Secret both need to be specified for successful authentication.")
@@ -34,7 +43,22 @@ func (c *Config) LoadAndValidate() error {
 	cfg.EndPoint = c.EndPoint
 
 	logCfg := ppLog.NewLogConfig()
-	logCfg.Level = os.Getenv("TF_LOG")
+
+	// Map Terrform Log Levels to our SDK Levels
+	switch os.Getenv("TF_LOG") {
+	case "TRACE":
+		logCfg.Level = "DEBUG"
+	case "DEBUG":
+		logCfg.Level = "DEBUG"
+	case "INFO":
+		logCfg.Level = "INFO"
+	case "WARN":
+		logCfg.Level = "WARNING"
+	case "ERROR":
+		logCfg.Level = "ERROR"
+	default:
+		logCfg.Level = "WARNING"
+	}
 
 	ppLog.SetupLogger(logCfg)
 

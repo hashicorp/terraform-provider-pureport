@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "0.3.0"
+def version = "0.4.0"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
@@ -29,7 +29,7 @@ pipeline {
           )
       choice(
           name: 'ACCEPTANCE_TESTS_LOG_LEVEL',
-          choices: ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR'],
+          choices: ['WARN', 'ERROR', 'DEBUG', 'INFO', 'TRACE'],
           description: 'The Terraform Debug Level'
           )
     }
@@ -54,7 +54,7 @@ pipeline {
         AWS_ACCESS_KEY_ID     = credentials('terraform-acc-test-aws-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('terraform-acc-test-aws-secret')
 
-        TF_VAR_azurerm_express_route_circuit_service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
+        TF_VAR_azurerm_express_route_circuit_service_key = "0f18c4dd-29a7-4f0c-9491-8e6419415da8"
     }
     stages {
         stage('Configure') {
@@ -102,11 +102,15 @@ pipeline {
                     // Don't fail if the test fall. Just setting this until we can get our issues
                     // resolved with the Google Provider.
                     sh "make testacc"
+                }
+            }
+            post {
+                always {
 
                     archiveArtifacts(
                         allowEmptyArchive: true,
                         artifacts: 'pureport/tf_log.log'
-                        )
+                    )
                 }
             }
         }

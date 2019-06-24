@@ -18,16 +18,16 @@ func dataSourceNetworks() *schema.Resource {
 		Read: dataSourceNetworksRead,
 
 		Schema: map[string]*schema.Schema{
+			"account_href": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+			},
 			"name_regex": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.ValidateRegexp,
-			},
-			"account_href": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
 			},
 			"networks": {
 				Type:     schema.TypeList,

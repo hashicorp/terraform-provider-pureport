@@ -27,7 +27,7 @@ data "pureport_networks" "main" {
 
 const testAccResourceGoogleCloudConnectionConfig_basic = testAccResourceGoogleCloudConnectionConfig_common + `
 data "google_compute_network" "default" {
-  name = "default"
+  name = "terraform-acc-network"
 }
 
 resource "google_compute_router" "main" {
@@ -70,7 +70,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 	resourceName := "pureport_google_cloud_connection.main"
 	var instance client.GoogleCloudInterconnectConnection
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckGoogleCloudConnectionDestroy,

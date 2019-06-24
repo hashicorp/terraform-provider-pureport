@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/antihax/optional"
@@ -21,6 +22,31 @@ const (
 func resourceSiteVPNConnection() *schema.Resource {
 
 	connection_schema := map[string]*schema.Schema{
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
+		"ike_version": {
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
+			StateFunc: func(val interface{}) string {
+				return strings.ToUpper(val.(string))
+			},
+		},
+		"primary_customer_router_ip": {
+			Type:     schema.TypeString,
+			Required: true,
+		},
+		"routing_type": {
+			Type:         schema.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringInSlice([]string{"ROUTE_BASED_BGP", "ROUTE_BASED_STATIC", "POLICY_BASED"}, true),
+			StateFunc: func(val interface{}) string {
+				return strings.ToUpper(val.(string))
+			},
+		},
 		"auth_type": {
 			Type:         schema.TypeString,
 			Optional:     true,
@@ -28,21 +54,10 @@ func resourceSiteVPNConnection() *schema.Resource {
 			ForceNew:     true,
 			ValidateFunc: validation.StringInSlice([]string{"psk"}, true),
 		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
-		},
 		"enable_bgp_password": {
 			Type:     schema.TypeBool,
 			Optional: true,
 			Default:  false,
-		},
-		"ike_version": {
-			Type:         schema.TypeString,
-			Required:     true,
-			ValidateFunc: validation.StringInSlice([]string{"V1", "V2"}, true),
 		},
 		"ike_config": {
 			Type:     schema.TypeList,
@@ -100,17 +115,9 @@ func resourceSiteVPNConnection() *schema.Resource {
 				},
 			},
 		},
-		"primary_customer_router_ip": {
-			Type:     schema.TypeString,
-			Required: true,
-		},
 		"primary_key": {
 			Type:     schema.TypeString,
 			Optional: true,
-		},
-		"routing_type": {
-			Type:     schema.TypeString,
-			Required: true,
 		},
 		"secondary_customer_router_ip": {
 			Type:     schema.TypeString,
@@ -121,18 +128,20 @@ func resourceSiteVPNConnection() *schema.Resource {
 			Optional: true,
 		},
 		"traffic_selectors": {
-			Type:     schema.TypeList,
+			Type:     schema.TypeSet,
 			Optional: true,
 			Computed: true,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"customer_side": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.CIDRNetwork(16, 32),
 					},
 					"pureport_side": {
-						Type:     schema.TypeString,
-						Required: true,
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.CIDRNetwork(16, 32),
 					},
 				},
 			},
@@ -174,14 +183,16 @@ func expandTrafficSelectorMappings(d *schema.ResourceData) []client.TrafficSelec
 
 		mappings := []client.TrafficSelectorMapping{}
 
-		for _, m := range data.([]map[string]string) {
+		for _, i := range data.(*schema.Set).List() {
 
-			new := client.TrafficSelectorMapping{
-				CustomerSide: m["customer_side"],
-				PureportSide: m["pureport_side"],
+			m := i.(map[string]interface{})
+
+			ts := client.TrafficSelectorMapping{
+				CustomerSide: m["customer_side"].(string),
+				PureportSide: m["pureport_side"].(string),
 			}
 
-			mappings = append(mappings, new)
+			mappings = append(mappings, ts)
 		}
 
 		return mappings
@@ -582,10 +593,6 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 	if d.HasChange("ike_version") {
 		c.IkeVersion = d.Get("ike_version").(string)
-	}
-
-	if d.HasChange("ike_version") {
-		c.IkeVersion = d.Get("ike_version").(string)
 
 		if c.IkeVersion == "V1" {
 			c.IkeV1 = expandIkeVersion1(d)
@@ -662,7 +669,12 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 		return fmt.Errorf("Error Response while updating %s: code=%v", sitevpnConnectionName, resp.StatusCode)
 	}
 
+	if err := WaitForConnection(sitevpnConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", sitevpnConnectionName, err)
+	}
+
 	d.Partial(false)
+
 	return resourceSiteVPNConnectionRead(d, m)
 }
 

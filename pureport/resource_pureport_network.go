@@ -24,6 +24,10 @@ func resourceNetwork() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"account_href": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -31,10 +35,6 @@ func resourceNetwork() *schema.Resource {
 			"href": {
 				Type:     schema.TypeString,
 				Computed: true,
-			},
-			"account_href": {
-				Type:     schema.TypeString,
-				Required: true,
 			},
 		},
 	}

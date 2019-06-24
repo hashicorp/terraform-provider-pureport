@@ -26,6 +26,12 @@ func resourceGoogleCloudConnection() *schema.Resource {
 			Required: true,
 			ForceNew: true,
 		},
+		"speed": {
+			Type:         schema.TypeInt,
+			Required:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
+		},
 		"secondary_pairing_key": {
 			Type:     schema.TypeString,
 			Optional: true,
@@ -39,12 +45,6 @@ func resourceGoogleCloudConnection() *schema.Resource {
 			Elem: &schema.Resource{
 				Schema: StandardGatewaySchema,
 			},
-		},
-		"speed": {
-			Type:         schema.TypeInt,
-			Required:     true,
-			ForceNew:     true,
-			ValidateFunc: validation.IntInSlice([]int{50, 100, 200, 300, 400, 500, 1000, 10000}),
 		},
 	}
 
@@ -308,7 +308,12 @@ func resourceGoogleCloudConnectionUpdate(d *schema.ResourceData, m interface{}) 
 		return fmt.Errorf("Error Response while updating %s: code=%v", googleConnectionName, resp.StatusCode)
 	}
 
+	if err := WaitForConnection(googleConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", googleConnectionName, err)
+	}
+
 	d.Partial(false)
+
 	return resourceGoogleCloudConnectionRead(d, m)
 }
 
