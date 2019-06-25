@@ -4,6 +4,11 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.40.0 // indirect
+	github.com/Azure/go-autorest v12.1.0+incompatible // indirect
+	github.com/Azure/go-autorest/autorest v0.2.0 // indirect
+	github.com/Azure/go-autorest/autorest/azure/cli v0.1.0 // indirect
+	github.com/Azure/go-autorest/autorest/to v0.2.0 // indirect
+	github.com/Azure/go-autorest/autorest/validation v0.1.0 // indirect
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/go-critic/go-critic v0.0.0-20181204210945-ee9bf5809ead // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
@@ -17,6 +22,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.4.0 // indirect
 	github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
+	github.com/terraform-providers/terraform-provider-azurerm v1.30.1
 	github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
 	github.com/terraform-providers/terraform-provider-template v1.0.0
 	go.opencensus.io v0.22.0 // indirect
