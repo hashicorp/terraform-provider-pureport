@@ -10,10 +10,12 @@
 package client
 
 type User struct {
-	Email     string `json:"email,omitempty"`
-	FirstName string `json:"firstName,omitempty"`
-	Href      string `json:"href,omitempty"`
-	Id        string `json:"id,omitempty"`
-	LastName  string `json:"lastName,omitempty"`
-	Username  string `json:"username,omitempty"`
+	Company     string `json:"company,omitempty"`
+	Email       string `json:"email,omitempty"`
+	FirstName   string `json:"firstName,omitempty"`
+	Href        string `json:"href,omitempty"`
+	Id          string `json:"id,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
+	PhoneNumber string `json:"phoneNumber,omitempty"`
+	Username    string `json:"username,omitempty"`
 }

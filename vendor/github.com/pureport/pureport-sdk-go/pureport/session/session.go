@@ -54,6 +54,8 @@ func createCredentials(cfg *pureport.Configuration) *credentials.Credentials {
 // NewSession creates a new request session
 func NewSession(cfg *pureport.Configuration) *Session {
 
+	log.Debug("*** Creating new Pureport Session ***")
+
 	return &Session{
 		Credentials:   createCredentials(cfg),
 		Configuration: cfg,

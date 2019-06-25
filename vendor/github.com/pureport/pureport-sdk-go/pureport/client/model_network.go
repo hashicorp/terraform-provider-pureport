@@ -10,9 +10,10 @@
 package client
 
 type Network struct {
-	Account     *Link  `json:"account,omitempty"`
-	Description string `json:"description,omitempty"`
-	Href        string `json:"href,omitempty"`
-	Id          string `json:"id,omitempty"`
-	Name        string `json:"name,omitempty"`
+	Account     *Link             `json:"account,omitempty"`
+	Description string            `json:"description,omitempty"`
+	Href        string            `json:"href,omitempty"`
+	Id          string            `json:"id,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	Tags        map[string]string `json:"tags,omitempty"`
 }
