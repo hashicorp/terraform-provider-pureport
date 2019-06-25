@@ -32,23 +32,9 @@ data "aws_caller_identity" "current" {}
 `
 
 const testAccResourceAWSConnectionConfig_basic = testAccResourceAWSConnectionConfig_common + `
-resource "pureport_aws_connection" "main" {
+resource "pureport_aws_connection" "basic" {
   name = "AwsDirectConnectTest"
-  speed = "100"
-  high_availability = true
-
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
-
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
-}
-`
-
-const testAccResourceAWSConnectionConfig_basic_update_speed = testAccResourceAWSConnectionConfig_common + `
-resource "pureport_aws_connection" "main" {
-  name = "AwsDirectConnectTest"
-  speed = "200"
+  speed = "50"
   high_availability = true
 
   location_href = "${data.pureport_locations.main.locations.0.href}"
@@ -60,10 +46,10 @@ resource "pureport_aws_connection" "main" {
 `
 
 const testAccResourceAWSConnectionConfig_basic_update_no_respawn = testAccResourceAWSConnectionConfig_common + `
-resource "pureport_aws_connection" "main" {
+resource "pureport_aws_connection" "basic" {
   name = "Aws DirectConnect Test"
   description = "AWS Basic Test"
-  speed = "100"
+  speed = "50"
   high_availability = true
 
   location_href = "${data.pureport_locations.main.locations.0.href}"
@@ -75,9 +61,38 @@ resource "pureport_aws_connection" "main" {
 `
 
 const testAccResourceAWSConnectionConfig_basic_update_respawn = testAccResourceAWSConnectionConfig_common + `
-resource "pureport_aws_connection" "main" {
+resource "pureport_aws_connection" "basic" {
+  name = "AwsDirectConnectTest"
+  description = "AWS Basic Test"
+  speed = "50"
+  high_availability = false
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+}
+`
+
+const testAccResourceAWSConnectionConfig_basic_speed_start = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "updateSpeed" {
   name = "AwsDirectConnectTest"
   speed = "100"
+  high_availability = true
+
+  location_href = "${data.pureport_locations.main.locations.0.href}"
+  network_href = "${data.pureport_networks.main.networks.0.href}"
+
+  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
+  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+}
+`
+
+const testAccResourceAWSConnectionConfig_basic_speed_update = testAccResourceAWSConnectionConfig_common + `
+resource "pureport_aws_connection" "updateSpeed" {
+  name = "AwsDirectConnectTest"
+  speed = "200"
   high_availability = true
 
   location_href = "${data.pureport_locations.main.locations.0.href}"
@@ -93,7 +108,7 @@ data "pureport_cloud_services" "s3" {
   name_regex = ".*S3"
 }
 
-resource "pureport_aws_connection" "main" {
+resource "pureport_aws_connection" "cloudServices" {
   name = "AwsDirectConnectCloudServicesTest"
   speed = "100"
   high_availability = true
@@ -110,7 +125,7 @@ resource "pureport_aws_connection" "main" {
 `
 
 const testAccResourceAWSConnectionConfig_nat_mapping = testAccResourceAWSConnectionConfig_common + `
-resource "pureport_aws_connection" "main" {
+resource "pureport_aws_connection" "nat_mapping" {
   name = "AwsDirectConnectNatMappingTest"
   speed = "100"
   high_availability = true
@@ -137,7 +152,7 @@ resource "pureport_aws_connection" "main" {
 
 func TestAWSConnection_basic(t *testing.T) {
 
-	resourceName := "pureport_aws_connection.main"
+	resourceName := "pureport_aws_connection.basic"
 	var instance client.AwsDirectConnectConnection
 	var respawn_instance client.AwsDirectConnectConnection
 
@@ -154,7 +169,7 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
-					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
+					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
 					resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
@@ -188,6 +203,10 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.1.remote_id"),
+
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "false"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.pnat_cidr", ""),
 				),
 			},
 			{
@@ -196,6 +215,8 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "Aws DirectConnect Test"),
 					resource.TestCheckResourceAttr(resourceName, "description", "AWS Basic Test"),
+					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
+					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 				),
 			},
 			{
@@ -205,8 +226,10 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
 					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
-					resource.TestCheckResourceAttr(resourceName, "description", ""),
+					resource.TestCheckResourceAttr(resourceName, "description", "AWS Basic Test"),
 					resource.TestMatchResourceAttr(resourceName, "aws_account_id", regexp.MustCompile("[0-9]{12}")),
+					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
+					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
 				),
 			},
 		},
@@ -215,7 +238,7 @@ func TestAWSConnection_basic(t *testing.T) {
 
 func TestAWSConnection_updateSpeed(t *testing.T) {
 
-	resourceName := "pureport_aws_connection.main"
+	resourceName := "pureport_aws_connection.updateSpeed"
 	var instance client.AwsDirectConnectConnection
 	var respawn_instance client.AwsDirectConnectConnection
 
@@ -225,7 +248,7 @@ func TestAWSConnection_updateSpeed(t *testing.T) {
 		CheckDestroy: testAccCheckAWSConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAWSConnectionConfig_basic,
+				Config: testAccResourceAWSConnectionConfig_basic_speed_start,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAWSConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
@@ -234,7 +257,7 @@ func TestAWSConnection_updateSpeed(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccResourceAWSConnectionConfig_basic_update_speed,
+				Config: testAccResourceAWSConnectionConfig_basic_speed_update,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAWSConnection(resourceName, &respawn_instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
@@ -249,7 +272,7 @@ func TestAWSConnection_updateSpeed(t *testing.T) {
 
 func TestAWSConnection_cloudServices(t *testing.T) {
 
-	resourceName := "pureport_aws_connection.main"
+	resourceName := "pureport_aws_connection.cloudServices"
 	var instance client.AwsDirectConnectConnection
 
 	resource.ParallelTest(t, resource.TestCase{
@@ -268,7 +291,10 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 					resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
 					resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
+
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "false"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.pnat_cidr", ""),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
@@ -306,10 +332,10 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 
 func TestAWSConnection_nat_mappings(t *testing.T) {
 
-	resourceName := "pureport_aws_connection.main"
+	resourceName := "pureport_aws_connection.nat_mapping"
 	var instance client.AwsDirectConnectConnection
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckAWSConnectionDestroy,
@@ -319,15 +345,19 @@ func TestAWSConnection_nat_mappings(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAWSConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectNatMappingTest"),
-					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "true"),
-					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.#", "2"),
-					//					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.0.native_cidr", "192.168.0.0/24"),
-					//					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.mappings.0.nat_cidr"),
-					//					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.1.native_cidr", "192.200.0.0/16"),
-					//					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.mappings.1.nat_cidr"),
-					resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "2"),
-					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.pnat_cidr"),
+
+					resource.ComposeAggregateTestCheckFunc(
+						resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectNatMappingTest"),
+						resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "true"),
+						resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "2"),
+						resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.pnat_cidr"),
+						resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.#", "2"),
+
+						//					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.0.native_cidr", "192.168.0.0/24"),
+						//					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.mappings.0.nat_cidr"),
+						//					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.1.native_cidr", "192.200.0.0/16"),
+						//					resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.mappings.1.nat_cidr"),
+					),
 				),
 			},
 		},

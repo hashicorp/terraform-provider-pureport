@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "0.4.0"
+def version = "0.4.1"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
@@ -54,7 +54,11 @@ pipeline {
         AWS_ACCESS_KEY_ID     = credentials('terraform-acc-test-aws-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('terraform-acc-test-aws-secret')
 
-        TF_VAR_azurerm_express_route_circuit_service_key = "0f18c4dd-29a7-4f0c-9491-8e6419415da8"
+        ARM_CLIENT_ID         = credentials('terraform-acc-test-azure-client-id')
+        ARM_CLIENT_SECRET     = credentials('terraform-acc-test-azure-client-secret')
+        ARM_SUBSCRIPTION_ID   = credentials('terraform-acc-test-azure-subscription-id')
+        ARM_TENANT_ID         = credentials('terraform-acc-test-azure-tenant-id')
+        ARG_USE_MSI           = true
     }
     stages {
         stage('Configure') {

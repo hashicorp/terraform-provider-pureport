@@ -35,6 +35,7 @@ type AzureExpressRouteConnection struct {
 	SecondaryGateway *StandardGateway      `json:"secondaryGateway,omitempty"`
 	Speed            int32                 `json:"speed"`
 	State            string                `json:"state,omitempty"`
+	Tags             map[string]string     `json:"tags,omitempty"`
 	Type_            string                `json:"type"`
 	Peering          *PeeringConfiguration `json:"peering,omitempty"`
 	ServiceKey       string                `json:"serviceKey"`

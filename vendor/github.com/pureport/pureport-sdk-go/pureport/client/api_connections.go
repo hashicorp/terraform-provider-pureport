@@ -37,12 +37,9 @@ ConnectionsApiService Add new connection
 
 */
 
-/**
- * Duplicate
- */
-// type AddConnectionOpts struct {
-// 	Body optional.Interface
-// }
+type AddConnectionOpts struct {
+	Body optional.Interface
+}
 
 func (a *ConnectionsApiService) AddConnection(ctx context.Context, networkId string, localVarOptionals *AddConnectionOpts) (*http.Response, error) {
 	var (

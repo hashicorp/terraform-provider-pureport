@@ -18,6 +18,9 @@ type Value struct {
 	// Pureport Session Token
 	SessionToken string
 
+	// Pureport Refresh Token
+	RefreshToken string
+
 	// Provider used to get credentials
 	ProviderName string
 }
