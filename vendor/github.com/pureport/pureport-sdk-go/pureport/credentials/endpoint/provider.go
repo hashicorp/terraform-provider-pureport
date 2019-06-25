@@ -36,12 +36,13 @@ type Provider struct {
 }
 
 type loginResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-	Status      int    `json:"status"`
-	Code        string `json:"code"`
-	Message     string `json:"message"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+	Status       int    `json:"status"`
+	Code         string `json:"code"`
+	Message      string `json:"message"`
 }
 
 func newEndpointProvider(cfg pureport.Configuration, endpoint string, cred *credentials.Credentials) credentials.Provider {
@@ -67,19 +68,13 @@ func (p *Provider) IsExpired() bool {
 	return p.Expiry.IsExpired()
 }
 
-// Retrieve - see Provider.Retrieve()
-func (p *Provider) Retrieve() (credentials.Value, error) {
-
-	local, err := p.Credentials.Get()
-	if err != nil {
-		return credentials.Value{ProviderName: providerName}, err
-	}
+func (p *Provider) login(local credentials.Value) ([]byte, error) {
 
 	// Create the body of the request
 	values := map[string]string{"key": local.APIKey, "secret": local.Secret}
 	jsonValue, err := json.Marshal(values)
 	if err != nil {
-		return credentials.Value{ProviderName: providerName}, fmt.Errorf("Error creating credential body")
+		return nil, fmt.Errorf("Error creating credential body")
 	}
 
 	buf := bytes.NewBuffer(jsonValue)
@@ -90,11 +85,53 @@ func (p *Provider) Retrieve() (credentials.Value, error) {
 	resp, err := p.Client.Post(fmt.Sprintf("%s/login", p.EndPoint), "application/json", buf)
 	if err != nil {
 		log.Errorf("HTTP Response: %s Error: %s", resp, err)
-		return credentials.Value{ProviderName: providerName}, fmt.Errorf("Error creating credentials login request")
+		return nil, fmt.Errorf("Error creating credentials login request")
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	return ioutil.ReadAll(resp.Body)
+}
+
+func (p *Provider) refresh(local credentials.Value) ([]byte, error) {
+
+	// Create the body of the request
+	values := map[string]string{"refreshToken": local.RefreshToken}
+	jsonValue, err := json.Marshal(values)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating credential body")
+	}
+
+	buf := bytes.NewBuffer(jsonValue)
+
+	log.Debugf("Refreshing Login credentials at EndPoint: %s/login/refresh", p.EndPoint)
+
+	// Create the HTTP Request
+	resp, err := p.Client.Post(fmt.Sprintf("%s/login/refresh", p.EndPoint), "application/json", buf)
+	if err != nil {
+		log.Errorf("HTTP Response: %s Error: %s", resp, err)
+		return nil, fmt.Errorf("Error in refreshing credentials request")
+	}
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+}
+
+// Retrieve - see Provider.Retrieve()
+func (p *Provider) Retrieve() (credentials.Value, error) {
+
+	local, err := p.Credentials.Get()
+	if err != nil {
+		return credentials.Value{ProviderName: providerName}, err
+	}
+
+	// If this isn't the first request, refresh the token
+	var body []byte
+	if local.RefreshToken != "" {
+		body, err = p.refresh(local)
+	} else {
+		body, err = p.login(local)
+	}
+
 	if err != nil {
 		log.Errorf("HTTP Body: %s, Error: %s", string(body), err)
 		return credentials.Value{ProviderName: providerName}, fmt.Errorf("Error reading credential request body")
@@ -102,7 +139,7 @@ func (p *Provider) Retrieve() (credentials.Value, error) {
 
 	var data loginResponse
 	if err = json.Unmarshal(body, &data); err != nil {
-		return credentials.Value{ProviderName: providerName}, fmt.Errorf("Error reading credential response")
+		return credentials.Value{ProviderName: providerName}, fmt.Errorf("Error converting expiry time")
 	}
 
 	// Check to make sure an error wasn't returned
@@ -128,5 +165,6 @@ func (p *Provider) Retrieve() (credentials.Value, error) {
 		APIKey:       local.APIKey,
 		Secret:       local.Secret,
 		SessionToken: data.AccessToken,
+		RefreshToken: data.RefreshToken,
 	}, nil
 }

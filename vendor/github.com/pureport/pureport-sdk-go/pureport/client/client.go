@@ -19,7 +19,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -60,6 +59,8 @@ type APIClient struct {
 
 	ApikeysApi *ApikeysApiService
 
+	AuthApi *AuthApiService
+
 	BillingApi *BillingApiService
 
 	CloudRegionsApi *CloudRegionsApiService
@@ -68,13 +69,19 @@ type APIClient struct {
 
 	ConnectionsApi *ConnectionsApiService
 
+	FacilitiesApi *FacilitiesApiService
+
 	LocationsApi *LocationsApiService
 
 	NetworksApi *NetworksApiService
 
 	OptionsApi *OptionsApiService
 
+	PortsApi *PortsApiService
+
 	SupportedConnectionsApi *SupportedConnectionsApiService
+
+	SupportedPortsApi *SupportedPortsApiService
 
 	UsersApi *UsersApiService
 }
@@ -101,14 +108,18 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.AccountRolesApi = (*AccountRolesApiService)(&c.common)
 	c.AccountsApi = (*AccountsApiService)(&c.common)
 	c.ApikeysApi = (*ApikeysApiService)(&c.common)
+	c.AuthApi = (*AuthApiService)(&c.common)
 	c.BillingApi = (*BillingApiService)(&c.common)
 	c.CloudRegionsApi = (*CloudRegionsApiService)(&c.common)
 	c.CloudServicesApi = (*CloudServicesApiService)(&c.common)
 	c.ConnectionsApi = (*ConnectionsApiService)(&c.common)
+	c.FacilitiesApi = (*FacilitiesApiService)(&c.common)
 	c.LocationsApi = (*LocationsApiService)(&c.common)
 	c.NetworksApi = (*NetworksApiService)(&c.common)
 	c.OptionsApi = (*OptionsApiService)(&c.common)
+	c.PortsApi = (*PortsApiService)(&c.common)
 	c.SupportedConnectionsApi = (*SupportedConnectionsApiService)(&c.common)
+	c.SupportedPortsApi = (*SupportedPortsApiService)(&c.common)
 	c.UsersApi = (*UsersApiService)(&c.common)
 
 	return c
@@ -194,29 +205,18 @@ func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
 	// --------------------------------------------------
 	// Add tracing of HTTP Requests
 	// --------------------------------------------------
-	if dump, derr := httputil.DumpRequest(request, true); derr == nil {
-		log.Debugf("Request:\n%q", dump)
-	}
+	logRequest(request)
 
 	resp, err := c.cfg.HTTPClient.Do(request)
 
 	if err != nil {
 		log.Errorf("Error Response: %+v", err)
-
-	} else {
-
-		if dump, derr := httputil.DumpResponse(resp, true); derr == nil {
-
-			if resp.StatusCode > 300 {
-				log.Infof("Response:\n%q", dump)
-			} else {
-				log.Debugf("Response:\n%q", dump)
-			}
-		}
+		return resp, err
 	}
 
-	// --------------------------------------------------
+	logResponse(resp)
 
+	// --------------------------------------------------
 	return resp, err
 }
 
