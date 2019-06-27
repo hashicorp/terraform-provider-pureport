@@ -34,7 +34,7 @@ func TestNetworks_empty(t *testing.T) {
 
 	resourceName := "data.pureport_networks.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -42,25 +42,31 @@ func TestNetworks_empty(t *testing.T) {
 				Config: testAccDataSourceNetworksConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceNetworks(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "networks.#", "3"),
+					resource.TestCheckResourceAttr(resourceName, "networks.#", "4"),
 
 					resource.TestMatchResourceAttr(resourceName, "networks.0.id", regexp.MustCompile("network-.{16}")),
 					resource.TestMatchResourceAttr(resourceName, "networks.0.href", regexp.MustCompile("/networks/network-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "Connections"),
-					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Data Source Testing"),
+					resource.TestCheckResourceAttr(resourceName, "networks.0.name", "A Flock of Seagulls"),
+					resource.TestCheckResourceAttr(resourceName, "networks.0.description", "Test Network DataSource"),
 					resource.TestMatchResourceAttr(resourceName, "networks.0.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 
 					resource.TestMatchResourceAttr(resourceName, "networks.1.id", regexp.MustCompile("network-.{16}")),
 					resource.TestMatchResourceAttr(resourceName, "networks.1.href", regexp.MustCompile("/networks/network-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "networks.1.name", "Siouxsie & The Banshees"),
-					resource.TestCheckResourceAttr(resourceName, "networks.1.description", "Test Network #2"),
+					resource.TestCheckResourceAttr(resourceName, "networks.1.name", "Connections"),
+					resource.TestCheckResourceAttr(resourceName, "networks.1.description", "Data Source Testing"),
 					resource.TestMatchResourceAttr(resourceName, "networks.1.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 
 					resource.TestMatchResourceAttr(resourceName, "networks.2.id", regexp.MustCompile("network-.{16}")),
 					resource.TestMatchResourceAttr(resourceName, "networks.2.href", regexp.MustCompile("/networks/network-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "networks.2.name", "The Clash"),
-					resource.TestCheckResourceAttr(resourceName, "networks.2.description", "Test Network #1"),
+					resource.TestCheckResourceAttr(resourceName, "networks.2.name", "Siouxsie & The Banshees"),
+					resource.TestCheckResourceAttr(resourceName, "networks.2.description", "Test Network #2"),
 					resource.TestMatchResourceAttr(resourceName, "networks.2.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
+
+					resource.TestMatchResourceAttr(resourceName, "networks.3.id", regexp.MustCompile("network-.{16}")),
+					resource.TestMatchResourceAttr(resourceName, "networks.3.href", regexp.MustCompile("/networks/network-.{16}")),
+					resource.TestCheckResourceAttr(resourceName, "networks.3.name", "The Clash"),
+					resource.TestCheckResourceAttr(resourceName, "networks.3.description", "Test Network #1"),
+					resource.TestMatchResourceAttr(resourceName, "networks.3.account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 				),
 			},
 		},
@@ -71,7 +77,7 @@ func TestNetworks_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_networks.name_regex"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

@@ -23,7 +23,7 @@ func TestCloudRegions_empty(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_regions.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -48,7 +48,7 @@ func TestCloudRegions_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_regions.name_regex"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

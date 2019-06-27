@@ -24,7 +24,7 @@ func TestAccounts_empty(t *testing.T) {
 
 	resourceName := "data.pureport_accounts.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -53,7 +53,7 @@ func TestAccounts_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_accounts.name_regex"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

@@ -23,7 +23,7 @@ func TestCloudServices_empty(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_services.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -52,7 +52,7 @@ func TestCloudServices_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_services.name_regex"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{

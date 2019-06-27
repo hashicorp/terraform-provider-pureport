@@ -10,3 +10,10 @@ module "azure-infra" {
 module "google-infra" {
   source = "./modules/google-cloud-interconnect"
 }
+
+module "pureport-infra" {
+  source                   = "./modules/pureport-infra"
+  datasource_express_route = module.azure-infra.datasource_express_route
+  google_compute_network   = module.google-infra.compute_network
+}
+

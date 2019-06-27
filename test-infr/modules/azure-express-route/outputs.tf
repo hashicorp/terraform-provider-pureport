@@ -1,5 +1,5 @@
-output "express_route_service_key" {
-  description = "Expressroute Service Key"
-  value       = [azurerm_express_route_circuit.main.service_key]
+output "datasource_express_route" {
+  description = "The Express Route DataSource to use for Testing"
+  value       = azurerm_express_route_circuit.datasource
 }
 

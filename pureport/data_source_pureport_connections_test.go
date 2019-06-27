@@ -37,7 +37,7 @@ func TestConnections_empty(t *testing.T) {
 
 	resourceName := "data.pureport_connections.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -83,7 +83,7 @@ func TestConnections_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_connections.name_filter"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
