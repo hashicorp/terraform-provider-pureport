@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
 func resourceNetwork() *schema.Resource {
@@ -54,7 +55,7 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 	accountHref := d.Get("account_href").(string)
 	accountId := filepath.Base(accountHref)
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 
 	opts := client.AddNetworkOpts{
@@ -109,7 +110,7 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	networkId := d.Id()
 	ctx := config.Session.GetSessionContext()
 
@@ -149,7 +150,7 @@ func resourceNetworkUpdate(d *schema.ResourceData, m interface{}) error {
 		n.Description = d.Get("description").(string)
 	}
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 
 	opts := client.UpdateNetworkOpts{
@@ -190,7 +191,7 @@ func resourceNetworkUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceNetworkDelete(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 	networkId := d.Id()
 

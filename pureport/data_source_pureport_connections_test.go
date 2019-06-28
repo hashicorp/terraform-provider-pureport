@@ -33,7 +33,7 @@ data "pureport_connections" "name_filter" {
 }
 `
 
-func TestConnections_empty(t *testing.T) {
+func TestConnectionsDataSource_empty(t *testing.T) {
 
 	resourceName := "data.pureport_connections.empty"
 
@@ -79,7 +79,7 @@ func TestConnections_empty(t *testing.T) {
 	})
 }
 
-func TestConnections_name_regex(t *testing.T) {
+func TestConnectionsDataSource_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_connections.name_filter"
 

@@ -13,10 +13,8 @@ import (
 	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-)
-
-const (
-	sitevpnConnectionName = "SiteVPN Connection"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/connection"
 )
 
 func resourceSiteVPNConnection() *schema.Resource {
@@ -152,13 +150,13 @@ func resourceSiteVPNConnection() *schema.Resource {
 			MinItems: 1,
 			MaxItems: 2,
 			Elem: &schema.Resource{
-				Schema: VpnGatewaySchema,
+				Schema: connection.VpnGatewaySchema,
 			},
 		},
 	}
 
 	// Add the base items
-	for k, v := range getBaseConnectionSchema() {
+	for k, v := range connection.GetBaseResourceConnectionSchema() {
 		connection_schema[k] = v
 	}
 
@@ -318,8 +316,8 @@ func expandSiteVPNConnection(d *schema.ResourceData) client.SiteIpSecVpnConnecti
 	}
 
 	// Generic Optionals
-	c.CustomerNetworks = ExpandCustomerNetworks(d)
-	c.Nat = ExpandNATConfiguration(d)
+	c.CustomerNetworks = connection.ExpandCustomerNetworks(d)
+	c.Nat = connection.ExpandNATConfiguration(d)
 
 	if description, ok := d.GetOk("description"); ok {
 		c.Description = description.(string)
@@ -367,18 +365,18 @@ func expandSiteVPNConnection(d *schema.ResourceData) client.SiteIpSecVpnConnecti
 
 func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
-	connection := expandSiteVPNConnection(d)
+	c := expandSiteVPNConnection(d)
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 
 	opts := client.AddConnectionOpts{
-		Body: optional.NewInterface(connection),
+		Body: optional.NewInterface(c),
 	}
 
 	resp, err := config.Session.Client.ConnectionsApi.AddConnection(
 		ctx,
-		filepath.Base(connection.Network.Href),
+		filepath.Base(c.Network.Href),
 		&opts,
 	)
 
@@ -388,21 +386,21 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		json_response := string(err.(client.GenericSwaggerError).Body()[:])
 		response, err := structure.ExpandJsonFromString(json_response)
 		if err != nil {
-			log.Printf("Error Creating new %s: %v", sitevpnConnectionName, err)
+			log.Printf("Error Creating new %s: %v", connection.SiteVPNConnectionName, err)
 		} else {
 			statusCode := int(response["status"].(float64))
-			log.Printf("Error Creating new %s: %d\n", sitevpnConnectionName, statusCode)
+			log.Printf("Error Creating new %s: %d\n", connection.SiteVPNConnectionName, statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}
 
 		d.SetId("")
-		return fmt.Errorf("Error while creating %s: err=%s", sitevpnConnectionName, http_err)
+		return fmt.Errorf("Error while creating %s: err=%s", connection.SiteVPNConnectionName, http_err)
 	}
 
 	if resp.StatusCode >= 300 {
 		d.SetId("")
-		return fmt.Errorf("Error while creating %s: code=%v", sitevpnConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error while creating %s: code=%v", connection.SiteVPNConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
@@ -419,8 +417,8 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	if err := WaitForConnection(sitevpnConnectionName, d, m); err != nil {
-		return fmt.Errorf("Error waiting for %s: err=%s", sitevpnConnectionName, err)
+	if err := connection.WaitForConnection(connection.SiteVPNConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", connection.SiteVPNConnectionName, err)
 	}
 
 	return resourceSiteVPNConnectionRead(d, m)
@@ -428,60 +426,66 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 
 func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	connectionId := d.Id()
 	ctx := config.Session.GetSessionContext()
 
 	c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
+			log.Printf("Error Response while reading %s: code=%v", connection.SiteVPNConnectionName, resp.StatusCode)
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading data for %s: %s", sitevpnConnectionName, err)
+		return fmt.Errorf("Error reading data for %s: %s", connection.SiteVPNConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while reading %s: code=%v", sitevpnConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error Response while reading %s: code=%v", connection.SiteVPNConnectionName, resp.StatusCode)
 	}
 
 	conn := c.(client.SiteIpSecVpnConnection)
+	d.Set("auth_type", conn.AuthType)
+	d.Set("description", conn.Description)
+	d.Set("enable_bgp_password", conn.EnableBGPPassword)
+	d.Set("high_availability", conn.HighAvailability)
+	d.Set("href", conn.Href)
+	d.Set("ike_version", conn.IkeVersion)
+	d.Set("name", conn.Name)
+	d.Set("primary_customer_router_ip", conn.PrimaryCustomerRouterIP)
+	d.Set("primary_key", conn.PrimaryKey)
+	d.Set("routing_type", conn.RoutingType)
+	d.Set("secondary_customer_router_ip", conn.SecondaryCustomerRouterIP)
+	d.Set("secondary_key", conn.SecondaryKey)
 	d.Set("speed", conn.Speed)
+	d.Set("state", conn.State)
 
 	// Add Gateway information
 	var gateways []map[string]interface{}
 	if g := conn.PrimaryGateway; g != nil {
-		gateways = append(gateways, FlattenVpnGateway(g))
+		gateways = append(gateways, connection.FlattenVpnGateway(g))
 	}
 	if g := conn.SecondaryGateway; g != nil {
-		gateways = append(gateways, FlattenVpnGateway(g))
+		gateways = append(gateways, connection.FlattenVpnGateway(g))
 	}
 	if err := d.Set("gateways", gateways); err != nil {
-		return fmt.Errorf("Error setting gateway information for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting gateway information for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 	}
 
-	d.Set("description", conn.Description)
-	d.Set("high_availability", conn.HighAvailability)
-
-	if err := d.Set("customer_networks", flattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
-		return fmt.Errorf("Error setting customer networks for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+	if err := d.Set("customer_networks", connection.FlattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
+		return fmt.Errorf("Error setting customer networks for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 	}
 
-	if err := d.Set("nat_config", FlattenNatConfig(conn.Nat)); err != nil {
-		return fmt.Errorf("Error setting NAT Configuration for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+	if err := d.Set("nat_config", connection.FlattenNatConfig(conn.Nat)); err != nil {
+		return fmt.Errorf("Error setting NAT Configuration for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 	}
 
 	if err := d.Set("location_href", conn.Location.Href); err != nil {
-		return fmt.Errorf("Error setting location for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting location for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 	}
 	if err := d.Set("network_href", conn.Network.Href); err != nil {
-		return fmt.Errorf("Error setting network for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting network for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 	}
-
-	d.Set("auth_type", conn.AuthType)
-	d.Set("enable_bgp_password", conn.EnableBGPPassword)
-	d.Set("ike_version", conn.IkeVersion)
 
 	if conn.IkeVersion == "V1" {
 		if err := d.Set("ike_config", []map[string]interface{}{
@@ -502,7 +506,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 				},
 			},
 		}); err != nil {
-			return fmt.Errorf("Error setting IKE V1 Configuration for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+			return fmt.Errorf("Error setting IKE V1 Configuration for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 		}
 	}
 
@@ -526,15 +530,9 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 				},
 			},
 		}); err != nil {
-			return fmt.Errorf("Error setting IKE V2 Configuration for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+			return fmt.Errorf("Error setting IKE V2 Configuration for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 		}
 	}
-
-	d.Set("routing_type", conn.RoutingType)
-	d.Set("primary_customer_router_ip", conn.PrimaryCustomerRouterIP)
-	d.Set("primary_key", conn.PrimaryKey)
-	d.Set("secondary_customer_router_ip", conn.SecondaryCustomerRouterIP)
-	d.Set("secondary_key", conn.SecondaryKey)
 
 	trafficSelectors := []map[string]string{}
 	for _, v := range conn.TrafficSelectors {
@@ -545,7 +543,7 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if err := d.Set("traffic_selectors", trafficSelectors); err != nil {
-		return fmt.Errorf("Error setting traffics selectors for %s %s: %s", sitevpnConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting traffics selectors for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 	}
 
 	return nil
@@ -557,7 +555,7 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 	d.Partial(true)
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 
 	if d.HasChange("name") {
@@ -576,11 +574,11 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 	}
 
 	if d.HasChange("customer_networks") {
-		c.CustomerNetworks = ExpandCustomerNetworks(d)
+		c.CustomerNetworks = connection.ExpandCustomerNetworks(d)
 	}
 
 	if d.HasChange("nat_config") {
-		c.Nat = ExpandNATConfiguration(d)
+		c.Nat = connection.ExpandNATConfiguration(d)
 	}
 
 	if d.HasChange("billing_term") {
@@ -656,21 +654,21 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 			if jerr == nil {
 				statusCode := int(response["status"].(float64))
-				log.Printf("Error updating %s: %d\n", sitevpnConnectionName, statusCode)
+				log.Printf("Error updating %s: %d\n", connection.SiteVPNConnectionName, statusCode)
 				log.Printf("  %s\n", response["code"])
 				log.Printf("  %s\n", response["message"])
 			}
 		}
 
-		return fmt.Errorf("Error while updating %s: err=%s", sitevpnConnectionName, err)
+		return fmt.Errorf("Error while updating %s: err=%s", connection.SiteVPNConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while updating %s: code=%v", sitevpnConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error Response while updating %s: code=%v", connection.SiteVPNConnectionName, resp.StatusCode)
 	}
 
-	if err := WaitForConnection(sitevpnConnectionName, d, m); err != nil {
-		return fmt.Errorf("Error waiting for %s: err=%s", sitevpnConnectionName, err)
+	if err := connection.WaitForConnection(connection.SiteVPNConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", connection.SiteVPNConnectionName, err)
 	}
 
 	d.Partial(false)
@@ -679,5 +677,5 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 }
 
 func resourceSiteVPNConnectionDelete(d *schema.ResourceData, m interface{}) error {
-	return DeleteConnection(sitevpnConnectionName, d, m)
+	return connection.DeleteConnection(connection.SiteVPNConnectionName, d, m)
 }

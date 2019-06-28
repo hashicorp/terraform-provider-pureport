@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
 const testAccResourceAWSConnectionConfig_common = `
@@ -367,7 +368,7 @@ func TestAWSConnection_nat_mappings(t *testing.T) {
 func testAccCheckResourceAWSConnection(name string, instance *client.AwsDirectConnectConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		config, ok := testAccProvider.Meta().(*Config)
+		config, ok := testAccProvider.Meta().(*configuration.Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -403,7 +404,7 @@ func testAccCheckResourceAWSConnection(name string, instance *client.AwsDirectCo
 
 func testAccCheckAWSConnectionDestroy(s *terraform.State) error {
 
-	config, ok := testAccProvider.Meta().(*Config)
+	config, ok := testAccProvider.Meta().(*configuration.Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}

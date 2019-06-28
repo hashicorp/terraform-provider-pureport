@@ -19,7 +19,7 @@ data "pureport_cloud_services" "name_regex" {
 }
 `
 
-func TestCloudServices_empty(t *testing.T) {
+func TestCloudServicesDataSource_empty(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_services.empty"
 
@@ -48,7 +48,7 @@ func TestCloudServices_empty(t *testing.T) {
 	})
 }
 
-func TestCloudServices_name_regex(t *testing.T) {
+func TestCloudServicesDataSource_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_services.name_regex"
 

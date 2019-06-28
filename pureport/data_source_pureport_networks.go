@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
 func dataSourceNetworks() *schema.Resource {
@@ -64,7 +65,7 @@ func dataSourceNetworks() *schema.Resource {
 
 func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	accountHref := d.Get("account_href").(string)
 	accountId := filepath.Base(accountHref)
 

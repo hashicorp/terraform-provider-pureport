@@ -12,10 +12,8 @@ import (
 	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-)
-
-const (
-	azureConnectionName = "Azure Cloud Connection"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/connection"
 )
 
 func resourceAzureConnection() *schema.Resource {
@@ -46,13 +44,13 @@ func resourceAzureConnection() *schema.Resource {
 			MinItems: 1,
 			MaxItems: 2,
 			Elem: &schema.Resource{
-				Schema: StandardGatewaySchema,
+				Schema: connection.StandardGatewaySchema,
 			},
 		},
 	}
 
 	// Add the base items
-	for k, v := range getBaseConnectionSchema() {
+	for k, v := range connection.GetBaseResourceConnectionSchema() {
 		connection_schema[k] = v
 	}
 
@@ -95,8 +93,8 @@ func expandAzureConnection(d *schema.ResourceData) client.AzureExpressRouteConne
 	}
 
 	// Generic Optionals
-	c.CustomerNetworks = ExpandCustomerNetworks(d)
-	c.Nat = ExpandNATConfiguration(d)
+	c.CustomerNetworks = connection.ExpandCustomerNetworks(d)
+	c.Nat = connection.ExpandNATConfiguration(d)
 
 	if description, ok := d.GetOk("description"); ok {
 		c.Description = description.(string)
@@ -107,26 +105,26 @@ func expandAzureConnection(d *schema.ResourceData) client.AzureExpressRouteConne
 	}
 
 	// Azure Optionals
-	c.Peering = ExpandPeeringType(d)
+	c.Peering = connection.ExpandPeeringType(d)
 
 	return c
 }
 
 func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error {
 
-	connection := expandAzureConnection(d)
+	c := expandAzureConnection(d)
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 
 	ctx := config.Session.GetSessionContext()
 
 	opts := client.AddConnectionOpts{
-		Body: optional.NewInterface(connection),
+		Body: optional.NewInterface(c),
 	}
 
 	resp, err := config.Session.Client.ConnectionsApi.AddConnection(
 		ctx,
-		filepath.Base(connection.Network.Href),
+		filepath.Base(c.Network.Href),
 		&opts,
 	)
 
@@ -136,23 +134,23 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		json_response := string(err.(client.GenericSwaggerError).Body()[:])
 		response, err := structure.ExpandJsonFromString(json_response)
 		if err != nil {
-			log.Printf("Error Creating new %s: %v", azureConnectionName, err)
+			log.Printf("Error Creating new %s: %v", connection.AzureConnectionName, err)
 
 		} else {
 			statusCode := int(response["status"].(float64))
 
-			log.Printf("Error Creating new %s: %d\n", azureConnectionName, statusCode)
+			log.Printf("Error Creating new %s: %d\n", connection.AzureConnectionName, statusCode)
 			log.Printf("  %s\n", response["code"])
 			log.Printf("  %s\n", response["message"])
 		}
 
 		d.SetId("")
-		return fmt.Errorf("Error while creating %s: err=%s", azureConnectionName, http_err)
+		return fmt.Errorf("Error while creating %s: err=%s", connection.AzureConnectionName, http_err)
 	}
 
 	if resp.StatusCode >= 300 {
 		d.SetId("")
-		return fmt.Errorf("Error while creating %s: code=%v", azureConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error while creating %s: code=%v", connection.AzureConnectionName, resp.StatusCode)
 	}
 
 	loc := resp.Header.Get("location")
@@ -169,8 +167,8 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error when decoding Connection ID")
 	}
 
-	if err := WaitForConnection(azureConnectionName, d, m); err != nil {
-		return fmt.Errorf("Error waiting for %s: err=%s", azureConnectionName, err)
+	if err := connection.WaitForConnection(connection.AzureConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", connection.AzureConnectionName, err)
 	}
 
 	return resourceAzureConnectionRead(d, m)
@@ -178,58 +176,60 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 
 func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	connectionId := d.Id()
 	ctx := config.Session.GetSessionContext()
 
 	c, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, connectionId)
 	if err != nil {
 		if resp.StatusCode == 404 {
-			log.Printf("Error Response while reading %s: code=%v", azureConnectionName, resp.StatusCode)
+			log.Printf("Error Response while reading %s: code=%v", connection.AzureConnectionName, resp.StatusCode)
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("Error reading data for %s: %s", azureConnectionName, err)
+		return fmt.Errorf("Error reading data for %s: %s", connection.AzureConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while reading %s: code=%v", azureConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error Response while reading %s: code=%v", connection.AzureConnectionName, resp.StatusCode)
 	}
 
 	conn := c.(client.AzureExpressRouteConnection)
-	d.Set("service_key", conn.ServiceKey)
+	d.Set("description", conn.Description)
+	d.Set("high_availability", conn.HighAvailability)
+	d.Set("href", conn.Href)
+	d.Set("name", conn.Name)
 	d.Set("peering_type", conn.Peering.Type_)
+	d.Set("service_key", conn.ServiceKey)
 	d.Set("speed", conn.Speed)
+	d.Set("state", conn.State)
 
-	if err := d.Set("customer_networks", flattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
-		return fmt.Errorf("Error setting customer networks for %s %s: %s", azureConnectionName, d.Id(), err)
+	if err := d.Set("customer_networks", connection.FlattenCustomerNetworks(conn.CustomerNetworks)); err != nil {
+		return fmt.Errorf("Error setting customer networks for %s %s: %s", connection.AzureConnectionName, d.Id(), err)
 	}
 
 	// Add Gateway information
 	var gateways []map[string]interface{}
 	if g := conn.PrimaryGateway; g != nil {
-		gateways = append(gateways, FlattenStandardGateway(g))
+		gateways = append(gateways, connection.FlattenStandardGateway(g))
 	}
 	if g := conn.SecondaryGateway; g != nil {
-		gateways = append(gateways, FlattenStandardGateway(g))
+		gateways = append(gateways, connection.FlattenStandardGateway(g))
 	}
 	if err := d.Set("gateways", gateways); err != nil {
-		return fmt.Errorf("Error setting gateway information for %s %s: %s", azureConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting gateway information for %s %s: %s", connection.AzureConnectionName, d.Id(), err)
 	}
 
 	// NAT Configuration
-	if err := d.Set("nat_config", FlattenNatConfig(conn.Nat)); err != nil {
-		return fmt.Errorf("Error setting NAT Configuration for %s %s: %s", azureConnectionName, d.Id(), err)
+	if err := d.Set("nat_config", connection.FlattenNatConfig(conn.Nat)); err != nil {
+		return fmt.Errorf("Error setting NAT Configuration for %s %s: %s", connection.AzureConnectionName, d.Id(), err)
 	}
-
-	d.Set("description", conn.Description)
-	d.Set("high_availability", conn.HighAvailability)
 
 	if err := d.Set("location_href", conn.Location.Href); err != nil {
-		return fmt.Errorf("Error setting location for %s %s: %s", azureConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting location for %s %s: %s", connection.AzureConnectionName, d.Id(), err)
 	}
 	if err := d.Set("network_href", conn.Network.Href); err != nil {
-		return fmt.Errorf("Error setting network for %s %s: %s", azureConnectionName, d.Id(), err)
+		return fmt.Errorf("Error setting network for %s %s: %s", connection.AzureConnectionName, d.Id(), err)
 	}
 
 	return nil
@@ -241,7 +241,7 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 
 	d.Partial(true)
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 
 	if d.HasChange("name") {
@@ -260,11 +260,11 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 	}
 
 	if d.HasChange("customer_networks") {
-		c.CustomerNetworks = ExpandCustomerNetworks(d)
+		c.CustomerNetworks = connection.ExpandCustomerNetworks(d)
 	}
 
 	if d.HasChange("nat_config") {
-		c.Nat = ExpandNATConfiguration(d)
+		c.Nat = connection.ExpandNATConfiguration(d)
 	}
 
 	if d.HasChange("billing_term") {
@@ -290,21 +290,21 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 
 			if jerr == nil {
 				statusCode := int(response["status"].(float64))
-				log.Printf("Error updating %s: %d\n", azureConnectionName, statusCode)
+				log.Printf("Error updating %s: %d\n", connection.AzureConnectionName, statusCode)
 				log.Printf("  %s\n", response["code"])
 				log.Printf("  %s\n", response["message"])
 			}
 		}
 
-		return fmt.Errorf("Error while updating %s: err=%s", azureConnectionName, err)
+		return fmt.Errorf("Error while updating %s: err=%s", connection.AzureConnectionName, err)
 	}
 
 	if resp.StatusCode >= 300 {
-		return fmt.Errorf("Error Response while updating %s: code=%v", azureConnectionName, resp.StatusCode)
+		return fmt.Errorf("Error Response while updating %s: code=%v", connection.AzureConnectionName, resp.StatusCode)
 	}
 
-	if err := WaitForConnection(azureConnectionName, d, m); err != nil {
-		return fmt.Errorf("Error waiting for %s: err=%s", azureConnectionName, err)
+	if err := connection.WaitForConnection(connection.AzureConnectionName, d, m); err != nil {
+		return fmt.Errorf("Error waiting for %s: err=%s", connection.AzureConnectionName, err)
 	}
 
 	d.Partial(false)
@@ -313,5 +313,5 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 }
 
 func resourceAzureConnectionDelete(d *schema.ResourceData, m interface{}) error {
-	return DeleteConnection(azureConnectionName, d, m)
+	return connection.DeleteConnection(connection.AzureConnectionName, d, m)
 }

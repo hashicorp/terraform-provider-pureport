@@ -1,4 +1,4 @@
-package pureport
+package configuration
 
 import (
 	"fmt"

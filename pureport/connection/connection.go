@@ -1,4 +1,4 @@
-package pureport
+package connection
 
 import (
 	"fmt"
@@ -11,6 +11,14 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+)
+
+const (
+	AwsConnectionName     = "AWS Cloud Connection"
+	AzureConnectionName   = "Azure Cloud Connection"
+	GoogleConnectionName  = "Google Cloud Connection"
+	SiteVPNConnectionName = "SiteVPN Connection"
 )
 
 var (
@@ -143,11 +151,19 @@ var (
 	}
 )
 
-func getBaseConnectionSchema() map[string]*schema.Schema {
+func GetBaseResourceConnectionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"name": {
 			Type:     schema.TypeString,
 			Required: true,
+		},
+		"href": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"state": {
+			Type:     schema.TypeString,
+			Computed: true,
 		},
 		"location_href": {
 			Type:     schema.TypeString,
@@ -237,6 +253,101 @@ func getBaseConnectionSchema() map[string]*schema.Schema {
 	}
 }
 
+func GetBaseDataSourceConnectionSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"name": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"href": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"state": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"location_href": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"network_href": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"description": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"customer_networks": {
+			Type:     schema.TypeSet,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"name": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"address": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
+		},
+		"nat_config": {
+			Type:     schema.TypeList,
+			Computed: true,
+			MaxItems: 1,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"enabled": {
+						Type:     schema.TypeBool,
+						Computed: true,
+					},
+					"mappings": {
+						Type:     schema.TypeSet,
+						Computed: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"native_cidr": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"nat_cidr": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+							},
+						},
+					},
+					"blocks": {
+						Type:     schema.TypeList,
+						Computed: true,
+						Elem:     &schema.Schema{Type: schema.TypeString},
+					},
+					"pnat_cidr": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+				},
+			},
+		},
+		"billing_term": {
+			Type:     schema.TypeString,
+			Computed: true,
+		},
+		"customer_asn": {
+			Type:     schema.TypeInt,
+			Computed: true,
+		},
+		"high_availability": {
+			Type:     schema.TypeBool,
+			Computed: true,
+		},
+	}
+}
+
 // FlattenGateway flattens the provide gateway to a map for use with terraform
 func FlattenStandardGateway(gateway *client.StandardGateway) (out map[string]interface{}) {
 
@@ -307,7 +418,7 @@ func FlattenVpnGateway(gateway *client.VpnGateway) (out map[string]interface{}) 
 	return
 }
 
-func flattenCustomerNetworks(customerNetworks []client.CustomerNetwork) (out []map[string]string) {
+func FlattenCustomerNetworks(customerNetworks []client.CustomerNetwork) (out []map[string]string) {
 
 	for _, cn := range customerNetworks {
 		out = append(out, map[string]string{
@@ -346,7 +457,7 @@ func flattenMappings(mappings []client.NatMapping) (out []map[string]interface{}
 
 func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 	connectionId := d.Id()
 
@@ -395,7 +506,7 @@ func WaitForConnection(name string, d *schema.ResourceData, m interface{}) error
 
 func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	ctx := config.Session.GetSessionContext()
 	connectionId := d.Id()
 

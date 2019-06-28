@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
 func dataSourceCloudRegions() *schema.Resource {
@@ -53,7 +54,7 @@ func dataSourceCloudRegions() *schema.Resource {
 
 func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	nameRegex, nameRegexOk := d.GetOk("name_regex")
 
 	ctx := config.Session.GetSessionContext()

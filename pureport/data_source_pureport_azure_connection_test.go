@@ -1,72 +1,62 @@
 package pureport
 
 import (
-	"fmt"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
-	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
-const testAccResourceAzureConnectionConfig_common = `
+const testAccDataSourceAzureConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
-}
-
-data "pureport_locations" "main" {
-  name_regex = "Sea.*"
+  name_regex = "Terraform .*"
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
+  name_regex = "A Flock of Seagulls"
 }
 
-data "azurerm_express_route_circuit" "main" {
-  name                = "terraform-acc-express-route"
-  resource_group_name = "terraform-acceptance-tests"
-}
-`
-
-const testAccResourceAzureConnectionConfig = testAccResourceAzureConnectionConfig_common + `
-resource "pureport_azure_connection" "main" {
-  name = "AzureExpressRouteTest"
-  description = "Some random description"
-  speed = "100"
-  high_availability = true
-
-  location_href = "${data.pureport_locations.main.locations.0.href}"
+data "pureport_connections" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
-
-  service_key = "${data.azurerm_express_route_circuit.main.service_key}"
+  name_regex = "Azure"
 }
 `
 
-func TestAzureConnection_basic(t *testing.T) {
+const testAccDataSourceAzureConnectionConfig_basic = testAccDataSourceAzureConnectionConfig_common + `
+data "pureport_azure_connection" "basic" {
+  connection_id = "${data.pureport_connections.main.connections.0.id}"
+}
+`
 
-	resourceName := "pureport_azure_connection.main"
-	var instance client.AzureExpressRouteConnection
+func TestAzureConnectionDataSource_basic(t *testing.T) {
+
+	resourceName := "data.pureport_azure_connection.basic"
 
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccCheckAzureConnectionDestroy,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAzureConnectionConfig,
+				Config: testAccDataSourceAzureConnectionConfig_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckResourceAzureConnection(resourceName, &instance),
-					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 
 					resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr(resourceName, "name", "AzureExpressRouteTest"),
+
+						resource.TestMatchResourceAttr(resourceName, "id", regexp.MustCompile("conn-.{16}")),
+
+						resource.TestCheckResourceAttr(resourceName, "name", "AzureExpressRoute_DataSource"),
 						resource.TestCheckResourceAttr(resourceName, "description", "Some random description"),
 						resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 						resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 						resource.TestMatchResourceAttr(resourceName, "service_key", regexp.MustCompile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")),
+
+						resource.TestCheckResourceAttr(resourceName, "peering_type", "PRIVATE"),
+						resource.TestMatchResourceAttr(resourceName, "href", regexp.MustCompile("/connections/conn-.{16}")),
+						resource.TestCheckResourceAttr(resourceName, "state", "ACTIVE"),
+						resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
+						resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
+						resource.TestCheckResourceAttr(resourceName, "cloud_service_hrefs.#", "0"),
 
 						resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 
@@ -102,70 +92,4 @@ func TestAzureConnection_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-func testAccCheckResourceAzureConnection(name string, instance *client.AzureExpressRouteConnection) resource.TestCheckFunc {
-	return func(s *terraform.State) error {
-
-		config, ok := testAccProvider.Meta().(*configuration.Config)
-		if !ok {
-			return fmt.Errorf("Error getting Pureport client")
-		}
-
-		// Find the state object
-		rs, ok := s.RootModule().Resources[name]
-		if !ok {
-			return fmt.Errorf("Can't find Azure Connnection resource: %s", name)
-		}
-
-		if rs.Primary.ID == "" {
-			return fmt.Errorf("No ID is set")
-		}
-
-		id := rs.Primary.ID
-
-		ctx := config.Session.GetSessionContext()
-		found, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
-
-		if err != nil {
-			return fmt.Errorf("receive error when requesting Azure Connection %s", id)
-		}
-
-		if resp.StatusCode != 200 {
-			return fmt.Errorf("Error getting Azure Connection ID %s: %s", id, err)
-		}
-
-		*instance = found.(client.AzureExpressRouteConnection)
-
-		return nil
-	}
-}
-
-func testAccCheckAzureConnectionDestroy(s *terraform.State) error {
-
-	config, ok := testAccProvider.Meta().(*configuration.Config)
-	if !ok {
-		return fmt.Errorf("Error getting Pureport client")
-	}
-
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "pureport_aws_connection" {
-			continue
-		}
-
-		id := rs.Primary.ID
-
-		ctx := config.Session.GetSessionContext()
-		_, resp, err := config.Session.Client.ConnectionsApi.GetConnection(ctx, id)
-
-		if err != nil {
-			return fmt.Errorf("should not get error for Azure Connection with ID %s after delete: %s", id, err)
-		}
-
-		if resp.StatusCode != 404 {
-			return fmt.Errorf("should not find Azure Connection with ID %s existing after delete", id)
-		}
-	}
-
-	return nil
 }

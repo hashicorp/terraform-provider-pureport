@@ -19,7 +19,7 @@ data "pureport_locations" "name_regex" {
 }
 `
 
-func TestLocations_empty(t *testing.T) {
+func TestLocationsDataSource_empty(t *testing.T) {
 
 	resourceName := "data.pureport_locations.empty"
 
@@ -124,7 +124,7 @@ func TestLocations_empty(t *testing.T) {
 	})
 }
 
-func TestLocations_name_regex(t *testing.T) {
+func TestLocationsDataSource_name_regex(t *testing.T) {
 
 	resourceName := "data.pureport_locations.name_regex"
 
