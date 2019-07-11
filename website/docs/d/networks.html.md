@@ -46,5 +46,7 @@ The following arguments are supported:
 
     * `account_href` - The HREF for the Pureport account associated with this network.
 
+    * `tags` - A dictionary of user defined key/value pairs associated with this resource.
+
 
 The Pureport Guide, []()

@@ -11,6 +11,30 @@ import (
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
+func init() {
+	resource.AddTestSweepers("pureport_network", &resource.Sweeper{
+		Name: "pureport_network",
+		F: func(region string) error {
+			c, err := sharedClientForRegion(region)
+			if err != nil {
+				return fmt.Errorf("Error getting client: %s", err)
+			}
+
+			config := c.(*configuration.Config)
+			networks, err := config.GetAccNetworks()
+			if err != nil {
+				return fmt.Errorf("Error getting networks %s", err)
+			}
+
+			if err = config.SweepNetworks(networks); err != nil {
+				return fmt.Errorf("Error occurred sweeping networks")
+			}
+
+			return nil
+		},
+	})
+}
+
 const testAccResourceNetworkConfig_common = `
 data "pureport_accounts" "main" {
   name_regex = "Terraform"
@@ -22,6 +46,11 @@ resource "pureport_network" "main" {
   name = "NetworkTest"
   description = "Network Terraform Test"
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "the-rockit"
+  }
 }
 `
 
@@ -44,6 +73,9 @@ func TestNetwork_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", "NetworkTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Network Terraform Test"),
 					resource.TestMatchResourceAttr(resourceName, "account_href", regexp.MustCompile("/accounts/ac-.{16}")),
+
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "the-rockit"),
 				),
 			},
 		},

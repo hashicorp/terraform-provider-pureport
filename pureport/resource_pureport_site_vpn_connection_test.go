@@ -11,6 +11,30 @@ import (
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
+func init() {
+	resource.AddTestSweepers("pureport_site_vpn_connection", &resource.Sweeper{
+		Name: "pureport_site_vpn_connection",
+		F: func(region string) error {
+			c, err := sharedClientForRegion(region)
+			if err != nil {
+				return fmt.Errorf("Error getting client: %s", err)
+			}
+
+			config := c.(*configuration.Config)
+			connections, err := config.GetAccConnections()
+			if err != nil {
+				return fmt.Errorf("Error getting connections %s", err)
+			}
+
+			if err = config.SweepConnections(connections); err != nil {
+				return fmt.Errorf("Error occurred sweeping connections")
+			}
+
+			return nil
+		},
+	})
+}
+
 const testAccResourceSiteVPNConnectionConfig_common = `
 data "pureport_accounts" "main" {
   name_regex = "Terraform"
@@ -42,6 +66,11 @@ resource "pureport_site_vpn_connection" "main" {
 
   primary_customer_router_ip = "123.123.123.123"
   secondary_customer_router_ip = "124.124.124.124"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-tibb"
+  }
 }
 `
 
@@ -95,6 +124,11 @@ resource "pureport_site_vpn_connection" "main" {
 
   primary_customer_router_ip = "123.123.123.123"
   secondary_customer_router_ip = "124.124.124.124"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-tibb"
+  }
 }
 `
 
@@ -124,6 +158,11 @@ resource "pureport_site_vpn_connection" "main" {
 
   primary_customer_router_ip = "111.111.111.111"
   secondary_customer_router_ip = "222.222.222.222"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-tibb"
+  }
 }
 `
 
@@ -142,6 +181,11 @@ resource "pureport_site_vpn_connection" "main" {
 
   primary_customer_router_ip = "123.123.123.123"
   secondary_customer_router_ip = "124.124.124.124"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-tibb"
+  }
 
   traffic_selectors {
     customer_side = "10.10.10.10/32"
@@ -224,6 +268,8 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.vpn_auth_type", "PSK"),
 						resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vpn_auth_key"),
 					),
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-tibb"),
 				),
 			},
 			{
@@ -294,6 +340,8 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.vpn_auth_type", "PSK"),
 						resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vpn_auth_key"),
 					),
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-tibb"),
 				),
 			},
 		},
@@ -367,6 +415,8 @@ func TestSiteVPNConnection_with_ikeconfig(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.vpn_auth_type", "PSK"),
 						resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vpn_auth_key"),
 					),
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-tibb"),
 				),
 			},
 		},
@@ -442,6 +492,8 @@ func TestSiteVPNConnection_with_policy_based(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.vpn_auth_type", "PSK"),
 						resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vpn_auth_key"),
 					),
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-tibb"),
 				),
 			},
 		},

@@ -42,4 +42,6 @@ The following arguments are supported:
 
     * `cloud_region_id` - The identifier for the cloud service where this service is located.
 
+    * `tags` - A dictionary of user defined key/value pairs associated with this resource.
+
 The Pureport Guide, []()

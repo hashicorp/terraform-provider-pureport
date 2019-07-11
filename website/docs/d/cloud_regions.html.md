@@ -36,4 +36,6 @@ The following arguments are supported:
 
     * `identifier` - The identifier provided by the cloud provider for this region.
 
+    * `tags` - A dictionary of user defined key/value pairs associated with this resource.
+
 The Pureport Guide, []()

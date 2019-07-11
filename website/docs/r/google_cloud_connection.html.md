@@ -55,6 +55,11 @@ resource "pureport_google_cloud_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
+
+  tags = {
+    Environment = "production"
+    Owner       = "Scott Pilgrim"
+  }
 }
 ```
 
@@ -80,6 +85,7 @@ The following arguments are supported:
 * `billing_term` - (Optional) The billing term for the connection: (Currently only HOURLY is supported.)
 * `high_availability` - (Optional) Whether a redundant gateway is/should be provisioned for this connection.
 * `secodary_pairing_key` - (Optional) If HA is enabled, the pairing key for the backup Google Cloud Interconnect Attachment.
+* `tags` - (Optional) A dictionary of user defined key/value pairs to associate with this resource.
 
 ## Attributes
 

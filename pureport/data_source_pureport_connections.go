@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func dataSourceConnections() *schema.Resource {
@@ -67,6 +68,8 @@ func dataSourceConnections() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"tags": tags.TagsSchemaComputed(),
 					},
 				},
 			},
@@ -85,7 +88,7 @@ func dataSourceConnectionsRead(d *schema.ResourceData, m interface{}) error {
 	connections, resp, err := config.Session.Client.ConnectionsApi.GetConnections(ctx, networkId)
 	if err != nil {
 		d.SetId("")
-		return fmt.Errorf("Error when Reading Cloud Services data: %v", err)
+		return fmt.Errorf("Error when Reading Connections data: %v", err)
 	}
 
 	if resp.StatusCode >= 300 {
@@ -140,6 +143,7 @@ func flattenConnections(connections []client.Connection) (out []map[string]inter
 			"speed":         c.Speed,
 			"location_href": c.Location.Href,
 			"state":         c.State,
+			"tags":          c.Tags,
 		})
 	}
 

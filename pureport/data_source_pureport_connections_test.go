@@ -47,32 +47,9 @@ func TestConnectionsDataSource_empty(t *testing.T) {
 					testAccCheckDataSourceConnections(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "connections.#", "3"),
 
-					resource.TestMatchResourceAttr(resourceName, "connections.0.id", regexp.MustCompile("conn-.{16}")),
-					resource.TestMatchResourceAttr(resourceName, "connections.0.href", regexp.MustCompile("/connections/conn-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.name", "ConnectionsTest-1"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.description", "ACC Test - 1"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.type", "AWS_DIRECT_CONNECT"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.speed", "50"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.location_href", "/locations/us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.state", "ACTIVE"),
-
-					resource.TestMatchResourceAttr(resourceName, "connections.1.id", regexp.MustCompile("conn-.{16}")),
-					resource.TestMatchResourceAttr(resourceName, "connections.1.href", regexp.MustCompile("/connections/conn-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.name", "ConnectionsTest-2"),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.description", "ACC Test - 2"),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.type", "AWS_DIRECT_CONNECT"),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.speed", "50"),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.location_href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "connections.1.state", "ACTIVE"),
-
-					resource.TestMatchResourceAttr(resourceName, "connections.2.id", regexp.MustCompile("conn-.{16}")),
-					resource.TestMatchResourceAttr(resourceName, "connections.2.href", regexp.MustCompile("/connections/conn-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "connections.2.name", "ConnectionsTest-3"),
-					resource.TestCheckResourceAttr(resourceName, "connections.2.description", "ACC Test - 3"),
-					resource.TestCheckResourceAttr(resourceName, "connections.2.type", "AWS_DIRECT_CONNECT"),
-					resource.TestCheckResourceAttr(resourceName, "connections.2.speed", "50"),
-					resource.TestCheckResourceAttr(resourceName, "connections.2.location_href", "/locations/us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "connections.2.state", "ACTIVE"),
+					testAccCheckDataSourceConnectionsTest1(resourceName, "connections.0"),
+					testAccCheckDataSourceConnectionsTest2(resourceName, "connections.1"),
+					testAccCheckDataSourceConnectionsTest3(resourceName, "connections.2"),
 				),
 			},
 		},
@@ -92,15 +69,7 @@ func TestConnectionsDataSource_name_regex(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceConnections(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "connections.#", "1"),
-
-					resource.TestMatchResourceAttr(resourceName, "connections.0.id", regexp.MustCompile("conn-.{16}")),
-					resource.TestMatchResourceAttr(resourceName, "connections.0.href", regexp.MustCompile("/connections/conn-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.name", "ConnectionsTest-2"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.description", "ACC Test - 2"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.type", "AWS_DIRECT_CONNECT"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.speed", "50"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.location_href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "connections.0.state", "ACTIVE"),
+					testAccCheckDataSourceConnectionsTest2(resourceName, "connections.0"),
 				),
 			},
 		},
@@ -122,4 +91,92 @@ func testAccCheckDataSourceConnections(name string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func testAccCheckDataSourceConnectionsTest1(resourceName, connection string) resource.TestCheckFunc {
+	if testEnvironmentName == "Production" {
+		return resource.ComposeAggregateTestCheckFunc(
+			resource.TestMatchResourceAttr(resourceName, connection+".id", regexp.MustCompile("conn-.{16}")),
+			resource.TestMatchResourceAttr(resourceName, connection+".href", regexp.MustCompile("/connections/conn-.{16}")),
+			resource.TestCheckResourceAttr(resourceName, connection+".name", "ConnectionsTest-1"),
+			resource.TestCheckResourceAttr(resourceName, connection+".description", "ACC Test - 1"),
+			resource.TestCheckResourceAttr(resourceName, connection+".type", "AWS_DIRECT_CONNECT"),
+			resource.TestCheckResourceAttr(resourceName, connection+".speed", "50"),
+			resource.TestCheckResourceAttr(resourceName, connection+".location_href", "/locations/us-wdc"),
+			resource.TestCheckResourceAttr(resourceName, connection+".state", "ACTIVE"),
+
+			resource.TestCheckResourceAttr(resourceName, connection+".tags.#", "0"),
+		)
+	}
+
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestMatchResourceAttr(resourceName, connection+".id", regexp.MustCompile("conn-.{16}")),
+		resource.TestMatchResourceAttr(resourceName, connection+".href", regexp.MustCompile("/connections/conn-.{16}")),
+		resource.TestCheckResourceAttr(resourceName, connection+".name", "ConnectionsTest-1"),
+		resource.TestCheckResourceAttr(resourceName, connection+".description", "ACC Test - 1"),
+		resource.TestCheckResourceAttr(resourceName, connection+".type", "AWS_DIRECT_CONNECT"),
+		resource.TestCheckResourceAttr(resourceName, connection+".speed", "50"),
+		resource.TestCheckResourceAttr(resourceName, connection+".location_href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, connection+".state", "ACTIVE"),
+
+		resource.TestCheckResourceAttr(resourceName, connection+".tags.#", "0"),
+	)
+}
+
+func testAccCheckDataSourceConnectionsTest2(resourceName, connection string) resource.TestCheckFunc {
+	if testEnvironmentName == "Production" {
+		return resource.ComposeAggregateTestCheckFunc(
+			resource.TestMatchResourceAttr(resourceName, connection+".id", regexp.MustCompile("conn-.{16}")),
+			resource.TestMatchResourceAttr(resourceName, connection+".href", regexp.MustCompile("/connections/conn-.{16}")),
+			resource.TestCheckResourceAttr(resourceName, connection+".name", "ConnectionsTest-2"),
+			resource.TestCheckResourceAttr(resourceName, connection+".description", "ACC Test - 2"),
+			resource.TestCheckResourceAttr(resourceName, connection+".type", "AWS_DIRECT_CONNECT"),
+			resource.TestCheckResourceAttr(resourceName, connection+".speed", "50"),
+			resource.TestCheckResourceAttr(resourceName, connection+".location_href", "/locations/us-sjc"),
+			resource.TestCheckResourceAttr(resourceName, connection+".state", "ACTIVE"),
+
+			resource.TestCheckResourceAttr(resourceName, connection+".tags.#", "0"),
+		)
+	}
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestMatchResourceAttr(resourceName, connection+".id", regexp.MustCompile("conn-.{16}")),
+		resource.TestMatchResourceAttr(resourceName, connection+".href", regexp.MustCompile("/connections/conn-.{16}")),
+		resource.TestCheckResourceAttr(resourceName, connection+".name", "ConnectionsTest-2"),
+		resource.TestCheckResourceAttr(resourceName, connection+".description", "ACC Test - 2"),
+		resource.TestCheckResourceAttr(resourceName, connection+".type", "AWS_DIRECT_CONNECT"),
+		resource.TestCheckResourceAttr(resourceName, connection+".speed", "50"),
+		resource.TestCheckResourceAttr(resourceName, connection+".location_href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, connection+".state", "ACTIVE"),
+
+		resource.TestCheckResourceAttr(resourceName, connection+".tags.#", "0"),
+	)
+}
+
+func testAccCheckDataSourceConnectionsTest3(resourceName, connection string) resource.TestCheckFunc {
+	if testEnvironmentName == "Production" {
+		return resource.ComposeAggregateTestCheckFunc(
+			resource.TestMatchResourceAttr(resourceName, connection+".id", regexp.MustCompile("conn-.{16}")),
+			resource.TestMatchResourceAttr(resourceName, connection+".href", regexp.MustCompile("/connections/conn-.{16}")),
+			resource.TestCheckResourceAttr(resourceName, connection+".name", "ConnectionsTest-3"),
+			resource.TestCheckResourceAttr(resourceName, connection+".description", "ACC Test - 3"),
+			resource.TestCheckResourceAttr(resourceName, connection+".type", "AWS_DIRECT_CONNECT"),
+			resource.TestCheckResourceAttr(resourceName, connection+".speed", "50"),
+			resource.TestCheckResourceAttr(resourceName, connection+".location_href", "/locations/us-chi"),
+			resource.TestCheckResourceAttr(resourceName, connection+".state", "ACTIVE"),
+
+			resource.TestCheckResourceAttr(resourceName, connection+".tags.#", "0"),
+		)
+	}
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestMatchResourceAttr(resourceName, connection+".id", regexp.MustCompile("conn-.{16}")),
+		resource.TestMatchResourceAttr(resourceName, connection+".href", regexp.MustCompile("/connections/conn-.{16}")),
+		resource.TestCheckResourceAttr(resourceName, connection+".name", "ConnectionsTest-3"),
+		resource.TestCheckResourceAttr(resourceName, connection+".description", "ACC Test - 3"),
+		resource.TestCheckResourceAttr(resourceName, connection+".type", "AWS_DIRECT_CONNECT"),
+		resource.TestCheckResourceAttr(resourceName, connection+".speed", "50"),
+		resource.TestCheckResourceAttr(resourceName, connection+".location_href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, connection+".state", "ACTIVE"),
+
+		resource.TestCheckResourceAttr(resourceName, connection+".tags.#", "0"),
+	)
 }

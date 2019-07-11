@@ -40,4 +40,6 @@ The following arguments are supported:
 
         * `speed` - The connection speed between the locations.
 
+    * `tags` - A dictionary of user defined key/value pairs associated with this resource.
+
 The Pureport Guide, []()

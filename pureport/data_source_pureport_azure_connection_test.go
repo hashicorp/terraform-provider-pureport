@@ -58,6 +58,8 @@ func TestAzureConnectionDataSource_basic(t *testing.T) {
 						resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 						resource.TestCheckResourceAttr(resourceName, "cloud_service_hrefs.#", "0"),
 
+						resource.TestCheckResourceAttr(resourceName, "tags.#", "0"),
+
 						resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),

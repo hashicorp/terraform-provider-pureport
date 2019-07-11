@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func resourceNetwork() *schema.Resource {
@@ -33,6 +34,7 @@ func resourceNetwork() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"tags": tags.TagsSchema(),
 			"href": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -43,10 +45,16 @@ func resourceNetwork() *schema.Resource {
 
 func expandNetwork(d *schema.ResourceData) client.Network {
 
-	return client.Network{
+	n := client.Network{
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 	}
+
+	if t, ok := d.GetOk("tags"); ok {
+		n.Tags = tags.FilterTags(t.(map[string]interface{}))
+	}
+
+	return n
 }
 
 func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
@@ -133,6 +141,10 @@ func resourceNetworkRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("href", n.Href)
 	d.Set("account_href", n.Account.Href)
 
+	if err := d.Set("tags", n.Tags); err != nil {
+		return fmt.Errorf("Error setting tags for Network %s: %s", d.Id(), err)
+	}
+
 	return nil
 }
 
@@ -148,6 +160,11 @@ func resourceNetworkUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if d.HasChange("description") {
 		n.Description = d.Get("description").(string)
+	}
+
+	if d.HasChange("tags") {
+		_, nraw := d.GetChange("tags")
+		n.Tags = tags.FilterTags(nraw.(map[string]interface{}))
 	}
 
 	config := m.(*configuration.Config)

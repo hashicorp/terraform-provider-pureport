@@ -52,6 +52,7 @@ func TestSiteVPNConnectionDataSource_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-chi"),
 						resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 						resource.TestCheckResourceAttr(resourceName, "cloud_service_hrefs.#", "0"),
+						resource.TestCheckResourceAttr(resourceName, "tags.#", "0"),
 
 						resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 

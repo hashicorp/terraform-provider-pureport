@@ -14,6 +14,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 	"github.com/pureport/terraform-provider-pureport/pureport/connection"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func resourceAzureConnection() *schema.Resource {
@@ -102,6 +103,10 @@ func expandAzureConnection(d *schema.ResourceData) client.AzureExpressRouteConne
 
 	if highAvailability, ok := d.GetOk("high_availability"); ok {
 		c.HighAvailability = highAvailability.(bool)
+	}
+
+	if t, ok := d.GetOk("tags"); ok {
+		c.Tags = tags.FilterTags(t.(map[string]interface{}))
 	}
 
 	// Azure Optionals
@@ -232,6 +237,10 @@ func resourceAzureConnectionRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error setting network for %s %s: %s", connection.AzureConnectionName, d.Id(), err)
 	}
 
+	if err := d.Set("tags", conn.Tags); err != nil {
+		return fmt.Errorf("Error setting tags for %s %s: %s", connection.AzureConnectionName, d.Id(), err)
+	}
+
 	return nil
 }
 
@@ -269,6 +278,11 @@ func resourceAzureConnectionUpdate(d *schema.ResourceData, m interface{}) error 
 
 	if d.HasChange("billing_term") {
 		c.BillingTerm = d.Get("billing_term").(string)
+	}
+
+	if d.HasChange("tags") {
+		_, nraw := d.GetChange("tags")
+		c.Tags = tags.FilterTags(nraw.(map[string]interface{}))
 	}
 
 	opts := client.UpdateConnectionOpts{

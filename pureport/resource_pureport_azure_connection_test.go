@@ -11,6 +11,30 @@ import (
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
+func init() {
+	resource.AddTestSweepers("pureport_azure_connection", &resource.Sweeper{
+		Name: "pureport_azure_connection",
+		F: func(region string) error {
+			c, err := sharedClientForRegion(region)
+			if err != nil {
+				return fmt.Errorf("Error getting client: %s", err)
+			}
+
+			config := c.(*configuration.Config)
+			connections, err := config.GetAccConnections()
+			if err != nil {
+				return fmt.Errorf("Error getting connections %s", err)
+			}
+
+			if err = config.SweepConnections(connections); err != nil {
+				return fmt.Errorf("Error occurred sweeping connections")
+			}
+
+			return nil
+		},
+	})
+}
+
 const testAccResourceAzureConnectionConfig_common = `
 data "pureport_accounts" "main" {
   name_regex = "Terraform"
@@ -42,6 +66,11 @@ resource "pureport_azure_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   service_key = "${data.azurerm_express_route_circuit.main.service_key}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-azure"
+  }
 }
 `
 
@@ -97,6 +126,9 @@ func TestAzureConnection_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.public_nat_ip", ""),
 						resource.TestCheckResourceAttrSet(resourceName, "gateways.1.vlan"),
 						resource.TestCheckResourceAttrSet(resourceName, "gateways.1.remote_id"),
+
+						resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+						resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-azure"),
 					),
 				),
 			},

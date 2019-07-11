@@ -41,4 +41,6 @@ The Pureport Account resource exports the following attributes:
 
     * `description` - The description of the account.
 
+    * `tags` - A dictionary of user defined key/value pairs associated with this resource.
+
 The Pureport Guide, []()

@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func dataSourceNetworks() *schema.Resource {
@@ -56,6 +57,8 @@ func dataSourceNetworks() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"tags": tags.TagsSchemaComputed(),
 					},
 				},
 			},
@@ -123,14 +126,15 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
 func flattenNetworks(networks []client.Network) (out []map[string]interface{}) {
 
-	for _, network := range networks {
+	for _, n := range networks {
 
 		l := map[string]interface{}{
-			"id":           network.Id,
-			"href":         network.Href,
-			"name":         network.Name,
-			"description":  network.Description,
-			"account_href": network.Account.Href,
+			"id":           n.Id,
+			"href":         n.Href,
+			"name":         n.Name,
+			"description":  n.Description,
+			"account_href": n.Account.Href,
+			"tags":         n.Tags,
 		}
 
 		out = append(out, l)

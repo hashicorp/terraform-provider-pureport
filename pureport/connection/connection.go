@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 const (
@@ -250,6 +251,7 @@ func GetBaseResourceConnectionSchema() map[string]*schema.Schema {
 			Optional: true,
 			ForceNew: true,
 		},
+		"tags": tags.TagsSchema(),
 	}
 }
 
@@ -345,6 +347,7 @@ func GetBaseDataSourceConnectionSchema() map[string]*schema.Schema {
 			Type:     schema.TypeBool,
 			Computed: true,
 		},
+		"tags": tags.TagsSchema(),
 	}
 }
 

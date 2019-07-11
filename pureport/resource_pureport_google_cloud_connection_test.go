@@ -11,6 +11,30 @@ import (
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
+func init() {
+	resource.AddTestSweepers("pureport_google_cloud_connection", &resource.Sweeper{
+		Name: "pureport_google_cloud_connection",
+		F: func(region string) error {
+			c, err := sharedClientForRegion(region)
+			if err != nil {
+				return fmt.Errorf("Error getting client: %s", err)
+			}
+
+			config := c.(*configuration.Config)
+			connections, err := config.GetAccConnections()
+			if err != nil {
+				return fmt.Errorf("Error getting connections %s", err)
+			}
+
+			if err = config.SweepConnections(connections); err != nil {
+				return fmt.Errorf("Error occurred sweeping connections")
+			}
+
+			return nil
+		},
+	})
+}
+
 const testAccResourceGoogleCloudConnectionConfig_common = `
 data "pureport_accounts" "main" {
   name_regex = "Terraform"
@@ -63,6 +87,11 @@ resource "pureport_google_cloud_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-google"
+  }
 }
 `
 
@@ -102,6 +131,9 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.remote_id"),
+
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-google"),
 				),
 			},
 		},

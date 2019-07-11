@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func dataSourceAccounts() *schema.Resource {
@@ -46,6 +47,8 @@ func dataSourceAccounts() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"tags": tags.TagsSchemaComputed(),
 					},
 				},
 			},
@@ -120,6 +123,7 @@ func flattenAccounts(accounts []client.Account) (out []map[string]interface{}) {
 			"href":        account.Href,
 			"name":        account.Name,
 			"description": account.Description,
+			"tags":        account.Tags,
 		}
 
 		out = append(out, l)

@@ -39,6 +39,11 @@ resource "pureport_aws_connection" "main" {
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
   aws_account_id = "123456789012"
+
+  tags = {
+    Environment = "production"
+    Owner       = "Scott Pilgrim"
+  }
 }
 ```
 
@@ -68,6 +73,7 @@ The following arguments are supported:
     * PRIVATE (Default)
     * PUBLIC
 * `cloud_service_hrefs` - (Optional) When PUBLIC peering is configured, a list of HREFs for the Public peering services to which we want access.
+* `tags` - (Optional) A dictionary of user defined key/value pairs to associate with this resource.
 
 ## Attributes
 

@@ -11,6 +11,30 @@ import (
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
+func init() {
+	resource.AddTestSweepers("pureport_aws_connection", &resource.Sweeper{
+		Name: "pureport_aws_connection",
+		F: func(region string) error {
+			c, err := sharedClientForRegion(region)
+			if err != nil {
+				return fmt.Errorf("Error getting client: %s", err)
+			}
+
+			config := c.(*configuration.Config)
+			connections, err := config.GetAccConnections()
+			if err != nil {
+				return fmt.Errorf("Error getting connections %s", err)
+			}
+
+			if err = config.SweepConnections(connections); err != nil {
+				return fmt.Errorf("Error occurred sweeping connections")
+			}
+
+			return nil
+		},
+	})
+}
+
 const testAccResourceAWSConnectionConfig_common = `
 data "pureport_accounts" "main" {
   name_regex = "Terraform"
@@ -43,6 +67,11 @@ resource "pureport_aws_connection" "basic" {
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
   aws_account_id = "${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-aws"
+  }
 }
 `
 
@@ -58,6 +87,11 @@ resource "pureport_aws_connection" "basic" {
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
   aws_account_id = "${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-aws"
+  }
 }
 `
 
@@ -87,6 +121,11 @@ resource "pureport_aws_connection" "updateSpeed" {
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
   aws_account_id = "${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "scott-pilgram"
+  }
 }
 `
 
@@ -101,6 +140,11 @@ resource "pureport_aws_connection" "updateSpeed" {
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
   aws_account_id = "${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-aws"
+  }
 }
 `
 
@@ -122,6 +166,11 @@ resource "pureport_aws_connection" "cloudServices" {
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
   aws_account_id = "${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-aws"
+  }
 }
 `
 
@@ -147,6 +196,11 @@ resource "pureport_aws_connection" "nat_mapping" {
     mappings {
       native_cidr = "192.200.0.0/16"
     }
+  }
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-aws"
   }
 }
 `
@@ -208,6 +262,9 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.pnat_cidr", ""),
+
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-aws"),
 				),
 			},
 			{
@@ -216,8 +273,11 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttr(resourceName, "name", "Aws DirectConnect Test"),
 					resource.TestCheckResourceAttr(resourceName, "description", "AWS Basic Test"),
+
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
+
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "scott-pilgram"),
 				),
 			},
 			{

@@ -15,6 +15,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 	"github.com/pureport/terraform-provider-pureport/pureport/connection"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func resourceAWSConnection() *schema.Resource {
@@ -112,6 +113,10 @@ func expandAWSConnection(d *schema.ResourceData) client.AwsDirectConnectConnecti
 
 	if highAvailability, ok := d.GetOk("high_availability"); ok {
 		c.HighAvailability = highAvailability.(bool)
+	}
+
+	if t, ok := d.GetOk("tags"); ok {
+		c.Tags = tags.FilterTags(t.(map[string]interface{}))
 	}
 
 	return c
@@ -254,6 +259,10 @@ func resourceAWSConnectionRead(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("Error setting network for %s %s: %s", connection.AwsConnectionName, d.Id(), err)
 	}
 
+	if err := d.Set("tags", conn.Tags); err != nil {
+		return fmt.Errorf("Error setting tags for %s %s: %s", connection.AwsConnectionName, d.Id(), err)
+	}
+
 	return nil
 }
 
@@ -295,6 +304,11 @@ func resourceAWSConnectionUpdate(d *schema.ResourceData, m interface{}) error {
 
 	if d.HasChange("cloud_services") {
 		c.CloudServices = connection.ExpandCloudServices(d)
+	}
+
+	if d.HasChange("tags") {
+		_, nraw := d.GetChange("tags")
+		c.Tags = tags.FilterTags(nraw.(map[string]interface{}))
 	}
 
 	opts := client.UpdateConnectionOpts{

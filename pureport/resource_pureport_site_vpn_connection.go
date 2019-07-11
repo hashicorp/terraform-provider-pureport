@@ -15,6 +15,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 	"github.com/pureport/terraform-provider-pureport/pureport/connection"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func resourceSiteVPNConnection() *schema.Resource {
@@ -360,6 +361,10 @@ func expandSiteVPNConnection(d *schema.ResourceData) client.SiteIpSecVpnConnecti
 		c.SecondaryKey = secondaryKey.(string)
 	}
 
+	if t, ok := d.GetOk("tags"); ok {
+		c.Tags = tags.FilterTags(t.(map[string]interface{}))
+	}
+
 	return c
 }
 
@@ -546,6 +551,10 @@ func resourceSiteVPNConnectionRead(d *schema.ResourceData, m interface{}) error 
 		return fmt.Errorf("Error setting traffics selectors for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
 	}
 
+	if err := d.Set("tags", conn.Tags); err != nil {
+		return fmt.Errorf("Error setting tags for %s %s: %s", connection.SiteVPNConnectionName, d.Id(), err)
+	}
+
 	return nil
 }
 
@@ -633,6 +642,11 @@ func resourceSiteVPNConnectionUpdate(d *schema.ResourceData, m interface{}) erro
 
 	if d.HasChange("traffic_selectors") {
 		c.TrafficSelectors = expandTrafficSelectorMappings(d)
+	}
+
+	if d.HasChange("tags") {
+		_, nraw := d.GetChange("tags")
+		c.Tags = tags.FilterTags(nraw.(map[string]interface{}))
 	}
 
 	opts := client.UpdateConnectionOpts{

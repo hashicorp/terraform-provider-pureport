@@ -20,6 +20,11 @@ resource "pureport_network" "main" {
   name = "MyNetwork"
   description = "My Custom Network"
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
+
+  tags = {
+    Environment = "production"
+    Owner       = "Scott Pilgrim"
+  }
 }
 ```
 
@@ -33,6 +38,7 @@ The following arguments are supported:
 - - -
 
 * `description` - (Optional) The description for the Network.
+* `tags` - (Optional) A dictionary of user defined key/value pairs to associate with this resource.
 
 ## Attributes
 

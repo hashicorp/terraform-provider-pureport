@@ -14,6 +14,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 	"github.com/pureport/terraform-provider-pureport/pureport/connection"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func resourceGoogleCloudConnection() *schema.Resource {
@@ -104,6 +105,10 @@ func expandGoogleCloudConnection(d *schema.ResourceData) client.GoogleCloudInter
 	// Google Optionals
 	if secondaryPairingKey, ok := d.GetOk("secondary_pairing_key"); ok {
 		c.SecondaryPairingKey = secondaryPairingKey.(string)
+	}
+
+	if t, ok := d.GetOk("tags"); ok {
+		c.Tags = tags.FilterTags(t.(map[string]interface{}))
 	}
 
 	return c
@@ -237,6 +242,10 @@ func resourceGoogleCloudConnectionRead(d *schema.ResourceData, m interface{}) er
 		return fmt.Errorf("Error setting network for %s %s: %s", connection.GoogleConnectionName, d.Id(), err)
 	}
 
+	if err := d.Set("tags", conn.Tags); err != nil {
+		return fmt.Errorf("Error setting tags for %s %s: %s", connection.GoogleConnectionName, d.Id(), err)
+	}
+
 	return nil
 }
 
@@ -274,6 +283,11 @@ func resourceGoogleCloudConnectionUpdate(d *schema.ResourceData, m interface{}) 
 
 	if d.HasChange("billing_term") {
 		c.BillingTerm = d.Get("billing_term").(string)
+	}
+
+	if d.HasChange("tags") {
+		_, nraw := d.GetChange("tags")
+		c.Tags = tags.FilterTags(nraw.(map[string]interface{}))
 	}
 
 	opts := client.UpdateConnectionOpts{

@@ -57,5 +57,7 @@ The following arguments are supported:
 
     * `state` - The current state of this connection.
 
+    * `tags` - A dictionary of user defined key/value pairs associated with this resource.
+
 
 The Pureport Guide, []()

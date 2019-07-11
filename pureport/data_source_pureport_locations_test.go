@@ -31,93 +31,7 @@ func TestLocationsDataSource_empty(t *testing.T) {
 				Config: testAccDataSourceLocationsConfig_empty,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceLocations(resourceName),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.#", "5"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.id", "us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.href", "/locations/us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.name", "Chicago, IL"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.#", "4"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.0.location_href", "/locations/us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.0.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.1.location_href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.1.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.2.location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.2.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.3.location_href", "/locations/us-dal"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.3.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.1.id", "us-dal"),
-					resource.TestCheckResourceAttr(resourceName, "locations.1.href", "/locations/us-dal"),
-					resource.TestCheckResourceAttr(resourceName, "locations.1.name", "Dallas, TX"),
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.#", "4"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.0.location_href", "/locations/us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.0.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.1.location_href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.1.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.2.location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.2.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.3.location_href", "/locations/us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "locations.1.links.3.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.2.id", "us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.2.href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.2.name", "Seattle, WA"),
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.#", "4"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.0.location_href", "/locations/us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.0.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.1.location_href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.1.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.2.location_href", "/locations/us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.2.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.3.location_href", "/locations/us-dal"),
-					resource.TestCheckResourceAttr(resourceName, "locations.2.links.3.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.3.id", "us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.3.href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.3.name", "Silicon Valley, CA"),
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.#", "4"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.0.location_href", "/locations/us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.0.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.1.location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.1.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.2.location_href", "/locations/us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.2.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.3.location_href", "/locations/us-dal"),
-					resource.TestCheckResourceAttr(resourceName, "locations.3.links.3.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.4.id", "us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.4.href", "/locations/us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.4.name", "Washington, DC"),
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.#", "4"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.0.location_href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.0.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.1.location_href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.1.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.2.location_href", "/locations/us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.2.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.3.location_href", "/locations/us-dal"),
-					resource.TestCheckResourceAttr(resourceName, "locations.4.links.3.speed", "1000"),
+					testAccCheckDataSourceLocationAll(resourceName),
 				),
 			},
 		},
@@ -138,23 +52,7 @@ func TestLocationsDataSource_name_regex(t *testing.T) {
 					testAccCheckDataSourceLocations(resourceName),
 
 					resource.TestCheckResourceAttr(resourceName, "locations.#", "1"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.id", "us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.href", "/locations/us-sea"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.name", "Seattle, WA"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.#", "4"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.0.location_href", "/locations/us-wdc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.0.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.1.location_href", "/locations/us-sjc"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.1.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.2.location_href", "/locations/us-chi"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.2.speed", "1000"),
-
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.3.location_href", "/locations/us-dal"),
-					resource.TestCheckResourceAttr(resourceName, "locations.0.links.3.speed", "1000"),
+					testAccCheckDataSourceLocationSeattle(resourceName, "locations.0"),
 				),
 			},
 		},
@@ -176,4 +74,146 @@ func testAccCheckDataSourceLocations(name string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func testAccCheckDataSourceLocationAll(resourceName string) resource.TestCheckFunc {
+	if testEnvironmentName == "Production" {
+		return resource.ComposeTestCheckFunc(
+			resource.TestCheckResourceAttr(resourceName, "locations.#", "5"),
+			testAccCheckDataSourceLocationChicago(resourceName, "locations.0"),
+			testAccCheckDataSourceLocationDallas(resourceName, "locations.1"),
+			testAccCheckDataSourceLocationSeattle(resourceName, "locations.2"),
+			testAccCheckDataSourceLocationSanJose(resourceName, "locations.3"),
+			testAccCheckDataSourceLocationWashington(resourceName, "locations.4"),
+		)
+	}
+
+	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, "locations.#", "2"),
+		testAccCheckDataSourceLocationRaleigh(resourceName, "locations.0"),
+		testAccCheckDataSourceLocationSeattle(resourceName, "locations.1"),
+	)
+}
+
+func testAccCheckDataSourceLocationRaleigh(resourceName, location string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, location+".id", "us-ral"),
+		resource.TestCheckResourceAttr(resourceName, location+".href", "/locations/us-ral"),
+		resource.TestCheckResourceAttr(resourceName, location+".name", "Raleigh, NC"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.#", "0"),
+	)
+}
+
+func testAccCheckDataSourceLocationChicago(resourceName, location string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, location+".id", "us-chi"),
+		resource.TestCheckResourceAttr(resourceName, location+".href", "/locations/us-chi"),
+		resource.TestCheckResourceAttr(resourceName, location+".name", "Chicago, IL"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.#", "4"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.location_href", "/locations/us-wdc"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.location_href", "/locations/us-sjc"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.location_href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.location_href", "/locations/us-dal"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.speed", "1000"),
+	)
+}
+
+func testAccCheckDataSourceLocationDallas(resourceName, location string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, location+".id", "us-dal"),
+		resource.TestCheckResourceAttr(resourceName, location+".href", "/locations/us-dal"),
+		resource.TestCheckResourceAttr(resourceName, location+".name", "Dallas, TX"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.#", "4"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.location_href", "/locations/us-wdc"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.location_href", "/locations/us-sjc"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.location_href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.location_href", "/locations/us-chi"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.speed", "1000"),
+	)
+}
+
+func testAccCheckDataSourceLocationSeattle(resourceName, location string) resource.TestCheckFunc {
+	if testEnvironmentName == "Production" {
+		return resource.ComposeAggregateTestCheckFunc(
+			resource.TestCheckResourceAttr(resourceName, location+".id", "us-sea"),
+			resource.TestCheckResourceAttr(resourceName, location+".href", "/locations/us-sea"),
+			resource.TestCheckResourceAttr(resourceName, location+".name", "Seattle, WA"),
+			resource.TestCheckResourceAttr(resourceName, location+".links.#", "4"),
+
+			resource.TestCheckResourceAttr(resourceName, location+".links.0.location_href", "/locations/us-wdc"),
+			resource.TestCheckResourceAttr(resourceName, location+".links.0.speed", "1000"),
+
+			resource.TestCheckResourceAttr(resourceName, location+".links.1.location_href", "/locations/us-sjc"),
+			resource.TestCheckResourceAttr(resourceName, location+".links.1.speed", "1000"),
+
+			resource.TestCheckResourceAttr(resourceName, location+".links.2.location_href", "/locations/us-chi"),
+			resource.TestCheckResourceAttr(resourceName, location+".links.2.speed", "1000"),
+
+			resource.TestCheckResourceAttr(resourceName, location+".links.3.location_href", "/locations/us-dal"),
+			resource.TestCheckResourceAttr(resourceName, location+".links.3.speed", "1000"),
+		)
+	}
+
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, location+".id", "us-sea"),
+		resource.TestCheckResourceAttr(resourceName, location+".href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, location+".name", "Seattle, WA"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.#", "0"),
+	)
+}
+
+func testAccCheckDataSourceLocationSanJose(resourceName, location string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, location+".id", "us-sjc"),
+		resource.TestCheckResourceAttr(resourceName, location+".href", "/locations/us-sjc"),
+		resource.TestCheckResourceAttr(resourceName, location+".name", "Silicon Valley, CA"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.#", "4"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.location_href", "/locations/us-wdc"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.location_href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.location_href", "/locations/us-chi"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.location_href", "/locations/us-dal"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.speed", "1000"),
+	)
+}
+
+func testAccCheckDataSourceLocationWashington(resourceName, location string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, location+".id", "us-wdc"),
+		resource.TestCheckResourceAttr(resourceName, location+".href", "/locations/us-wdc"),
+		resource.TestCheckResourceAttr(resourceName, location+".name", "Washington, DC"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.#", "4"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.location_href", "/locations/us-sjc"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.0.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.location_href", "/locations/us-sea"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.1.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.location_href", "/locations/us-chi"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.2.speed", "1000"),
+
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.location_href", "/locations/us-dal"),
+		resource.TestCheckResourceAttr(resourceName, location+".links.3.speed", "1000"),
+	)
 }
