@@ -81,6 +81,7 @@ pipeline {
                 retry(3) {
                   sh "make"
                   sh "make plugin"
+                  sh "chmod +x terraform-provider-pureport"
                   sh "mv terraform-provider-pureport ${plugin_name}"
 
                   archiveArtifacts(
