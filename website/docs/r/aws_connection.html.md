@@ -80,7 +80,7 @@ The following arguments are supported:
 * `nat_config` - The Network Address Translation configuration for the connection.
     * `enabled` - Is NAT enabled for this connection.
     * `mappings` - List of NAT mapped CIDR address
-        * `native_cidr` - (Required) The native CIDR block to map.
+        * `native_cidr` - The native CIDR block to map.
         * `nat_cidr` - The CIDR block use for NAT to the associated subnet.
     * `blocks` - List of reserved blocks for NAT.
     * `pnat_cidr` - CIDR use for PNAT between connections.
@@ -92,8 +92,6 @@ The following arguments are supported:
     * `description` - The description of the cloud gateway.
 
     * `availability_domain` - The availability domain of the cloud gateway. The valid values are `PRIMARY`, `SECONDARY`.
-
-    * `link_state` - The current link state of the gateway. The valid values are `WAITING_TO_PROVISION`, `PROVISIONING`, `FAILED_TO_PROVISION`, `ACTIVE`, `DOWN`, `UPDATING`, `FAILED_TO_UPDATE`, `DELETING`, `FAILED_TO_DELETE`.
 
     * `customer_asn` - The customer ASN used for BGP Peering.
 

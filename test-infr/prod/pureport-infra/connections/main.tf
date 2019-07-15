@@ -1,29 +1,50 @@
 data "pureport_cloud_regions" "us-east-1" {
-  name_regex = "N. Virginia"
+  filter {
+    name   = "DisplayName"
+    values = ["N. Virginia"]
+  }
 }
 
 data "pureport_cloud_regions" "us-east-2" {
-  name_regex = "Ohio"
+  filter {
+    name   = "DisplayName"
+    values = ["Ohio"]
+  }
 }
 
 data "pureport_cloud_regions" "us-west-1" {
-  name_regex = "N. California"
+  filter {
+    name   = "DisplayName"
+    values = ["N. California"]
+  }
 }
 
 data "pureport_locations" "wdc" {
-  name_regex = "^Washington*"
+  filter {
+    name   = "Name"
+    values = ["^Washington*"]
+  }
 }
 
 data "pureport_locations" "sjc" {
-  name_regex = "^Silicon*"
+  filter {
+    name   = "Name"
+    values = ["^Silicon*"]
+  }
 }
 
 data "pureport_locations" "chi" {
-  name_regex = "^Chicago*"
+  filter {
+    name   = "Name"
+    values = ["^Chicago*"]
+  }
 }
 
 data "pureport_locations" "sea" {
-  name_regex = "Seattle"
+  filter {
+    name   = "Name"
+    values = ["Seattle"]
+  }
 }
 
 data "aws_caller_identity" "current" {}

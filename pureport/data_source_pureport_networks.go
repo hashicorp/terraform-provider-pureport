@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/filter"
 	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
@@ -20,16 +19,11 @@ func dataSourceNetworks() *schema.Resource {
 		Read: dataSourceNetworksRead,
 
 		Schema: map[string]*schema.Schema{
+			"filter": filter.DataSourceFiltersSchema(),
 			"account_href": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-			},
-			"name_regex": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.ValidateRegexp,
 			},
 			"networks": {
 				Type:     schema.TypeList,
@@ -93,14 +87,19 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 	// Filter the results
 	var filteredNetworks []client.Network
 
-	nameRegex, nameRegexOk := d.GetOk("name_regex")
-	if nameRegexOk {
-		r := regexp.MustCompile(nameRegex.(string))
-		for _, network := range networks {
-			if r.MatchString(network.Name) {
-				filteredNetworks = append(filteredNetworks, network)
-			}
+	filters, filtersOk := d.GetOk("filter")
+	if filtersOk {
+
+		input := make([]interface{}, len(networks))
+		for i, x := range networks {
+			input[i] = x
 		}
+
+		output := filter.FilterType(input, filter.BuildDataSourceFilters(filters.(*schema.Set)))
+		for _, x := range output {
+			filteredNetworks = append(filteredNetworks, x.(client.Network))
+		}
+
 	} else {
 		filteredNetworks = networks
 	}

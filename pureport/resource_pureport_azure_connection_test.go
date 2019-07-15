@@ -35,27 +35,47 @@ func init() {
 	})
 }
 
-const testAccResourceAzureConnectionConfig_common = `
+func testAccResourceAzureConnectionConfig_common() string {
+
+	format := `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 
 data "pureport_locations" "main" {
-  name_regex = "Sea.*"
+  filter {
+    name = "Name"
+    values = ["Sea.*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
+  filter {
+    name = "Name"
+    values = ["Bansh.*"]
+  }
 }
 
 data "azurerm_express_route_circuit" "main" {
-  name                = "terraform-acc-express-route"
+  name                = "terraform-acc-express-route-%s"
   resource_group_name = "terraform-acceptance-tests"
 }
 `
 
-const testAccResourceAzureConnectionConfig = testAccResourceAzureConnectionConfig_common + `
+	if testEnvironmentName == "Production" {
+		return fmt.Sprintf(format, "prod")
+	}
+
+	return fmt.Sprintf(format, "dev1")
+}
+
+func testAccResourceAzureConnectionConfig() string {
+
+	return testAccResourceAzureConnectionConfig_common() + `
 resource "pureport_azure_connection" "main" {
   name = "AzureExpressRouteTest"
   description = "Some random description"
@@ -70,11 +90,13 @@ resource "pureport_azure_connection" "main" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-azure"
+    sweep       = "TRUE"
   }
 }
 `
+}
 
-func TestAzureConnection_basic(t *testing.T) {
+func TestResourceAzureConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_azure_connection.main"
 	var instance client.AzureExpressRouteConnection
@@ -85,7 +107,7 @@ func TestAzureConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckAzureConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceAzureConnectionConfig,
+				Config: testAccResourceAzureConnectionConfig(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAzureConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
@@ -102,7 +124,6 @@ func TestAzureConnection_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AZURE_EXPRESS_ROUTE"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "12076"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.1.2/30"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -116,7 +137,6 @@ func TestAzureConnection_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AZURE_EXPRESS_ROUTE 2"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "12076"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", "169.254.2.2/30"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),

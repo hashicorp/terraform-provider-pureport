@@ -37,20 +37,32 @@ func init() {
 
 const testAccResourceAWSConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
+  filter {
+    name = "Name"
+    values = ["Terraform"]
+  }
 }
 
 data "pureport_cloud_regions" "main" {
-  name_regex = "Oregon"
+  filter {
+    name = "DisplayName"
+    values = ["Oregon"]
+  }
 }
 
 data "pureport_locations" "main" {
-  name_regex = "^Sea*"
+  filter {
+    name = "Name"
+    values = ["^Sea*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
+  filter {
+    name = "Name"
+    values = ["Bansh.*"]
+  }
 }
 
 data "aws_caller_identity" "current" {}
@@ -71,6 +83,7 @@ resource "pureport_aws_connection" "basic" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-aws"
+    sweep       = "TRUE"
   }
 }
 `
@@ -90,7 +103,8 @@ resource "pureport_aws_connection" "basic" {
 
   tags = {
     Environment = "tf-test"
-    Owner       = "ksk-aws"
+    Owner       = "scott-pilgram"
+    sweep       = "TRUE"
   }
 }
 `
@@ -125,6 +139,7 @@ resource "pureport_aws_connection" "updateSpeed" {
   tags = {
     Environment = "tf-test"
     Owner       = "scott-pilgram"
+    sweep       = "TRUE"
   }
 }
 `
@@ -144,13 +159,17 @@ resource "pureport_aws_connection" "updateSpeed" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-aws"
+    sweep       = "TRUE"
   }
 }
 `
 
 const testAccResourceAWSConnectionConfig_cloudServices = testAccResourceAWSConnectionConfig_common + `
 data "pureport_cloud_services" "s3" {
-  name_regex = ".*S3"
+  filter {
+    name = "Name"
+    values = [".*S3"]
+  }
 }
 
 resource "pureport_aws_connection" "cloudServices" {
@@ -170,6 +189,7 @@ resource "pureport_aws_connection" "cloudServices" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-aws"
+    sweep       = "TRUE"
   }
 }
 `
@@ -201,11 +221,12 @@ resource "pureport_aws_connection" "nat_mapping" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-aws"
+    sweep       = "TRUE"
   }
 }
 `
 
-func TestAWSConnection_basic(t *testing.T) {
+func TestResourceAWSConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.basic"
 	var instance client.AwsDirectConnectConnection
@@ -234,7 +255,6 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AWS_DIRECT_CONNECT"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "64512"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.1.2/30"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -248,7 +268,6 @@ func TestAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AWS_DIRECT_CONNECT 2"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-					resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "64512"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", "169.254.2.2/30"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
@@ -297,7 +316,7 @@ func TestAWSConnection_basic(t *testing.T) {
 	})
 }
 
-func TestAWSConnection_updateSpeed(t *testing.T) {
+func TestResourceAWSConnection_updateSpeed(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.updateSpeed"
 	var instance client.AwsDirectConnectConnection
@@ -331,7 +350,7 @@ func TestAWSConnection_updateSpeed(t *testing.T) {
 	})
 }
 
-func TestAWSConnection_cloudServices(t *testing.T) {
+func TestResourceAWSConnection_cloudServices(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.cloudServices"
 	var instance client.AwsDirectConnectConnection
@@ -361,7 +380,6 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AWS_DIRECT_CONNECT"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "7224"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("45.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -375,7 +393,6 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AWS_DIRECT_CONNECT 2"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-					resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "7224"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("45.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
@@ -391,7 +408,7 @@ func TestAWSConnection_cloudServices(t *testing.T) {
 	})
 }
 
-func TestAWSConnection_nat_mappings(t *testing.T) {
+func TestResourceAWSConnection_nat_mappings(t *testing.T) {
 
 	resourceName := "pureport_aws_connection.nat_mapping"
 	var instance client.AwsDirectConnectConnection

@@ -2,6 +2,7 @@ package configuration
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"sync"
@@ -39,10 +40,22 @@ func (c *Config) LoadAndValidate() error {
 	}
 
 	cfg := pureport.NewConfiguration()
-	cfg.APIKey = c.APIKey
-	cfg.APISecret = c.APISecret
-	cfg.AuthenticationProfile = c.AuthenticationProfile
-	cfg.EndPoint = c.EndPoint
+
+	if c.APIKey != "" {
+		cfg.APIKey = c.APIKey
+	}
+
+	if c.APISecret != "" {
+		cfg.APISecret = c.APISecret
+	}
+
+	if c.AuthenticationProfile != "" {
+		cfg.AuthenticationProfile = c.AuthenticationProfile
+	}
+
+	if c.EndPoint != "" {
+		cfg.EndPoint = c.EndPoint
+	}
 
 	logCfg := ppLog.NewLogConfig()
 
@@ -87,13 +100,16 @@ func (c *Config) getAccounts() ([]client.Account, error) {
 		return nil, fmt.Errorf("Error Response while Reading Pureport Account data")
 	}
 
-	// Filter the results
-	var filteredAccounts []client.Account
-	for _, account := range accounts {
-		if _, ok := account.Tags["test-acc"]; ok {
-			filteredAccounts = append(filteredAccounts, account)
-		}
-	}
+	// Commenting this out for the moment until we can set tags for the Account
+	//var filteredAccounts []client.Account
+	//for _, account := range accounts {
+	//	if v, ok := account.Tags["Environment"]; ok && v == "test-acc" {
+	//		filteredAccounts = append(filteredAccounts, account)
+	//	}
+	//}
+	filteredAccounts := accounts
+
+	log.Printf("Found %d Accounts: %+v", len(filteredAccounts), filteredAccounts)
 
 	// Sort the list
 	sort.Slice(filteredAccounts, func(i int, j int) bool {
@@ -126,10 +142,12 @@ func (c *Config) GetAccNetworks() ([]client.Network, error) {
 		}
 
 		for _, network := range networks {
-			if _, ok := network.Tags["test-acc"]; ok {
+			if v, ok := network.Tags["Environment"]; ok && v == "tf-test" {
 				filteredNetworks = append(filteredNetworks, network)
 			}
 		}
+
+		log.Printf("Found %d Networks: %+v", len(filteredNetworks), filteredNetworks)
 	}
 
 	// Sort the list
@@ -163,10 +181,12 @@ func (c *Config) GetAccConnections() ([]client.Connection, error) {
 		}
 
 		for _, connection := range connections {
-			if _, ok := connection.Tags["test-acc"]; ok {
+			if v, ok := connection.Tags["Environment"]; ok && v == "tf-test" {
 				filteredConnections = append(filteredConnections, connection)
 			}
 		}
+
+		log.Printf("Found %d Connections: %+v", len(filteredConnections), filteredConnections)
 	}
 
 	// Sort the list

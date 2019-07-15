@@ -9,17 +9,26 @@ import (
 
 const testAccDataSourceAwsConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform .*"
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "A Flock of Seagulls"
+  filter {
+    name = "Name"
+    values = ["A Flock of Seagulls"]
+  }
 }
 
 data "pureport_connections" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
-  name_regex = "AWS"
+  filter {
+    name = "Name"
+    values = ["AWS"]
+  }
 }
 `
 
@@ -29,7 +38,7 @@ data "pureport_aws_connection" "basic" {
 }
 `
 
-func TestAwsConnectionDataSource_basic(t *testing.T) {
+func TestDataSourceAwsConnection_basic(t *testing.T) {
 
 	resourceName := "data.pureport_aws_connection.basic"
 
@@ -42,9 +51,11 @@ func TestAwsConnectionDataSource_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 
 					resource.ComposeAggregateTestCheckFunc(
+
+						testAccCheckDataSourceAwsConnection(resourceName),
+
 						resource.TestMatchResourceAttr(resourceName, "id", regexp.MustCompile("conn-.{16}")),
 						resource.TestMatchResourceAttr(resourceName, "aws_account_id", regexp.MustCompile("[0-9]{12}")),
-						resource.TestCheckResourceAttr(resourceName, "aws_region", "us-west-1"),
 						resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 						resource.TestCheckResourceAttr(resourceName, "peering_type", "PRIVATE"),
 						resource.TestMatchResourceAttr(resourceName, "href", regexp.MustCompile("/connections/conn-.{16}")),
@@ -52,7 +63,6 @@ func TestAwsConnectionDataSource_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "description", ""),
 						resource.TestCheckResourceAttr(resourceName, "state", "ACTIVE"),
 						resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),
-						resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sjc"),
 						resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 						resource.TestCheckResourceAttr(resourceName, "cloud_service_hrefs.#", "0"),
 
@@ -63,7 +73,6 @@ func TestAwsConnectionDataSource_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AWS_DIRECT_CONNECT"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "64512"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.1.2/30"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -78,4 +87,19 @@ func TestAwsConnectionDataSource_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccCheckDataSourceAwsConnection(resourceName string) resource.TestCheckFunc {
+
+	if testEnvironmentName == "Production" {
+		return resource.ComposeTestCheckFunc(
+			resource.TestCheckResourceAttr(resourceName, "aws_region", "us-west-1"),
+			resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sjc"),
+		)
+	}
+
+	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, "aws_region", "us-west-2"),
+		resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
+	)
 }

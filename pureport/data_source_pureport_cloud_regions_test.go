@@ -13,13 +13,16 @@ data "pureport_cloud_regions" "empty" {
 }
 `
 
-const testAccDataSourceCloudRegionsConfig_name_regex = `
-data "pureport_cloud_regions" "name_regex" {
-	name_regex = "US East.*"
+const testAccDataSourceCloudRegionsConfig_name_filter = `
+data "pureport_cloud_regions" "name_filter" {
+  filter {
+    name = "DisplayName"
+    values = ["US East.*"]
+  }
 }
 `
 
-func TestCloudRegionsDataSource_empty(t *testing.T) {
+func TestDataSourceCloudRegionsDataSource_empty(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_regions.empty"
 
@@ -44,16 +47,16 @@ func TestCloudRegionsDataSource_empty(t *testing.T) {
 	})
 }
 
-func TestCloudRegionsDataSource_name_regex(t *testing.T) {
+func TestDataSourceCloudRegionsDataSource_name_filter(t *testing.T) {
 
-	resourceName := "data.pureport_cloud_regions.name_regex"
+	resourceName := "data.pureport_cloud_regions.name_filter"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceCloudRegionsConfig_name_regex,
+				Config: testAccDataSourceCloudRegionsConfig_name_filter,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudRegions(resourceName),
 

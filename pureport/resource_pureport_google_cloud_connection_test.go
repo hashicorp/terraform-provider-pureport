@@ -37,22 +37,33 @@ func init() {
 
 const testAccResourceGoogleCloudConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
+  filter {
+    name = "Name"
+    values = ["Terraform"]
+  }
 }
 
 data "pureport_locations" "main" {
-  name_regex = "^Sea.*"
+  filter {
+    name = "Name"
+    values = ["^Sea.*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
+  filter {
+    name = "Name"
+    values = ["Bansh.*"]
+  }
 }
 `
 
-const testAccResourceGoogleCloudConnectionConfig_basic = testAccResourceGoogleCloudConnectionConfig_common + `
+func testAccResourceGoogleCloudConnectionConfig_basic() string {
+
+	format := testAccResourceGoogleCloudConnectionConfig_common + `
 data "google_compute_network" "default" {
-  name = "terraform-acc-network"
+  name = "terraform-acc-network-%s"
 }
 
 resource "google_compute_router" "main" {
@@ -91,11 +102,19 @@ resource "pureport_google_cloud_connection" "main" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-google"
+    sweep       = "TRUE"
   }
 }
 `
 
-func TestGoogleCloudConnection_basic(t *testing.T) {
+	if testEnvironmentName == "Production" {
+		return fmt.Sprintf(format, "prod")
+	}
+
+	return fmt.Sprintf(format, "dev1")
+}
+
+func TestResourceGoogleCloudConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_google_cloud_connection.main"
 	var instance client.GoogleCloudInterconnectConnection
@@ -106,7 +125,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckGoogleCloudConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceGoogleCloudConnectionConfig_basic,
+				Config: testAccResourceGoogleCloudConnectionConfig_basic(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceGoogleCloudConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
@@ -121,7 +140,6 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "GOOGLE_CLOUD_INTERCONNECT"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "16550"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),

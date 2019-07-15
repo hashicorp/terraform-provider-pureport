@@ -23,9 +23,11 @@ data "pureport_accounts" "name_regex" {
 
 The following arguments are supported:
 
-* `name_regex` - (Optional) A regex string to apply to the account list returned by Pureport. This
-  filtering is done locally on what Pureport returns, and could have a performance impact if the
-  result is large.
+* `filter` - (Optional) A filter used to scope the list e.g. by tags.
+  * `name` - (Required) The name of the filter. The valid values are defined in the
+    [Pureport SDK Model](https://github.com/pureport/pureport-sdk-go/blob/develop/docs/client/Account.md).
+    Nested values are supported. E.g.("Location.DisplayName")
+  * `values` - (Required) The value of the filter. Currently only regex strings are supported.
 
 ## Attributes
 

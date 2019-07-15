@@ -86,8 +86,6 @@ The following arguments are supported:
 
     * `availability_domain` - The availability domain of the cloud gateway. The valid values are `PRIMARY`, `SECONDARY`.
 
-    * `link_state` - The current link state of the gateway. The valid values are `WAITING_TO_PROVISION`, `PROVISIONING`, `FAILED_TO_PROVISION`, `ACTIVE`, `DOWN`, `UPDATING`, `FAILED_TO_UPDATE`, `DELETING`, `FAILED_TO_DELETE`.
-
     * `customer_asn` - The customer ASN used for BGP Peering.
 
     * `customer_ip` - The assigned IP address to the customer side of the BGP Config.

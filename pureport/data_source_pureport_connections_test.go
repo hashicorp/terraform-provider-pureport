@@ -11,12 +11,18 @@ import (
 
 const testAccDataSourceConnectionsConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform .*"
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Connections"
+  filter {
+    name = "Name"
+    values = ["Connections"]
+  }
 }
 `
 
@@ -26,14 +32,17 @@ data "pureport_connections" "empty" {
 }
 `
 
-const testAccDataSourceConnectionsConfig_name_regex = testAccDataSourceConnectionsConfig_common + `
+const testAccDataSourceConnectionsConfig_name_filter = testAccDataSourceConnectionsConfig_common + `
 data "pureport_connections" "name_filter" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
-  name_regex = ".*Test-2"
+  filter {
+    name = "Name"
+    values = [".*Test-2"]
+  }
 }
 `
 
-func TestConnectionsDataSource_empty(t *testing.T) {
+func TestDataSourceConnections_empty(t *testing.T) {
 
 	resourceName := "data.pureport_connections.empty"
 
@@ -56,7 +65,7 @@ func TestConnectionsDataSource_empty(t *testing.T) {
 	})
 }
 
-func TestConnectionsDataSource_name_regex(t *testing.T) {
+func TestDataSourceConnections_name_filter(t *testing.T) {
 
 	resourceName := "data.pureport_connections.name_filter"
 
@@ -65,7 +74,7 @@ func TestConnectionsDataSource_name_regex(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceConnectionsConfig_name_regex,
+				Config: testAccDataSourceConnectionsConfig_name_filter,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceConnections(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "connections.#", "1"),

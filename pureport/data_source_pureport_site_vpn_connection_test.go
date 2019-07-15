@@ -9,17 +9,26 @@ import (
 
 const testAccDataSourceSiteVPNConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform .*"
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "A Flock of Seagulls"
+  filter {
+    name = "Name"
+    values = ["A Flock of Seagulls"]
+  }
 }
 
 data "pureport_connections" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
-  name_regex = "SiteVPN"
+  filter {
+    name = "Name"
+    values = ["SiteVPN"]
+  }
 }
 `
 
@@ -29,7 +38,7 @@ data "pureport_site_vpn_connection" "basic" {
 }
 `
 
-func TestSiteVPNConnectionDataSource_basic(t *testing.T) {
+func TestDataSourceSiteVPNConnection_basic(t *testing.T) {
 
 	resourceName := "data.pureport_site_vpn_connection.basic"
 
@@ -42,6 +51,9 @@ func TestSiteVPNConnectionDataSource_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 
 					resource.ComposeAggregateTestCheckFunc(
+
+						testAccCheckDataSourceSiteVPNConnection(resourceName),
+
 						resource.TestMatchResourceAttr(resourceName, "id", regexp.MustCompile("conn-.{16}")),
 						resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP_DataSource"),
 						resource.TestCheckResourceAttr(resourceName, "description", ""),
@@ -49,7 +61,6 @@ func TestSiteVPNConnectionDataSource_basic(t *testing.T) {
 						resource.TestMatchResourceAttr(resourceName, "href", regexp.MustCompile("/connections/conn-.{16}")),
 						resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
 						resource.TestCheckResourceAttr(resourceName, "state", "ACTIVE"),
-						resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-chi"),
 						resource.TestMatchResourceAttr(resourceName, "network_href", regexp.MustCompile("/networks/network-.{16}")),
 						resource.TestCheckResourceAttr(resourceName, "cloud_service_hrefs.#", "0"),
 						resource.TestCheckResourceAttr(resourceName, "tags.#", "0"),
@@ -60,7 +71,6 @@ func TestSiteVPNConnectionDataSource_basic(t *testing.T) {
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-							resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "30000"),
 							resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -80,7 +90,6 @@ func TestSiteVPNConnectionDataSource_basic(t *testing.T) {
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-							resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "30000"),
 							resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
@@ -100,4 +109,16 @@ func TestSiteVPNConnectionDataSource_basic(t *testing.T) {
 			},
 		},
 	})
+}
+
+func testAccCheckDataSourceSiteVPNConnection(resourceName string) resource.TestCheckFunc {
+	if testEnvironmentName == "Production" {
+		return resource.ComposeTestCheckFunc(
+			resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-chi"),
+		)
+	}
+
+	return resource.ComposeTestCheckFunc(
+		resource.TestCheckResourceAttr(resourceName, "location_href", "/locations/us-sea"),
+	)
 }

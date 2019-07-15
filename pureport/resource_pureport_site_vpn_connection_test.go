@@ -37,16 +37,25 @@ func init() {
 
 const testAccResourceSiteVPNConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
+  filter {
+    name = "Name"
+    values = ["Terraform"]
+  }
 }
 
 data "pureport_locations" "main" {
-  name_regex = "^Sea*"
+  filter {
+    name = "Name"
+    values = ["^Sea*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
+  filter {
+    name = "Name"
+    values = ["Bansh.*"]
+  }
 }
 `
 
@@ -70,6 +79,7 @@ resource "pureport_site_vpn_connection" "main" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-tibb"
+    sweep       = "TRUE"
   }
 }
 `
@@ -90,6 +100,12 @@ resource "pureport_site_vpn_connection" "main" {
 
   primary_customer_router_ip = "123.123.123.100"
   secondary_customer_router_ip = "124.124.124.100"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-tibb"
+    sweep       = "TRUE"
+  }
 }
 `
 
@@ -128,6 +144,7 @@ resource "pureport_site_vpn_connection" "main" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-tibb"
+    sweep       = "TRUE"
   }
 }
 `
@@ -162,6 +179,7 @@ resource "pureport_site_vpn_connection" "main" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-tibb"
+    sweep       = "TRUE"
   }
 }
 `
@@ -185,6 +203,7 @@ resource "pureport_site_vpn_connection" "main" {
   tags = {
     Environment = "tf-test"
     Owner       = "ksk-tibb"
+    sweep       = "TRUE"
   }
 
   traffic_selectors {
@@ -199,7 +218,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
+func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 
 	resourceName := "pureport_site_vpn_connection.main"
 	var instance client.SiteIpSecVpnConnection
@@ -233,7 +252,6 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -253,7 +271,6 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
@@ -305,7 +322,6 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "0"),
@@ -325,7 +341,6 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "0"),
@@ -348,7 +363,7 @@ func TestSiteVPNConnection_route_based_bgp(t *testing.T) {
 	})
 }
 
-func TestSiteVPNConnection_with_ikeconfig(t *testing.T) {
+func TestResourceSiteVPNConnection_with_ikeconfig(t *testing.T) {
 
 	resourceName := "pureport_site_vpn_connection.main"
 	var instance client.SiteIpSecVpnConnection
@@ -380,7 +395,6 @@ func TestSiteVPNConnection_with_ikeconfig(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -400,7 +414,6 @@ func TestSiteVPNConnection_with_ikeconfig(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),
@@ -423,7 +436,7 @@ func TestSiteVPNConnection_with_ikeconfig(t *testing.T) {
 	})
 }
 
-func TestSiteVPNConnection_with_policy_based(t *testing.T) {
+func TestResourceSiteVPNConnection_with_policy_based(t *testing.T) {
 
 	resourceName := "pureport_site_vpn_connection.main"
 	var instance client.SiteIpSecVpnConnection
@@ -457,7 +470,6 @@ func TestSiteVPNConnection_with_policy_based(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "0"),
@@ -477,7 +489,6 @@ func TestSiteVPNConnection_with_policy_based(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "0"),

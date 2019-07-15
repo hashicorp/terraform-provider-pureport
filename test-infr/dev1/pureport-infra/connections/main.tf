@@ -1,9 +1,15 @@
 data "pureport_cloud_regions" "us-west-2" {
-  name_regex = "Oregon"
+  filter {
+    name   = "DisplayName"
+    values = ["Oregon"]
+  }
 }
 
 data "pureport_locations" "sea" {
-  name_regex = "Seattle*"
+  filter {
+    name   = "Name"
+    values = ["Seattle*"]
+  }
 }
 
 data "aws_caller_identity" "current" {}

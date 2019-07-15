@@ -37,7 +37,10 @@ func init() {
 
 const testAccResourceNetworkConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
+  filter {
+    name = "Name"
+    values = ["Terraform"]
+  }
 }
 `
 
@@ -50,11 +53,12 @@ resource "pureport_network" "main" {
   tags = {
     Environment = "tf-test"
     Owner       = "the-rockit"
+    sweep       = "TRUE"
   }
 }
 `
 
-func TestNetwork_basic(t *testing.T) {
+func TestResourceNetwork_basic(t *testing.T) {
 
 	resourceName := "pureport_network.main"
 	var instance client.Network

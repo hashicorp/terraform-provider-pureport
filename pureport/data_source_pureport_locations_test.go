@@ -13,13 +13,16 @@ data "pureport_locations" "empty" {
 }
 `
 
-const testAccDataSourceLocationsConfig_name_regex = `
-data "pureport_locations" "name_regex" {
-	name_regex = "^Sea*"
+const testAccDataSourceLocationsConfig_name_filter = `
+data "pureport_locations" "name_filter" {
+  filter {
+    name = "Name"
+    values = ["^Sea*"]
+  }
 }
 `
 
-func TestLocationsDataSource_empty(t *testing.T) {
+func TestDataSourceLocations_empty(t *testing.T) {
 
 	resourceName := "data.pureport_locations.empty"
 
@@ -38,16 +41,16 @@ func TestLocationsDataSource_empty(t *testing.T) {
 	})
 }
 
-func TestLocationsDataSource_name_regex(t *testing.T) {
+func TestDataSourceLocations_name_filter(t *testing.T) {
 
-	resourceName := "data.pureport_locations.name_regex"
+	resourceName := "data.pureport_locations.name_filter"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceLocationsConfig_name_regex,
+				Config: testAccDataSourceLocationsConfig_name_filter,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceLocations(resourceName),
 

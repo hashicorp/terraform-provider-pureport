@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/filter"
 	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
@@ -33,10 +34,6 @@ var (
 			Computed: true,
 		},
 		"description": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"link_state": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -89,10 +86,6 @@ var (
 			Computed: true,
 		},
 		"description": {
-			Type:     schema.TypeString,
-			Computed: true,
-		},
-		"link_state": {
 			Type:     schema.TypeString,
 			Computed: true,
 		},
@@ -257,6 +250,7 @@ func GetBaseResourceConnectionSchema() map[string]*schema.Schema {
 
 func GetBaseDataSourceConnectionSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
+		"filter": filter.DataSourceFiltersSchema(),
 		"name": {
 			Type:     schema.TypeString,
 			Computed: true,
@@ -358,7 +352,6 @@ func FlattenStandardGateway(gateway *client.StandardGateway) (out map[string]int
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
-		"link_state":          gateway.LinkState,
 		"remote_id":           gateway.RemoteId,
 		"vlan":                gateway.Vlan,
 		"customer_asn":        0,
@@ -391,7 +384,6 @@ func FlattenVpnGateway(gateway *client.VpnGateway) (out map[string]interface{}) 
 		"availability_domain": gateway.AvailabilityDomain,
 		"name":                gateway.Name,
 		"description":         gateway.Description,
-		"link_state":          gateway.LinkState,
 		"customer_gateway_ip": gateway.CustomerGatewayIP,
 		"customer_vti_ip":     gateway.CustomerVtiIP,
 		"pureport_gateway_ip": gateway.PureportGatewayIP,

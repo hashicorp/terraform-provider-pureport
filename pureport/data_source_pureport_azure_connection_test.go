@@ -9,17 +9,26 @@ import (
 
 const testAccDataSourceAzureConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform .*"
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "A Flock of Seagulls"
+  filter {
+    name = "Name"
+    values = ["A Flock of Seagulls"]
+  }
 }
 
 data "pureport_connections" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
-  name_regex = "Azure"
+  filter {
+    name = "Name"
+    values = ["Azure"]
+  }
 }
 `
 
@@ -29,7 +38,7 @@ data "pureport_azure_connection" "basic" {
 }
 `
 
-func TestAzureConnectionDataSource_basic(t *testing.T) {
+func TestDataSourceAzureConnection_basic(t *testing.T) {
 
 	resourceName := "data.pureport_azure_connection.basic"
 
@@ -65,7 +74,6 @@ func TestAzureConnectionDataSource_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AZURE_EXPRESS_ROUTE"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "12076"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", "169.254.1.2/30"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -79,7 +87,6 @@ func TestAzureConnectionDataSource_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AZURE_EXPRESS_ROUTE 2"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.link_state", "PENDING"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "12076"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", "169.254.2.2/30"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.pureport_asn", "394351"),

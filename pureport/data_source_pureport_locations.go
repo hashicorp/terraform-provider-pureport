@@ -3,14 +3,13 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/filter"
 )
 
 func dataSourceLocations() *schema.Resource {
@@ -18,12 +17,7 @@ func dataSourceLocations() *schema.Resource {
 		Read: dataSourceLocationsRead,
 
 		Schema: map[string]*schema.Schema{
-			"name_regex": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.ValidateRegexp,
-			},
+			"filter": filter.DataSourceFiltersSchema(),
 			"locations": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -68,7 +62,7 @@ func dataSourceLocations() *schema.Resource {
 func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 
 	config := m.(*configuration.Config)
-	nameRegex, nameRegexOk := d.GetOk("name_regex")
+	filters, filtersOk := d.GetOk("filter")
 
 	ctx := config.Session.GetSessionContext()
 
@@ -90,13 +84,18 @@ func dataSourceLocationsRead(d *schema.ResourceData, m interface{}) error {
 
 	// Filter the results
 	var filteredLocations []client.Location
-	if nameRegexOk {
-		r := regexp.MustCompile(nameRegex.(string))
-		for _, location := range locations {
-			if r.MatchString(location.Name) {
-				filteredLocations = append(filteredLocations, location)
-			}
+	if filtersOk {
+
+		input := make([]interface{}, len(locations))
+		for i, x := range locations {
+			input[i] = x
 		}
+
+		output := filter.FilterType(input, filter.BuildDataSourceFilters(filters.(*schema.Set)))
+		for _, x := range output {
+			filteredLocations = append(filteredLocations, x.(client.Location))
+		}
+
 	} else {
 		filteredLocations = locations
 	}

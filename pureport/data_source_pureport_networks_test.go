@@ -11,30 +11,39 @@ import (
 
 const testAccDataSourceNetworksConfig_empty = `
 data "pureport_accounts" "main" {
-	name_regex = "Terraform .*"
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 
 data "pureport_networks" "empty" {
-	account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
 }
 `
 
-const testAccDataSourceNetworksConfig_name_regex = `
+const testAccDataSourceNetworksConfig_name_filter = `
 data "pureport_accounts" "main" {
-	name_regex = "Terraform .*"
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 
-data "pureport_networks" "name_regex" {
-	account_href = "${data.pureport_accounts.main.accounts.0.href}"
-	name_regex = "Clash.*"
+data "pureport_networks" "name_filter" {
+  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  filter {
+    name = "Name"
+    values = ["Clash.*"]
+  }
 }
 `
 
-func TestNetworksDataSource_empty(t *testing.T) {
+func TestDataSourceNetworks_empty(t *testing.T) {
 
 	resourceName := "data.pureport_networks.empty"
 
-	resource.ParallelTest(t, resource.TestCase{
+	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -77,16 +86,16 @@ func TestNetworksDataSource_empty(t *testing.T) {
 	})
 }
 
-func TestNetworksDataSource_name_regex(t *testing.T) {
+func TestDataSourceNetworks_name_filter(t *testing.T) {
 
-	resourceName := "data.pureport_networks.name_regex"
+	resourceName := "data.pureport_networks.name_filter"
 
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceNetworksConfig_name_regex,
+				Config: testAccDataSourceNetworksConfig_name_filter,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceNetworks(resourceName),
 
