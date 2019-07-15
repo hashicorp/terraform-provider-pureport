@@ -11,7 +11,7 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.1.0 // indirect
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
-	github.com/hashicorp/terraform v0.12.3
+	github.com/hashicorp/terraform v0.12.4
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/pureport/pureport-sdk-go v1.1.0
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect

@@ -233,14 +233,18 @@ func TestFilterMap2(t *testing.T) {
 		return
 	}
 
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].(client.Account).Name < results[j].(client.Account).Name
+	})
+
 	result := results[0].(client.Account)
 	if result.Name != "Testing 2" {
-		t.Errorf("Invalid name: expected: 'Testing 1', got '%s'", result.Name)
+		t.Errorf("Invalid name: expected: 'Testing 2', got '%s'", result.Name)
 	}
 
 	result = results[1].(client.Account)
 	if result.Name != "Testing 3" {
-		t.Errorf("Invalid name: expected: 'Testing 1', got '%s'", result.Name)
+		t.Errorf("Invalid name: expected: 'Testing 3', got '%s'", result.Name)
 	}
 }
 
