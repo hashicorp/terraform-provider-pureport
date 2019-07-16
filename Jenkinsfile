@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "0.4.1"
+def version = "1.0.0"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
@@ -56,6 +56,7 @@ pipeline {
 
                     // Setup the test environment
                     def environment = params.ACC_TEST_ENVIRONMENT
+                    def provider_version = ""
 
                     // If the environment is specified to be the default,
                     // use the branch name to determine the environment
@@ -65,13 +66,16 @@ pipeline {
 
                       case ~/release\/.*/:
                         environment = "Production"
+                        provider_version = "v${version}"
 
                       default:
                         environment = "Dev1"
+                        provider_version = "dev-b${env.BUILD_NUMBER}"
                       }
                     }
 
                     env.PUREPORT_ACC_TEST_ENVIRONMENT = environment
+                    env.PROVIDER_VERSION = provider_version
                 }
             }
         }
