@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/filter"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func dataSourceNetworks() *schema.Resource {
@@ -18,16 +19,11 @@ func dataSourceNetworks() *schema.Resource {
 		Read: dataSourceNetworksRead,
 
 		Schema: map[string]*schema.Schema{
+			"filter": filter.DataSourceFiltersSchema(),
 			"account_href": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
-			},
-			"name_regex": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.ValidateRegexp,
 			},
 			"networks": {
 				Type:     schema.TypeList,
@@ -55,6 +51,8 @@ func dataSourceNetworks() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"tags": tags.TagsSchemaComputed(),
 					},
 				},
 			},
@@ -64,7 +62,7 @@ func dataSourceNetworks() *schema.Resource {
 
 func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
+	config := m.(*configuration.Config)
 	accountHref := d.Get("account_href").(string)
 	accountId := filepath.Base(accountHref)
 
@@ -89,14 +87,19 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 	// Filter the results
 	var filteredNetworks []client.Network
 
-	nameRegex, nameRegexOk := d.GetOk("name_regex")
-	if nameRegexOk {
-		r := regexp.MustCompile(nameRegex.(string))
-		for _, network := range networks {
-			if r.MatchString(network.Name) {
-				filteredNetworks = append(filteredNetworks, network)
-			}
+	filters, filtersOk := d.GetOk("filter")
+	if filtersOk {
+
+		input := make([]interface{}, len(networks))
+		for i, x := range networks {
+			input[i] = x
 		}
+
+		output := filter.FilterType(input, filter.BuildDataSourceFilters(filters.(*schema.Set)))
+		for _, x := range output {
+			filteredNetworks = append(filteredNetworks, x.(client.Network))
+		}
+
 	} else {
 		filteredNetworks = networks
 	}
@@ -122,14 +125,15 @@ func dataSourceNetworksRead(d *schema.ResourceData, m interface{}) error {
 
 func flattenNetworks(networks []client.Network) (out []map[string]interface{}) {
 
-	for _, network := range networks {
+	for _, n := range networks {
 
 		l := map[string]interface{}{
-			"id":           network.Id,
-			"href":         network.Href,
-			"name":         network.Name,
-			"description":  network.Description,
-			"account_href": network.Account.Href,
+			"id":           n.Id,
+			"href":         n.Href,
+			"name":         n.Name,
+			"description":  n.Description,
+			"account_href": n.Account.Href,
+			"tags":         n.Tags,
 		}
 
 		out = append(out, l)

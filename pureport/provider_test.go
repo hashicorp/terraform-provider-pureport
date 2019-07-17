@@ -12,12 +12,16 @@ import (
 	"github.com/terraform-providers/terraform-provider-template/template"
 )
 
-var testAccProviders map[string]terraform.ResourceProvider
-var testAccProvider *schema.Provider
-var testAccGoogleProvider *schema.Provider
-var testAccAWSProvider *schema.Provider
-var testAccAzureProvider *schema.Provider
-var testAccTemplateProvider *schema.Provider
+var (
+	testAccProviders        map[string]terraform.ResourceProvider
+	testAccProvider         *schema.Provider
+	testAccGoogleProvider   *schema.Provider
+	testAccAWSProvider      *schema.Provider
+	testAccTemplateProvider *schema.Provider
+	testAccAzureProvider    *schema.Provider
+)
+
+var testEnvironmentName string = "Production"
 
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
@@ -32,6 +36,11 @@ func init() {
 		"google":   testAccGoogleProvider,
 		"aws":      testAccAWSProvider,
 		"azurerm":  testAccAzureProvider,
+	}
+
+	// Environment Variables for the Test Environment
+	if env := os.Getenv("PUREPORT_ACC_TEST_ENVIRONMENT"); env != "" {
+		testEnvironmentName = env
 	}
 }
 

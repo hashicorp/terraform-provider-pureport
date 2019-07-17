@@ -3,6 +3,7 @@ package pureport
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
 
 var descriptions map[string]string
@@ -67,12 +68,16 @@ func Provider() terraform.ResourceProvider {
 			"pureport_network":                 resourceNetwork(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"pureport_cloud_regions":  dataSourceCloudRegions(),
-			"pureport_cloud_services": dataSourceCloudServices(),
-			"pureport_locations":      dataSourceLocations(),
-			"pureport_networks":       dataSourceNetworks(),
-			"pureport_accounts":       dataSourceAccounts(),
-			"pureport_connections":    dataSourceConnections(),
+			"pureport_cloud_regions":           dataSourceCloudRegions(),
+			"pureport_cloud_services":          dataSourceCloudServices(),
+			"pureport_locations":               dataSourceLocations(),
+			"pureport_networks":                dataSourceNetworks(),
+			"pureport_accounts":                dataSourceAccounts(),
+			"pureport_connections":             dataSourceConnections(),
+			"pureport_aws_connection":          dataSourceAWSConnection(),
+			"pureport_azure_connection":        dataSourceAzureConnection(),
+			"pureport_google_cloud_connection": dataSourceGoogleCloudConnection(),
+			"pureport_site_vpn_connection":     dataSourceSiteVPNConnection(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -80,7 +85,7 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
-	config := Config{}
+	config := configuration.Config{}
 
 	if v, ok := d.GetOk("auth_profile"); ok {
 		config.AuthenticationProfile = v.(string)

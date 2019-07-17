@@ -39,6 +39,11 @@ resource "pureport_aws_connection" "main" {
 
   aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
   aws_account_id = "123456789012"
+
+  tags = {
+    Environment = "production"
+    Owner       = "Scott Pilgrim"
+  }
 }
 ```
 
@@ -68,13 +73,14 @@ The following arguments are supported:
     * PRIVATE (Default)
     * PUBLIC
 * `cloud_service_hrefs` - (Optional) When PUBLIC peering is configured, a list of HREFs for the Public peering services to which we want access.
+* `tags` - (Optional) A dictionary of user defined key/value pairs to associate with this resource.
 
 ## Attributes
 
 * `nat_config` - The Network Address Translation configuration for the connection.
     * `enabled` - Is NAT enabled for this connection.
     * `mappings` - List of NAT mapped CIDR address
-        * `native_cidr` - (Required) The native CIDR block to map.
+        * `native_cidr` - The native CIDR block to map.
         * `nat_cidr` - The CIDR block use for NAT to the associated subnet.
     * `blocks` - List of reserved blocks for NAT.
     * `pnat_cidr` - CIDR use for PNAT between connections.
@@ -86,8 +92,6 @@ The following arguments are supported:
     * `description` - The description of the cloud gateway.
 
     * `availability_domain` - The availability domain of the cloud gateway. The valid values are `PRIMARY`, `SECONDARY`.
-
-    * `link_state` - The current link state of the gateway. The valid values are `WAITING_TO_PROVISION`, `PROVISIONING`, `FAILED_TO_PROVISION`, `ACTIVE`, `DOWN`, `UPDATING`, `FAILED_TO_UPDATE`, `DELETING`, `FAILED_TO_DELETE`.
 
     * `customer_asn` - The customer ASN used for BGP Peering.
 

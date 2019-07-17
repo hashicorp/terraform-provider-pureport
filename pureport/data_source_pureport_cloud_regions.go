@@ -3,13 +3,13 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/filter"
 )
 
 func dataSourceCloudRegions() *schema.Resource {
@@ -17,12 +17,7 @@ func dataSourceCloudRegions() *schema.Resource {
 		Read: dataSourceCloudRegionsRead,
 
 		Schema: map[string]*schema.Schema{
-			"name_regex": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.ValidateRegexp,
-			},
+			"filter": filter.DataSourceFiltersSchema(),
 			"regions": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -53,8 +48,8 @@ func dataSourceCloudRegions() *schema.Resource {
 
 func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
-	nameRegex, nameRegexOk := d.GetOk("name_regex")
+	config := m.(*configuration.Config)
+	filters, filtersOk := d.GetOk("filter")
 
 	ctx := config.Session.GetSessionContext()
 
@@ -76,13 +71,18 @@ func dataSourceCloudRegionsRead(d *schema.ResourceData, m interface{}) error {
 
 	// Filter the results
 	var filteredRegions []client.CloudRegion
-	if nameRegexOk {
-		r := regexp.MustCompile(nameRegex.(string))
-		for _, region := range regions {
-			if r.MatchString(region.DisplayName) {
-				filteredRegions = append(filteredRegions, region)
-			}
+	if filtersOk {
+
+		input := make([]interface{}, len(regions))
+		for i, x := range regions {
+			input[i] = x
 		}
+
+		output := filter.FilterType(input, filter.BuildDataSourceFilters(filters.(*schema.Set)))
+		for _, x := range output {
+			filteredRegions = append(filteredRegions, x.(client.CloudRegion))
+		}
+
 	} else {
 		filteredRegions = regions
 	}

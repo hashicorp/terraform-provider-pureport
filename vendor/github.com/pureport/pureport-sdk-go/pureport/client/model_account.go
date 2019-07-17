@@ -15,6 +15,7 @@ type Account struct {
 	Id                        string            `json:"id,omitempty"`
 	Name                      string            `json:"name"`
 	Parent                    *Link             `json:"parent,omitempty"`
+	ShowChildAccountPricing   bool              `json:"showChildAccountPricing,omitempty"`
 	SupportedConnectionGroups []Link            `json:"supportedConnectionGroups,omitempty"`
 	Tags                      map[string]string `json:"tags,omitempty"`
 }

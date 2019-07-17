@@ -13,17 +13,20 @@ data "pureport_cloud_services" "empty" {
 }
 `
 
-const testAccDataSourceCloudServicesConfig_name_regex = `
-data "pureport_cloud_services" "name_regex" {
-	name_regex = ".*S3 us-west-2"
+const testAccDataSourceCloudServicesConfig_name_filter = `
+data "pureport_cloud_services" "name_filter" {
+  filter {
+    name = "Name"
+    values = [".*S3 us-west-2"]
+  }
 }
 `
 
-func TestCloudServices_empty(t *testing.T) {
+func TestDataSourceCloudServicesDataSource_empty(t *testing.T) {
 
 	resourceName := "data.pureport_cloud_services.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -48,16 +51,16 @@ func TestCloudServices_empty(t *testing.T) {
 	})
 }
 
-func TestCloudServices_name_regex(t *testing.T) {
+func TestDataSourceCloudServicesDataSource_name_filter(t *testing.T) {
 
-	resourceName := "data.pureport_cloud_services.name_regex"
+	resourceName := "data.pureport_cloud_services.name_filter"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceCloudServicesConfig_name_regex,
+				Config: testAccDataSourceCloudServicesConfig_name_filter,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudServices(resourceName),
 

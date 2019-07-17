@@ -14,17 +14,20 @@ data "pureport_accounts" "empty" {
 }
 `
 
-const testAccDataSourceAccountsConfig_name_regex = `
-data "pureport_accounts" "name_regex" {
-	name_regex = "Terraform .*"
+const testAccDataSourceAccountsConfig_name_filter = `
+data "pureport_accounts" "name_filter" {
+  filter {
+    name = "Name"
+    values = ["Terraform .*"]
+  }
 }
 `
 
-func TestAccounts_empty(t *testing.T) {
+func TestDataSourceAccounts_empty(t *testing.T) {
 
 	resourceName := "data.pureport_accounts.empty"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
@@ -33,40 +36,28 @@ func TestAccounts_empty(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceAccounts(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "accounts.#", "2"),
-
-					resource.TestMatchResourceAttr(resourceName, "accounts.0.id", regexp.MustCompile("ac-.{16}")),
-					resource.TestMatchResourceAttr(resourceName, "accounts.0.href", regexp.MustCompile("/accounts/ac-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.name", "HashiCorp"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.description", "Developer Account for Testing Terraform Provider"),
-
-					resource.TestMatchResourceAttr(resourceName, "accounts.1.id", regexp.MustCompile("ac-.{16}")),
-					resource.TestMatchResourceAttr(resourceName, "accounts.1.href", regexp.MustCompile("/accounts/ac-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "accounts.1.name", "Terraform Acceptance Tests"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.1.description", "Terraform Provider Acceptance Tests"),
+					testAccCheckDataSourceAccountMain(resourceName, "accounts.0"),
+					testAccCheckDataSourceAccountChildAccount(resourceName, "accounts.1"),
 				),
 			},
 		},
 	})
 }
 
-func TestAccounts_name_regex(t *testing.T) {
+func TestDataSourceAccounts_name_filter(t *testing.T) {
 
-	resourceName := "data.pureport_accounts.name_regex"
+	resourceName := "data.pureport_accounts.name_filter"
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:  func() { testAccPreCheck(t) },
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccDataSourceAccountsConfig_name_regex,
+				Config: testAccDataSourceAccountsConfig_name_filter,
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceAccounts(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "accounts.#", "1"),
-
-					resource.TestMatchResourceAttr(resourceName, "accounts.0.id", regexp.MustCompile("ac-.{16}")),
-					resource.TestMatchResourceAttr(resourceName, "accounts.0.href", regexp.MustCompile("/accounts/ac-.{16}")),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.name", "Terraform Acceptance Tests"),
-					resource.TestCheckResourceAttr(resourceName, "accounts.0.description", "Terraform Provider Acceptance Tests"),
+					testAccCheckDataSourceAccountChildAccount(resourceName, "accounts.0"),
 				),
 			},
 		},
@@ -88,4 +79,24 @@ func testAccCheckDataSourceAccounts(name string) resource.TestCheckFunc {
 
 		return nil
 	}
+}
+
+func testAccCheckDataSourceAccountMain(resourceName, account string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestMatchResourceAttr(resourceName, account+".id", regexp.MustCompile("ac-.{16}")),
+		resource.TestMatchResourceAttr(resourceName, account+".href", regexp.MustCompile("/accounts/ac-.{16}")),
+		resource.TestCheckResourceAttr(resourceName, account+".name", "HashiCorp"),
+		resource.TestCheckResourceAttr(resourceName, account+".description", "Developer Account for Testing Terraform Provider"),
+		resource.TestCheckResourceAttr(resourceName, account+".tags.#", "0"),
+	)
+}
+
+func testAccCheckDataSourceAccountChildAccount(resourceName, account string) resource.TestCheckFunc {
+	return resource.ComposeAggregateTestCheckFunc(
+		resource.TestMatchResourceAttr(resourceName, account+".id", regexp.MustCompile("ac-.{16}")),
+		resource.TestMatchResourceAttr(resourceName, account+".href", regexp.MustCompile("/accounts/ac-.{16}")),
+		resource.TestCheckResourceAttr(resourceName, account+".name", "Terraform Acceptance Tests"),
+		resource.TestCheckResourceAttr(resourceName, account+".description", "Terraform Provider Acceptance Tests"),
+		resource.TestCheckResourceAttr(resourceName, account+".tags.#", "0"),
+	)
 }

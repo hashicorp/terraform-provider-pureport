@@ -4,11 +4,12 @@ TESTARGS?=$("-parallel=2","-timeout=120m")
 GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=pureport
+PROVIDER_VERSION?=dev
 
 default: build
 
 build: fmtcheck
-	go install
+	go install -ldflags="-X=github.com/pureport/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)"
 
 sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."

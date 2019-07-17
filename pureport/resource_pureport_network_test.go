@@ -8,11 +8,39 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
+
+func init() {
+	resource.AddTestSweepers("pureport_network", &resource.Sweeper{
+		Name: "pureport_network",
+		F: func(region string) error {
+			c, err := sharedClientForRegion(region)
+			if err != nil {
+				return fmt.Errorf("Error getting client: %s", err)
+			}
+
+			config := c.(*configuration.Config)
+			networks, err := config.GetAccNetworks()
+			if err != nil {
+				return fmt.Errorf("Error getting networks %s", err)
+			}
+
+			if err = config.SweepNetworks(networks); err != nil {
+				return fmt.Errorf("Error occurred sweeping networks")
+			}
+
+			return nil
+		},
+	})
+}
 
 const testAccResourceNetworkConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
+  filter {
+    name = "Name"
+    values = ["Terraform"]
+  }
 }
 `
 
@@ -21,10 +49,16 @@ resource "pureport_network" "main" {
   name = "NetworkTest"
   description = "Network Terraform Test"
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "the-rockit"
+    sweep       = "TRUE"
+  }
 }
 `
 
-func TestNetwork_basic(t *testing.T) {
+func TestResourceNetwork_basic(t *testing.T) {
 
 	resourceName := "pureport_network.main"
 	var instance client.Network
@@ -43,6 +77,9 @@ func TestNetwork_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", "NetworkTest"),
 					resource.TestCheckResourceAttr(resourceName, "description", "Network Terraform Test"),
 					resource.TestMatchResourceAttr(resourceName, "account_href", regexp.MustCompile("/accounts/ac-.{16}")),
+
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "the-rockit"),
 				),
 			},
 		},
@@ -52,7 +89,7 @@ func TestNetwork_basic(t *testing.T) {
 func testAccCheckResourceNetwork(name string, instance *client.Network) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		config, ok := testAccProvider.Meta().(*Config)
+		config, ok := testAccProvider.Meta().(*configuration.Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -88,7 +125,7 @@ func testAccCheckResourceNetwork(name string, instance *client.Network) resource
 
 func testAccCheckNetworkDestroy(s *terraform.State) error {
 
-	config, ok := testAccProvider.Meta().(*Config)
+	config, ok := testAccProvider.Meta().(*configuration.Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}

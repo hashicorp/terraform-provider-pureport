@@ -34,6 +34,11 @@ resource "pureport_azure_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
+
+  tags = {
+    Environment = "production"
+    Owner       = "Scott Pilgrim"
+  }
 }
 ```
 
@@ -61,6 +66,7 @@ The following arguments are supported:
 * `peering_type` - (Optional) The peering type to to use for the connection:
     * PRIVATE (Default)
     * PUBLIC
+* `tags` - (Optional) A dictionary of user defined key/value pairs to associate with this resource.
 
 ## Attributes
 
@@ -79,8 +85,6 @@ The following arguments are supported:
     * `description` - The description of the cloud gateway.
 
     * `availability_domain` - The availability domain of the cloud gateway. The valid values are `PRIMARY`, `SECONDARY`.
-
-    * `link_state` - The current link state of the gateway. The valid values are `WAITING_TO_PROVISION`, `PROVISIONING`, `FAILED_TO_PROVISION`, `ACTIVE`, `DOWN`, `UPDATING`, `FAILED_TO_UPDATE`, `DELETING`, `FAILED_TO_DELETE`.
 
     * `customer_asn` - The customer ASN used for BGP Peering.
 

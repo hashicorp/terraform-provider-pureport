@@ -14,6 +14,7 @@ type AccountBilling struct {
 	Address        *PhysicalAddress `json:"address"`
 	Email          string           `json:"email"`
 	Href           string           `json:"href,omitempty"`
+	Name           string           `json:"name"`
 	StripeExpiry   string           `json:"stripeExpiry"`
 	StripeLastFour string           `json:"stripeLastFour"`
 	StripeToken    string           `json:"stripeToken"`

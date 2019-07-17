@@ -8,26 +8,62 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
 )
+
+func init() {
+	resource.AddTestSweepers("pureport_google_cloud_connection", &resource.Sweeper{
+		Name: "pureport_google_cloud_connection",
+		F: func(region string) error {
+			c, err := sharedClientForRegion(region)
+			if err != nil {
+				return fmt.Errorf("Error getting client: %s", err)
+			}
+
+			config := c.(*configuration.Config)
+			connections, err := config.GetAccConnections()
+			if err != nil {
+				return fmt.Errorf("Error getting connections %s", err)
+			}
+
+			if err = config.SweepConnections(connections); err != nil {
+				return fmt.Errorf("Error occurred sweeping connections")
+			}
+
+			return nil
+		},
+	})
+}
 
 const testAccResourceGoogleCloudConnectionConfig_common = `
 data "pureport_accounts" "main" {
-  name_regex = "Terraform"
+  filter {
+    name = "Name"
+    values = ["Terraform"]
+  }
 }
 
 data "pureport_locations" "main" {
-  name_regex = "^Sea.*"
+  filter {
+    name = "Name"
+    values = ["^Sea.*"]
+  }
 }
 
 data "pureport_networks" "main" {
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Bansh.*"
+  filter {
+    name = "Name"
+    values = ["Bansh.*"]
+  }
 }
 `
 
-const testAccResourceGoogleCloudConnectionConfig_basic = testAccResourceGoogleCloudConnectionConfig_common + `
+func testAccResourceGoogleCloudConnectionConfig_basic() string {
+
+	format := testAccResourceGoogleCloudConnectionConfig_common + `
 data "google_compute_network" "default" {
-  name = "terraform-acc-network"
+  name = "terraform-acc-network-%s"
 }
 
 resource "google_compute_router" "main" {
@@ -62,10 +98,23 @@ resource "pureport_google_cloud_connection" "main" {
   network_href = "${data.pureport_networks.main.networks.0.href}"
 
   primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
+
+  tags = {
+    Environment = "tf-test"
+    Owner       = "ksk-google"
+    sweep       = "TRUE"
+  }
 }
 `
 
-func TestGoogleCloudConnection_basic(t *testing.T) {
+	if testEnvironmentName == "Production" {
+		return fmt.Sprintf(format, "prod")
+	}
+
+	return fmt.Sprintf(format, "dev1")
+}
+
+func TestResourceGoogleCloudConnection_basic(t *testing.T) {
 
 	resourceName := "pureport_google_cloud_connection.main"
 	var instance client.GoogleCloudInterconnectConnection
@@ -76,7 +125,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 		CheckDestroy: testAccCheckGoogleCloudConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceGoogleCloudConnectionConfig_basic,
+				Config: testAccResourceGoogleCloudConnectionConfig_basic(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceGoogleCloudConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
@@ -91,7 +140,6 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "GOOGLE_CLOUD_INTERCONNECT"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
-					resource.TestCheckResourceAttr(resourceName, "gateways.0.link_state", "PENDING"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "16550"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.pureport_asn", "394351"),
@@ -101,6 +149,9 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.public_nat_ip", ""),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.vlan"),
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.remote_id"),
+
+					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),
+					resource.TestCheckResourceAttr(resourceName, "tags.Owner", "ksk-google"),
 				),
 			},
 		},
@@ -110,7 +161,7 @@ func TestGoogleCloudConnection_basic(t *testing.T) {
 func testAccCheckResourceGoogleCloudConnection(name string, instance *client.GoogleCloudInterconnectConnection) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		config, ok := testAccProvider.Meta().(*Config)
+		config, ok := testAccProvider.Meta().(*configuration.Config)
 		if !ok {
 			return fmt.Errorf("Error getting Pureport client")
 		}
@@ -146,7 +197,7 @@ func testAccCheckResourceGoogleCloudConnection(name string, instance *client.Goo
 
 func testAccCheckGoogleCloudConnectionDestroy(s *terraform.State) error {
 
-	config, ok := testAccProvider.Meta().(*Config)
+	config, ok := testAccProvider.Meta().(*configuration.Config)
 	if !ok {
 		return fmt.Errorf("Error getting Pureport client")
 	}

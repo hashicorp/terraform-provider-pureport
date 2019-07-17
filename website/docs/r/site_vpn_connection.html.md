@@ -39,6 +39,11 @@ resource "pureport_site_vpn_connection" "main" {
 
   primary_customer_router_ip = "123.123.123.123"
   secondary_customer_router_ip = "124.124.124.124"
+
+  tags = {
+    Environment = "production"
+    Owner       = "Scott Pilgrim"
+  }
 }
 ```
 
@@ -85,6 +90,7 @@ The following arguments are supported:
         * `native_cidr` - (Required) The native CIDR block to map.
 * `billing_term` - (Optional) The billing term for the connection: (Currently only HOURLY is supported.)
 * `high_availability` - (Optional) Whether a redundant gateway is/should be provisioned for this connection.
+* `tags` - (Optional) A dictionary of user defined key/value pairs to associate with this resource.
 
 ## Attributes
 
@@ -103,8 +109,6 @@ The following arguments are supported:
     * `description` - The description of the cloud gateway.
 
     * `availability_domain` - The availability domain of the cloud gateway. The valid values are `PRIMARY`, `SECONDARY`.
-
-    * `link_state` - The current link state of the gateway. The valid values are `WAITING_TO_PROVISION`, `PROVISIONING`, `FAILED_TO_PROVISION`, `ACTIVE`, `DOWN`, `UPDATING`, `FAILED_TO_UPDATE`, `DELETING`, `FAILED_TO_DELETE`.
 
     * `customer_asn` - The customer ASN used for BGP Peering.
 

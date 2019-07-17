@@ -3,13 +3,14 @@ package pureport
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"sort"
 
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
+	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/pureport/terraform-provider-pureport/pureport/filter"
+	"github.com/pureport/terraform-provider-pureport/pureport/tags"
 )
 
 func dataSourceAccounts() *schema.Resource {
@@ -17,12 +18,7 @@ func dataSourceAccounts() *schema.Resource {
 		Read: dataSourceAccountsRead,
 
 		Schema: map[string]*schema.Schema{
-			"name_regex": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.ValidateRegexp,
-			},
+			"filter": filter.DataSourceFiltersSchema(),
 			"accounts": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -45,6 +41,8 @@ func dataSourceAccounts() *schema.Resource {
 							Type:     schema.TypeString,
 							Computed: true,
 						},
+
+						"tags": tags.TagsSchemaComputed(),
 					},
 				},
 			},
@@ -54,8 +52,8 @@ func dataSourceAccounts() *schema.Resource {
 
 func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 
-	config := m.(*Config)
-	nameRegex, nameRegexOk := d.GetOk("name_regex")
+	config := m.(*configuration.Config)
+	filters, filtersOk := d.GetOk("filter")
 
 	ctx := config.Session.GetSessionContext()
 
@@ -79,13 +77,18 @@ func dataSourceAccountsRead(d *schema.ResourceData, m interface{}) error {
 
 	// Filter the results
 	var filteredAccounts []client.Account
-	if nameRegexOk {
-		r := regexp.MustCompile(nameRegex.(string))
-		for _, account := range accounts {
-			if r.MatchString(account.Name) {
-				filteredAccounts = append(filteredAccounts, account)
-			}
+	if filtersOk {
+
+		input := make([]interface{}, len(accounts))
+		for i, x := range accounts {
+			input[i] = x
 		}
+
+		output := filter.FilterType(input, filter.BuildDataSourceFilters(filters.(*schema.Set)))
+		for _, x := range output {
+			filteredAccounts = append(filteredAccounts, x.(client.Account))
+		}
+
 	} else {
 		filteredAccounts = accounts
 	}
@@ -119,6 +122,7 @@ func flattenAccounts(accounts []client.Account) (out []map[string]interface{}) {
 			"href":        account.Href,
 			"name":        account.Name,
 			"description": account.Description,
+			"tags":        account.Tags,
 		}
 
 		out = append(out, l)
