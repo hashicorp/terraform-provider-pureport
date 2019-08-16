@@ -47,11 +47,11 @@ pipeline {
             steps {
                 script {
 
-                    plugin_name += "_v${version}"
+                    provider_version += "v${version}"
 
                     // Only add the build version for the develop branch
                     if (env.BRANCH_NAME == "develop") {
-                      plugin_name += "-b${env.BUILD_NUMBER}"
+                      provider_version += "-b${env.BUILD_NUMBER}"
                     }
 
                     // Setup the test environment
