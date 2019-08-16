@@ -47,6 +47,10 @@ pipeline {
             steps {
                 script {
 
+                    // Setup the test environment
+                    def environment = params.ACC_TEST_ENVIRONMENT
+                    def provider_version = ""
+
                     provider_version += "v${version}"
 
                     // Only add the build version for the develop branch
@@ -54,9 +58,6 @@ pipeline {
                       provider_version += "-b${env.BUILD_NUMBER}"
                     }
 
-                    // Setup the test environment
-                    def environment = params.ACC_TEST_ENVIRONMENT
-                    def provider_version = ""
 
                     // If the environment is specified to be the default,
                     // use the branch name to determine the environment
