@@ -66,13 +66,13 @@ pipeline {
 
                       case ~/release\/.*/:
                         environment = "Production"
-                        provider_version = "v${version}"
 
                       default:
                         environment = "Dev1"
-                        provider_version = "dev-b${env.BUILD_NUMBER}"
                       }
                     }
+
+                    plugin_name += "_${provider_version}"
 
                     env.PUREPORT_ACC_TEST_ENVIRONMENT = environment
                     env.PROVIDER_VERSION = provider_version
@@ -85,7 +85,7 @@ pipeline {
                 retry(3) {
                   sh "make"
                   sh "PROVIDER_VERSION=${env.PROVIDER_VERSION} make plugin"
-                  sh "chmod +x terraform-provider-pureport_${env.PROVIDER_VERSION}"
+                  sh "chmod +x ${plugin_name}"
 
                   archiveArtifacts(
                       artifacts: "${plugin_name}"
