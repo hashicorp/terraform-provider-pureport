@@ -33,19 +33,20 @@ AccountsApiService Add new account
  * @param optional nil or *CreateAccountOpts - Optional Parameters:
      * @param "Body" (optional.Interface of Account) -
 
-
+@return Account
 */
 
 type CreateAccountOpts struct {
 	Body optional.Interface
 }
 
-func (a *AccountsApiService) CreateAccount(ctx context.Context, localVarOptionals *CreateAccountOpts) (*http.Response, error) {
+func (a *AccountsApiService) CreateAccount(ctx context.Context, localVarOptionals *CreateAccountOpts) (Account, *http.Response, error) {
 	var (
-		localVarHttpMethod = strings.ToUpper("Post")
-		localVarPostBody   interface{}
-		localVarFileName   string
-		localVarFileBytes  []byte
+		localVarHttpMethod  = strings.ToUpper("Post")
+		localVarPostBody    interface{}
+		localVarFileName    string
+		localVarFileBytes   []byte
+		localVarReturnValue Account
 	)
 
 	// create path and map variables
@@ -77,24 +78,32 @@ func (a *AccountsApiService) CreateAccount(ctx context.Context, localVarOptional
 
 		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(Account)
 		if !localVarOptionalBodyok {
-			return nil, reportError("body should be Account")
+			return localVarReturnValue, nil, reportError("body should be Account")
 		}
 		localVarPostBody = &localVarOptionalBody
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode < 300 {
+		// If we succeed, return the data, otherwise pass on to decode error.
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		if err == nil {
+			return localVarReturnValue, localVarHttpResponse, err
+		}
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -103,10 +112,21 @@ func (a *AccountsApiService) CreateAccount(ctx context.Context, localVarOptional
 			error: localVarHttpResponse.Status,
 		}
 
-		return localVarHttpResponse, newErr
+		if localVarHttpResponse.StatusCode == 200 {
+			var v Account
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+
+		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	return localVarHttpResponse, nil
+	return localVarReturnValue, localVarHttpResponse, nil
 }
 
 /*

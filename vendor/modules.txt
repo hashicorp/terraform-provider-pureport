@@ -507,7 +507,7 @@ github.com/posener/complete
 github.com/posener/complete/cmd/install
 github.com/posener/complete/cmd
 github.com/posener/complete/match
-# github.com/pureport/pureport-sdk-go v1.1.0
+# github.com/pureport/pureport-sdk-go v1.2.0
 github.com/pureport/pureport-sdk-go/pureport/client
 github.com/pureport/pureport-sdk-go/pureport
 github.com/pureport/pureport-sdk-go/pureport/logging

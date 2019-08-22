@@ -12,7 +12,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/antihax/optional"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -24,35 +23,35 @@ var (
 	_ context.Context
 )
 
-type ApikeysApiService service
+type TasksApiService service
 
 /*
-ApikeysApiService Create a new API key
+TasksApiService Add a new task
 
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param accountId
- * @param optional nil or *CreateApiKeyOpts - Optional Parameters:
-     * @param "Body" (optional.Interface of ApiKey) -
+ * @param connectionId
+ * @param optional nil or *CreateConnectionTaskOpts - Optional Parameters:
+     * @param "Body" (optional.Interface of Task) -
 
-@return ApiKey
+@return Task
 */
 
-type CreateApiKeyOpts struct {
-	Body optional.Interface
-}
+//type CreateConnectionTaskOpts struct {
+//	Body optional.Interface
+//}
 
-func (a *ApikeysApiService) CreateApiKey(ctx context.Context, accountId string, localVarOptionals *CreateApiKeyOpts) (ApiKey, *http.Response, error) {
+func (a *TasksApiService) CreateConnectionTask(ctx context.Context, connectionId string, localVarOptionals *CreateConnectionTaskOpts) (Task, *http.Response, error) {
 	var (
 		localVarHttpMethod  = strings.ToUpper("Post")
 		localVarPostBody    interface{}
 		localVarFileName    string
 		localVarFileBytes   []byte
-		localVarReturnValue ApiKey
+		localVarReturnValue Task
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/accounts/{accountId}/apikeys"
-	localVarPath = strings.Replace(localVarPath, "{"+"accountId"+"}", fmt.Sprintf("%v", accountId), -1)
+	localVarPath := a.client.cfg.BasePath + "/connections/{connectionId}/tasks"
+	localVarPath = strings.Replace(localVarPath, "{"+"connectionId"+"}", fmt.Sprintf("%v", connectionId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -78,9 +77,9 @@ func (a *ApikeysApiService) CreateApiKey(ctx context.Context, accountId string, 
 	// body params
 	if localVarOptionals != nil && localVarOptionals.Body.IsSet() {
 
-		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(ApiKey)
+		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(Task)
 		if !localVarOptionalBodyok {
-			return localVarReturnValue, nil, reportError("body should be ApiKey")
+			return localVarReturnValue, nil, reportError("body should be Task")
 		}
 		localVarPostBody = &localVarOptionalBody
 	}
@@ -115,7 +114,7 @@ func (a *ApikeysApiService) CreateApiKey(ctx context.Context, accountId string, 
 		}
 
 		if localVarHttpResponse.StatusCode == 200 {
-			var v ApiKey
+			var v Task
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -132,96 +131,25 @@ func (a *ApikeysApiService) CreateApiKey(ctx context.Context, accountId string, 
 }
 
 /*
-ApikeysApiService Delete API Key
+TasksApiService List connection tasks
 
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param key
- * @param accountId
+ * @param connectionId
 
-
+@return []Task
 */
-func (a *ApikeysApiService) DeleteApiKey(ctx context.Context, key string, accountId string) (*http.Response, error) {
-	var (
-		localVarHttpMethod = strings.ToUpper("Delete")
-		localVarPostBody   interface{}
-		localVarFileName   string
-		localVarFileBytes  []byte
-	)
-
-	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/accounts/{accountId}/apikeys/{key}"
-	localVarPath = strings.Replace(localVarPath, "{"+"key"+"}", fmt.Sprintf("%v", key), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"accountId"+"}", fmt.Sprintf("%v", accountId), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
-	if localVarHttpContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHttpContentType
-	}
-
-	// to determine the Accept header
-	localVarHttpHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
-	if localVarHttpHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
-	}
-	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	localVarHttpResponse, err := a.client.callAPI(r)
-	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
-	}
-
-	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
-	localVarHttpResponse.Body.Close()
-	if err != nil {
-		return localVarHttpResponse, err
-	}
-
-	if localVarHttpResponse.StatusCode >= 300 {
-		newErr := GenericSwaggerError{
-			body:  localVarBody,
-			error: localVarHttpResponse.Status,
-		}
-
-		return localVarHttpResponse, newErr
-	}
-
-	return localVarHttpResponse, nil
-}
-
-/*
-ApikeysApiService List API keys for an account
-
- * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param accountId
-
-@return []ApiKey
-*/
-func (a *ApikeysApiService) FindApiKeys(ctx context.Context, accountId string) ([]ApiKey, *http.Response, error) {
+func (a *TasksApiService) GetConnectionTasks(ctx context.Context, connectionId string) ([]Task, *http.Response, error) {
 	var (
 		localVarHttpMethod  = strings.ToUpper("Get")
 		localVarPostBody    interface{}
 		localVarFileName    string
 		localVarFileBytes   []byte
-		localVarReturnValue []ApiKey
+		localVarReturnValue []Task
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/accounts/{accountId}/apikeys"
-	localVarPath = strings.Replace(localVarPath, "{"+"accountId"+"}", fmt.Sprintf("%v", accountId), -1)
+	localVarPath := a.client.cfg.BasePath + "/connections/{connectionId}/tasks"
+	localVarPath = strings.Replace(localVarPath, "{"+"connectionId"+"}", fmt.Sprintf("%v", connectionId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -275,7 +203,7 @@ func (a *ApikeysApiService) FindApiKeys(ctx context.Context, accountId string) (
 		}
 
 		if localVarHttpResponse.StatusCode == 200 {
-			var v []ApiKey
+			var v []Task
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -292,27 +220,25 @@ func (a *ApikeysApiService) FindApiKeys(ctx context.Context, accountId string) (
 }
 
 /*
-ApikeysApiService Get API Key details
+TasksApiService Get Task details
 
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param key
- * @param accountId
+ * @param taskId
 
-@return ApiKey
+@return Task
 */
-func (a *ApikeysApiService) GetApiKey(ctx context.Context, key string, accountId string) (ApiKey, *http.Response, error) {
+func (a *TasksApiService) GetTask(ctx context.Context, taskId string) (Task, *http.Response, error) {
 	var (
 		localVarHttpMethod  = strings.ToUpper("Get")
 		localVarPostBody    interface{}
 		localVarFileName    string
 		localVarFileBytes   []byte
-		localVarReturnValue ApiKey
+		localVarReturnValue Task
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/accounts/{accountId}/apikeys/{key}"
-	localVarPath = strings.Replace(localVarPath, "{"+"key"+"}", fmt.Sprintf("%v", key), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"accountId"+"}", fmt.Sprintf("%v", accountId), -1)
+	localVarPath := a.client.cfg.BasePath + "/tasks/{taskId}"
+	localVarPath = strings.Replace(localVarPath, "{"+"taskId"+"}", fmt.Sprintf("%v", taskId), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -366,7 +292,7 @@ func (a *ApikeysApiService) GetApiKey(ctx context.Context, key string, accountId
 		}
 
 		if localVarHttpResponse.StatusCode == 200 {
-			var v ApiKey
+			var v Task
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -383,41 +309,30 @@ func (a *ApikeysApiService) GetApiKey(ctx context.Context, key string, accountId
 }
 
 /*
-ApikeysApiService Update API Key
+TasksApiService List Tasks
 
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- * @param key
- * @param accountId
- * @param optional nil or *UpdateApiKeyOpts - Optional Parameters:
-     * @param "Body" (optional.Interface of ApiKey) -
 
-@return ApiKey
+@return []Task
 */
-
-type UpdateApiKeyOpts struct {
-	Body optional.Interface
-}
-
-func (a *ApikeysApiService) UpdateApiKey(ctx context.Context, key string, accountId string, localVarOptionals *UpdateApiKeyOpts) (ApiKey, *http.Response, error) {
+func (a *TasksApiService) GetTasks(ctx context.Context) ([]Task, *http.Response, error) {
 	var (
-		localVarHttpMethod  = strings.ToUpper("Put")
+		localVarHttpMethod  = strings.ToUpper("Get")
 		localVarPostBody    interface{}
 		localVarFileName    string
 		localVarFileBytes   []byte
-		localVarReturnValue ApiKey
+		localVarReturnValue []Task
 	)
 
 	// create path and map variables
-	localVarPath := a.client.cfg.BasePath + "/accounts/{accountId}/apikeys/{key}"
-	localVarPath = strings.Replace(localVarPath, "{"+"key"+"}", fmt.Sprintf("%v", key), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"accountId"+"}", fmt.Sprintf("%v", accountId), -1)
+	localVarPath := a.client.cfg.BasePath + "/tasks"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
 	// to determine the Content-Type header
-	localVarHttpContentTypes := []string{"application/json"}
+	localVarHttpContentTypes := []string{}
 
 	// set Content-Type header
 	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
@@ -432,15 +347,6 @@ func (a *ApikeysApiService) UpdateApiKey(ctx context.Context, key string, accoun
 	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
 	if localVarHttpHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
-	}
-	// body params
-	if localVarOptionals != nil && localVarOptionals.Body.IsSet() {
-
-		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(ApiKey)
-		if !localVarOptionalBodyok {
-			return localVarReturnValue, nil, reportError("body should be ApiKey")
-		}
-		localVarPostBody = &localVarOptionalBody
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
@@ -473,7 +379,7 @@ func (a *ApikeysApiService) UpdateApiKey(ctx context.Context, key string, accoun
 		}
 
 		if localVarHttpResponse.StatusCode == 200 {
-			var v ApiKey
+			var v []Task
 			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

@@ -18,6 +18,7 @@ type SupportedConnection struct {
 	Id                    string        `json:"id,omitempty"`
 	Location              *Link         `json:"location"`
 	PeeringType           string        `json:"peeringType"`
+	Pending               bool          `json:"pending,omitempty"`
 	ReachableCloudRegions []Link        `json:"reachableCloudRegions,omitempty"`
 	Speed                 int32         `json:"speed"`
 	Type_                 string        `json:"type"`

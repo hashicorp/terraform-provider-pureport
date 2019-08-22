@@ -34,19 +34,20 @@ ConnectionsApiService Add new connection
  * @param optional nil or *AddConnectionOpts - Optional Parameters:
      * @param "Body" (optional.Interface of Connection) -
 
-
+@return Connection
 */
 
 type AddConnectionOpts struct {
 	Body optional.Interface
 }
 
-func (a *ConnectionsApiService) AddConnection(ctx context.Context, networkId string, localVarOptionals *AddConnectionOpts) (*http.Response, error) {
+func (a *ConnectionsApiService) AddConnection(ctx context.Context, networkId string, localVarOptionals *AddConnectionOpts) (interface{}, *http.Response, error) {
 	var (
-		localVarHttpMethod = strings.ToUpper("Post")
-		localVarPostBody   interface{}
-		localVarFileName   string
-		localVarFileBytes  []byte
+		localVarHttpMethod  = strings.ToUpper("Post")
+		localVarPostBody    interface{}
+		localVarFileName    string
+		localVarFileBytes   []byte
+		localVarReturnValue interface{}
 	)
 
 	// create path and map variables
@@ -81,7 +82,7 @@ func (a *ConnectionsApiService) AddConnection(ctx context.Context, networkId str
 		// Pureport (start)
 		// ##################################################
 		if body, err := ValidateConnection(localVarOptionals.Body.Value()); err != nil {
-			return nil, reportError("body should be valid Connection")
+			return nil, nil, reportError("body should be valid Connection")
 		} else {
 			localVarPostBody = body
 		}
@@ -92,30 +93,34 @@ func (a *ConnectionsApiService) AddConnection(ctx context.Context, networkId str
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	if localVarHttpResponse.StatusCode < 300 {
 
-		// If we succeed, return the data, otherwise pass on to decode error.
-		var v Connection
-		err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-		if err != nil {
-			return localVarHttpResponse, err
-		}
+		// ##################################################
+		// Pureport (start)
+		// ##################################################
+		localVarReturnValue, err = DecodeConnectionData(a.client, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		// ##################################################
+		// Pureport (end)
+		// ##################################################
 
-		return localVarHttpResponse, nil
+		// If we succeed, return the data, otherwise pass on to decode error.
+		if err == nil {
+			return localVarReturnValue, localVarHttpResponse, err
+		}
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -124,10 +129,104 @@ func (a *ConnectionsApiService) AddConnection(ctx context.Context, networkId str
 			error: localVarHttpResponse.Status,
 		}
 
-		return localVarHttpResponse, newErr
+		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	return localVarHttpResponse, nil
+	return localVarReturnValue, localVarHttpResponse, nil
+}
+
+/*
+ConnectionsApiService Add a new task
+
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param connectionId
+ * @param optional nil or *CreateConnectionTaskOpts - Optional Parameters:
+     * @param "Body" (optional.Interface of Task) -
+
+@return Task
+*/
+
+type CreateConnectionTaskOpts struct {
+	Body optional.Interface
+}
+
+func (a *ConnectionsApiService) CreateConnectionTask(ctx context.Context, connectionId string, localVarOptionals *CreateConnectionTaskOpts) (Task, *http.Response, error) {
+	var (
+		localVarHttpMethod  = strings.ToUpper("Post")
+		localVarPostBody    interface{}
+		localVarFileName    string
+		localVarFileBytes   []byte
+		localVarReturnValue Task
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/connections/{connectionId}/tasks"
+	localVarPath = strings.Replace(localVarPath, "{"+"connectionId"+"}", fmt.Sprintf("%v", connectionId), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{"application/json"}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	// body params
+	if localVarOptionals != nil && localVarOptionals.Body.IsSet() {
+
+		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(Task)
+		if !localVarOptionalBodyok {
+			return localVarReturnValue, nil, reportError("body should be Task")
+		}
+		localVarPostBody = &localVarOptionalBody
+	}
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode < 300 {
+		// If we succeed, return the data, otherwise pass on to decode error.
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		if err == nil {
+			return localVarReturnValue, localVarHttpResponse, err
+		}
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericSwaggerError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHttpResponse, nil
 }
 
 /*
@@ -352,16 +451,86 @@ func (a *ConnectionsApiService) GetConnection(ctx context.Context, connectionId 
 	}
 
 	if localVarHttpResponse.StatusCode < 300 {
-
-		// ##################################################
-		// Pureport (start)
-		// ##################################################
-		localVarReturnValue, err = DecodeConnectionData(a.client, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-		// ##################################################
-		// Pureport (end)
-		// ##################################################
-
 		// If we succeed, return the data, otherwise pass on to decode error.
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		if err == nil {
+			return localVarReturnValue, localVarHttpResponse, err
+		}
+	}
+
+	if localVarHttpResponse.StatusCode >= 300 {
+		newErr := GenericSwaggerError{
+			body:  localVarBody,
+			error: localVarHttpResponse.Status,
+		}
+
+		return localVarReturnValue, localVarHttpResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHttpResponse, nil
+}
+
+/*
+ConnectionsApiService List connection tasks
+
+ * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ * @param connectionId
+
+@return []Task
+*/
+func (a *ConnectionsApiService) GetConnectionTasks(ctx context.Context, connectionId string) ([]Task, *http.Response, error) {
+	var (
+		localVarHttpMethod  = strings.ToUpper("Get")
+		localVarPostBody    interface{}
+		localVarFileName    string
+		localVarFileBytes   []byte
+		localVarReturnValue []Task
+	)
+
+	// create path and map variables
+	localVarPath := a.client.cfg.BasePath + "/connections/{connectionId}/tasks"
+	localVarPath = strings.Replace(localVarPath, "{"+"connectionId"+"}", fmt.Sprintf("%v", connectionId), -1)
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHttpContentTypes := []string{}
+
+	// set Content-Type header
+	localVarHttpContentType := selectHeaderContentType(localVarHttpContentTypes)
+	if localVarHttpContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHttpContentType
+	}
+
+	// to determine the Accept header
+	localVarHttpHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHttpHeaderAccept := selectHeaderAccept(localVarHttpHeaderAccepts)
+	if localVarHttpHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHttpHeaderAccept
+	}
+	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHttpResponse, err := a.client.callAPI(r)
+	if err != nil || localVarHttpResponse == nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
+	localVarHttpResponse.Body.Close()
+	if err != nil {
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode < 300 {
+		// If we succeed, return the data, otherwise pass on to decode error.
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 		if err == nil {
 			return localVarReturnValue, localVarHttpResponse, err
 		}

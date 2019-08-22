@@ -372,19 +372,20 @@ AccountInvitationsApiService Invite account member
  * @param optional nil or *InviteAccountOpts - Optional Parameters:
      * @param "Body" (optional.Interface of AccountInvite) -
 
-
+@return AccountInvite
 */
 
 type InviteAccountOpts struct {
 	Body optional.Interface
 }
 
-func (a *AccountInvitationsApiService) InviteAccount(ctx context.Context, accountId string, localVarOptionals *InviteAccountOpts) (*http.Response, error) {
+func (a *AccountInvitationsApiService) InviteAccount(ctx context.Context, accountId string, localVarOptionals *InviteAccountOpts) (AccountInvite, *http.Response, error) {
 	var (
-		localVarHttpMethod = strings.ToUpper("Post")
-		localVarPostBody   interface{}
-		localVarFileName   string
-		localVarFileBytes  []byte
+		localVarHttpMethod  = strings.ToUpper("Post")
+		localVarPostBody    interface{}
+		localVarFileName    string
+		localVarFileBytes   []byte
+		localVarReturnValue AccountInvite
 	)
 
 	// create path and map variables
@@ -417,24 +418,32 @@ func (a *AccountInvitationsApiService) InviteAccount(ctx context.Context, accoun
 
 		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(AccountInvite)
 		if !localVarOptionalBodyok {
-			return nil, reportError("body should be AccountInvite")
+			return localVarReturnValue, nil, reportError("body should be AccountInvite")
 		}
 		localVarPostBody = &localVarOptionalBody
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode < 300 {
+		// If we succeed, return the data, otherwise pass on to decode error.
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		if err == nil {
+			return localVarReturnValue, localVarHttpResponse, err
+		}
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -443,10 +452,21 @@ func (a *AccountInvitationsApiService) InviteAccount(ctx context.Context, accoun
 			error: localVarHttpResponse.Status,
 		}
 
-		return localVarHttpResponse, newErr
+		if localVarHttpResponse.StatusCode == 200 {
+			var v AccountInvite
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+
+		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	return localVarHttpResponse, nil
+	return localVarReturnValue, localVarHttpResponse, nil
 }
 
 /*
