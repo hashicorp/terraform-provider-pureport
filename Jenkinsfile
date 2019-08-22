@@ -16,6 +16,11 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
+
+    triggers {
+      cron('H 1 * * *')
+    }
+
     parameters {
       booleanParam(
           name: 'ACCEPTANCE_TESTS_RUN',
