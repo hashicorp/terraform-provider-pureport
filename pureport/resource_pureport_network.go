@@ -70,7 +70,7 @@ func resourceNetworkCreate(d *schema.ResourceData, m interface{}) error {
 		Body: optional.NewInterface(network),
 	}
 
-	resp, err := config.Session.Client.NetworksApi.AddNetwork(
+	_, resp, err := config.Session.Client.NetworksApi.AddNetwork(
 		ctx,
 		accountId,
 		&opts,

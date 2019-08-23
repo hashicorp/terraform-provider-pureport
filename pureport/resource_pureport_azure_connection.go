@@ -127,7 +127,7 @@ func resourceAzureConnectionCreate(d *schema.ResourceData, m interface{}) error 
 		Body: optional.NewInterface(c),
 	}
 
-	resp, err := config.Session.Client.ConnectionsApi.AddConnection(
+	_, resp, err := config.Session.Client.ConnectionsApi.AddConnection(
 		ctx,
 		filepath.Base(c.Network.Href),
 		&opts,
