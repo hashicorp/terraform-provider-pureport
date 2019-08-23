@@ -38,7 +38,8 @@ type AwsDirectConnectConnection struct {
 	Tags             map[string]string     `json:"tags,omitempty"`
 	Type_            string                `json:"type"`
 	AwsAccountId     string                `json:"awsAccountId"`
-	AwsRegion        string                `json:"awsRegion"`
+	AwsRegion        string                `json:"awsRegion,omitempty"`
+	CloudRegion      *Link                 `json:"cloudRegion,omitempty"`
 	CloudServices    []Link                `json:"cloudServices,omitempty"`
 	Peering          *PeeringConfiguration `json:"peering,omitempty"`
 }

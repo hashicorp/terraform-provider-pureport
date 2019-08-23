@@ -13,7 +13,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/terraform v0.12.6
 	github.com/mattn/go-colorable v0.1.2 // indirect
-	github.com/pureport/pureport-sdk-go v1.1.0
+	github.com/pureport/pureport-sdk-go v1.2.1
 	github.com/smartystreets/assertions v0.0.0-20190116191733-b6c0e53d7304 // indirect
 	github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
 	github.com/terraform-providers/terraform-provider-azurerm v1.31.0

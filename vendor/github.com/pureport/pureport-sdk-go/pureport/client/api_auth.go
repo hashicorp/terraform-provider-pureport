@@ -32,19 +32,20 @@ AuthApiService Login with an API Key
  * @param optional nil or *LoginOpts - Optional Parameters:
      * @param "Body" (optional.Interface of LoginRequest) -
 
-
+@return LoginResponse
 */
 
 type LoginOpts struct {
 	Body optional.Interface
 }
 
-func (a *AuthApiService) Login(ctx context.Context, localVarOptionals *LoginOpts) (*http.Response, error) {
+func (a *AuthApiService) Login(ctx context.Context, localVarOptionals *LoginOpts) (LoginResponse, *http.Response, error) {
 	var (
-		localVarHttpMethod = strings.ToUpper("Post")
-		localVarPostBody   interface{}
-		localVarFileName   string
-		localVarFileBytes  []byte
+		localVarHttpMethod  = strings.ToUpper("Post")
+		localVarPostBody    interface{}
+		localVarFileName    string
+		localVarFileBytes   []byte
+		localVarReturnValue LoginResponse
 	)
 
 	// create path and map variables
@@ -76,24 +77,32 @@ func (a *AuthApiService) Login(ctx context.Context, localVarOptionals *LoginOpts
 
 		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(LoginRequest)
 		if !localVarOptionalBodyok {
-			return nil, reportError("body should be LoginRequest")
+			return localVarReturnValue, nil, reportError("body should be LoginRequest")
 		}
 		localVarPostBody = &localVarOptionalBody
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode < 300 {
+		// If we succeed, return the data, otherwise pass on to decode error.
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		if err == nil {
+			return localVarReturnValue, localVarHttpResponse, err
+		}
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -102,10 +111,21 @@ func (a *AuthApiService) Login(ctx context.Context, localVarOptionals *LoginOpts
 			error: localVarHttpResponse.Status,
 		}
 
-		return localVarHttpResponse, newErr
+		if localVarHttpResponse.StatusCode == 200 {
+			var v LoginResponse
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+
+		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	return localVarHttpResponse, nil
+	return localVarReturnValue, localVarHttpResponse, nil
 }
 
 /*
@@ -115,19 +135,20 @@ AuthApiService Login with a refresh token
  * @param optional nil or *LoginWithRefreshTokenOpts - Optional Parameters:
      * @param "Body" (optional.Interface of LoginWithRefreshTokenRequest) -
 
-
+@return LoginResponse
 */
 
 type LoginWithRefreshTokenOpts struct {
 	Body optional.Interface
 }
 
-func (a *AuthApiService) LoginWithRefreshToken(ctx context.Context, localVarOptionals *LoginWithRefreshTokenOpts) (*http.Response, error) {
+func (a *AuthApiService) LoginWithRefreshToken(ctx context.Context, localVarOptionals *LoginWithRefreshTokenOpts) (LoginResponse, *http.Response, error) {
 	var (
-		localVarHttpMethod = strings.ToUpper("Post")
-		localVarPostBody   interface{}
-		localVarFileName   string
-		localVarFileBytes  []byte
+		localVarHttpMethod  = strings.ToUpper("Post")
+		localVarPostBody    interface{}
+		localVarFileName    string
+		localVarFileBytes   []byte
+		localVarReturnValue LoginResponse
 	)
 
 	// create path and map variables
@@ -159,24 +180,32 @@ func (a *AuthApiService) LoginWithRefreshToken(ctx context.Context, localVarOpti
 
 		localVarOptionalBody, localVarOptionalBodyok := localVarOptionals.Body.Value().(LoginWithRefreshTokenRequest)
 		if !localVarOptionalBodyok {
-			return nil, reportError("body should be LoginWithRefreshTokenRequest")
+			return localVarReturnValue, nil, reportError("body should be LoginWithRefreshTokenRequest")
 		}
 		localVarPostBody = &localVarOptionalBody
 	}
 	r, err := a.client.prepareRequest(ctx, localVarPath, localVarHttpMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, localVarFileName, localVarFileBytes)
 	if err != nil {
-		return nil, err
+		return localVarReturnValue, nil, err
 	}
 
 	localVarHttpResponse, err := a.client.callAPI(r)
 	if err != nil || localVarHttpResponse == nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
 	}
 
 	localVarBody, err := ioutil.ReadAll(localVarHttpResponse.Body)
 	localVarHttpResponse.Body.Close()
 	if err != nil {
-		return localVarHttpResponse, err
+		return localVarReturnValue, localVarHttpResponse, err
+	}
+
+	if localVarHttpResponse.StatusCode < 300 {
+		// If we succeed, return the data, otherwise pass on to decode error.
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		if err == nil {
+			return localVarReturnValue, localVarHttpResponse, err
+		}
 	}
 
 	if localVarHttpResponse.StatusCode >= 300 {
@@ -185,8 +214,19 @@ func (a *AuthApiService) LoginWithRefreshToken(ctx context.Context, localVarOpti
 			error: localVarHttpResponse.Status,
 		}
 
-		return localVarHttpResponse, newErr
+		if localVarHttpResponse.StatusCode == 200 {
+			var v LoginResponse
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarReturnValue, localVarHttpResponse, newErr
+			}
+			newErr.model = v
+			return localVarReturnValue, localVarHttpResponse, newErr
+		}
+
+		return localVarReturnValue, localVarHttpResponse, newErr
 	}
 
-	return localVarHttpResponse, nil
+	return localVarReturnValue, localVarHttpResponse, nil
 }

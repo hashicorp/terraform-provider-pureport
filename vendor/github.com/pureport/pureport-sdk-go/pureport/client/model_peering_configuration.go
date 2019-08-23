@@ -10,5 +10,9 @@
 package client
 
 type PeeringConfiguration struct {
-	Type_ string `json:"type"`
+	PrimaryPureportBgpIP   string `json:"primaryPureportBgpIP,omitempty"`
+	PrimaryRemoteBgpIP     string `json:"primaryRemoteBgpIP,omitempty"`
+	SecondaryPureportBgpIP string `json:"secondaryPureportBgpIP,omitempty"`
+	SecondaryRemoteBgpIP   string `json:"secondaryRemoteBgpIP,omitempty"`
+	Type_                  string `json:"type"`
 }

@@ -10,6 +10,7 @@
 package client
 
 type Account struct {
+	Demo                      bool              `json:"demo,omitempty"`
 	Description               string            `json:"description,omitempty"`
 	Href                      string            `json:"href,omitempty"`
 	Id                        string            `json:"id,omitempty"`
