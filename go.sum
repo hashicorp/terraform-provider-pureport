@@ -609,6 +609,8 @@ github.com/pureport/pureport-sdk-go v1.1.0 h1:28qOOjnjHvOZHt2WS4DVrgB9bWsoz+1zee
 github.com/pureport/pureport-sdk-go v1.1.0/go.mod h1:A6980P/P72JbdhXLo03o1KnXyGG2+O8ctd5HK9V25rk=
 github.com/pureport/pureport-sdk-go v1.2.0 h1:aewfoRj86UUEtRi9kbz4Bvq3s00pSignlfOgCfOuSvw=
 github.com/pureport/pureport-sdk-go v1.2.0/go.mod h1:A6980P/P72JbdhXLo03o1KnXyGG2+O8ctd5HK9V25rk=
+github.com/pureport/pureport-sdk-go v1.2.1 h1:clHuQSCF7IiSfL5tgflldh3NruSrDetyaak5PKT5kvc=
+github.com/pureport/pureport-sdk-go v1.2.1/go.mod h1:A6980P/P72JbdhXLo03o1KnXyGG2+O8ctd5HK9V25rk=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.1.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=

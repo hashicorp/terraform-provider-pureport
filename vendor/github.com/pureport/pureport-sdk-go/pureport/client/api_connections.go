@@ -451,8 +451,16 @@ func (a *ConnectionsApiService) GetConnection(ctx context.Context, connectionId 
 	}
 
 	if localVarHttpResponse.StatusCode < 300 {
+
+		// ##################################################
+		// Pureport (start)
+		// ##################################################
+		localVarReturnValue, err = DecodeConnectionData(a.client, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		// ##################################################
+		// Pureport (end)
+		// ##################################################
+
 		// If we succeed, return the data, otherwise pass on to decode error.
-		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
 		if err == nil {
 			return localVarReturnValue, localVarHttpResponse, err
 		}
