@@ -16,11 +16,11 @@ sweep:
 	go test $(TEST) -v -sweep=$(SWEEP) $(SWEEPARGS)
 
 install: plugin
-	mkdir -p $(HOME)/.terraform.d/plugins
-	mv terraform-provider-pureport $(HOME)/.terraform.d/plugins/
+	mkdir -p $(HOME)/.terraform.d/plugins/darwin_amd64
+	mv terraform-provider-pureport_$(PROVIDER_VERSION) $(HOME)/.terraform.d/plugins/darwin_amd64
 
 plugin: fmtcheck
-	go build -o terraform-provider-pureport
+	go build -o terraform-provider-pureport_$(PROVIDER_VERSION)
 
 test: fmtcheck
 	go test -i $(TEST) || exit 1

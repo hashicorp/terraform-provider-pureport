@@ -35,7 +35,7 @@ func TestDataSourceCloudRegionsDataSource_empty(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudRegions(resourceName),
 
-					resource.TestCheckResourceAttr(resourceName, "regions.#", "37"),
+					resource.TestCheckResourceAttr(resourceName, "regions.#", "39"),
 
 					resource.TestCheckResourceAttr(resourceName, "regions.0.id", "aws-ap-northeast-1"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.name", "Asia Pacific (Tokyo)"),

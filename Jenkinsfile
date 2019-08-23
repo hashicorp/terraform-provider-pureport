@@ -16,6 +16,11 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
+
+    triggers {
+      cron('H 1 * * *')
+    }
+
     parameters {
       booleanParam(
           name: 'ACCEPTANCE_TESTS_RUN',
@@ -47,16 +52,17 @@ pipeline {
             steps {
                 script {
 
-                    plugin_name += "_v${version}"
-
-                    // Only add the build version for the develop branch
-                    if (env.BRANCH_NAME == "develop") {
-                      plugin_name += "-b${env.BUILD_NUMBER}"
-                    }
-
                     // Setup the test environment
                     def environment = params.ACC_TEST_ENVIRONMENT
                     def provider_version = ""
+
+                    provider_version += "v${version}"
+
+                    // Only add the build version for the develop branch
+                    if (env.BRANCH_NAME == "develop") {
+                      provider_version += "-b${env.BUILD_NUMBER}"
+                    }
+
 
                     // If the environment is specified to be the default,
                     // use the branch name to determine the environment
@@ -66,7 +72,6 @@ pipeline {
 
                       case ~/release\/.*/:
                         environment = "Production"
-                        provider_version = "v${version}"
 
                       case ~/hotfix\/.*/:
                         environment = "Production"
@@ -74,9 +79,10 @@ pipeline {
 
                       default:
                         environment = "Dev1"
-                        provider_version = "dev-b${env.BUILD_NUMBER}"
                       }
                     }
+
+                    plugin_name += "_${provider_version}"
 
                     env.PUREPORT_ACC_TEST_ENVIRONMENT = environment
                     env.PROVIDER_VERSION = provider_version
@@ -88,9 +94,8 @@ pipeline {
 
                 retry(3) {
                   sh "make"
-                  sh "make plugin"
-                  sh "chmod +x terraform-provider-pureport"
-                  sh "mv terraform-provider-pureport ${plugin_name}"
+                  sh "PROVIDER_VERSION=${env.PROVIDER_VERSION} make plugin"
+                  sh "chmod +x ${plugin_name}"
 
                   archiveArtifacts(
                       artifacts: "${plugin_name}"
