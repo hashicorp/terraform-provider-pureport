@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "1.0.0"
+def version = "1.0.1"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
@@ -68,6 +68,10 @@ pipeline {
                         environment = "Production"
                         provider_version = "v${version}"
 
+                      case ~/hotfix\/.*/:
+                        environment = "Production"
+                        provider_version = "v${version}"
+
                       default:
                         environment = "Dev1"
                         provider_version = "dev-b${env.BUILD_NUMBER}"
@@ -101,6 +105,7 @@ pipeline {
                 anyOf {
                   branch 'develop'
                   branch 'release/*'
+                  branch 'hotfix/*'
                   expression { return params.ACCEPTANCE_TESTS_RUN }
                 }
             }
@@ -175,6 +180,7 @@ pipeline {
                 anyOf {
                   branch 'develop'
                   branch 'release/*'
+                  branch 'hotfix/*'
                 }
             }
             steps {
