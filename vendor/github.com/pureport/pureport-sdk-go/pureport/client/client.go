@@ -53,6 +53,8 @@ type APIClient struct {
 
 	AccountMembersApi *AccountMembersApiService
 
+	AccountMetricsApi *AccountMetricsApiService
+
 	AccountRolesApi *AccountRolesApiService
 
 	AccountsApi *AccountsApiService
@@ -85,6 +87,8 @@ type APIClient struct {
 
 	SupportedPortsApi *SupportedPortsApiService
 
+	TasksApi *TasksApiService
+
 	UsersApi *UsersApiService
 }
 
@@ -107,6 +111,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.AccountConsentApi = (*AccountConsentApiService)(&c.common)
 	c.AccountInvitationsApi = (*AccountInvitationsApiService)(&c.common)
 	c.AccountMembersApi = (*AccountMembersApiService)(&c.common)
+	c.AccountMetricsApi = (*AccountMetricsApiService)(&c.common)
 	c.AccountRolesApi = (*AccountRolesApiService)(&c.common)
 	c.AccountsApi = (*AccountsApiService)(&c.common)
 	c.ApikeysApi = (*ApikeysApiService)(&c.common)
@@ -123,6 +128,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.PortsApi = (*PortsApiService)(&c.common)
 	c.SupportedConnectionsApi = (*SupportedConnectionsApiService)(&c.common)
 	c.SupportedPortsApi = (*SupportedPortsApiService)(&c.common)
+	c.TasksApi = (*TasksApiService)(&c.common)
 	c.UsersApi = (*UsersApiService)(&c.common)
 
 	return c

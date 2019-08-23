@@ -379,7 +379,7 @@ func resourceSiteVPNConnectionCreate(d *schema.ResourceData, m interface{}) erro
 		Body: optional.NewInterface(c),
 	}
 
-	resp, err := config.Session.Client.ConnectionsApi.AddConnection(
+	_, resp, err := config.Session.Client.ConnectionsApi.AddConnection(
 		ctx,
 		filepath.Base(c.Network.Href),
 		&opts,

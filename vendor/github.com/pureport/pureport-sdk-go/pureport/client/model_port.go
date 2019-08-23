@@ -10,7 +10,7 @@
 package client
 
 type Port struct {
-	Account                  *Link             `json:"account,omitempty"`
+	Account                  *Link             `json:"account"`
 	AvailabilityDomain       string            `json:"availabilityDomain"`
 	AvailableToChildAccounts bool              `json:"availableToChildAccounts,omitempty"`
 	BillingTerm              string            `json:"billingTerm"`
