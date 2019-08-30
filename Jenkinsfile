@@ -73,6 +73,9 @@ pipeline {
                       case ~/release\/.*/:
                         environment = "Production"
 
+                      case ~/master/:
+                        environment = "Production"
+
                       case ~/hotfix\/.*/:
                         environment = "Production"
                         provider_version = "v${version}"
