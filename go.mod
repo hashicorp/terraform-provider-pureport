@@ -4,7 +4,6 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.40.0 // indirect
-	github.com/Azure/go-autorest v12.4.3+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.3.0 // indirect
 	github.com/Azure/go-autorest/autorest/azure/cli v0.1.0 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.2.0 // indirect
