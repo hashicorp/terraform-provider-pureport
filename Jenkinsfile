@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "1.1.0"
+def version = "1.1.1"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
@@ -71,6 +71,9 @@ pipeline {
                       switch (env.BRANCH_NAME) {
 
                       case ~/release\/.*/:
+                        environment = "Production"
+
+                      case ~/master/:
                         environment = "Production"
 
                       case ~/hotfix\/.*/:
