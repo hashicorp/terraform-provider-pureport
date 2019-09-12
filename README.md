@@ -22,9 +22,9 @@ Usage
 ---------------------
 
 ```
-# For example, restrict pureport version in 0.4.x
+# For example, restrict pureport version in 1.1.2
 provider "pureport" {
-  version = "~> 0.4"
+  version = "~> 1.1.2"
 }
 ```
 

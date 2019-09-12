@@ -4,7 +4,7 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "1.1.1"
+def version = "1.1.2"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
@@ -97,12 +97,20 @@ pipeline {
             steps {
 
                 retry(3) {
-                  sh "make"
-                  sh "PROVIDER_VERSION=${env.PROVIDER_VERSION} make plugin"
+                  sh "GOOS=linux GOARCH=amd64 make"
+                  sh "GOOS=linux GOARCH=amd64 PROVIDER_VERSION=${env.PROVIDER_VERSION} make plugin"
                   sh "chmod +x ${plugin_name}"
+                  sh "tar cvf ${plugin_name}.linux_amd64.tar.bz2 ${plugin_name}"
+                  sh "rm ${plugin_name}"
+
+                  sh "GOOS=darwin GOARCH=amd64 make"
+                  sh "GOOS=darwin GOARCH=amd64 PROVIDER_VERSION=${env.PROVIDER_VERSION} make plugin"
+                  sh "chmod +x ${plugin_name}"
+                  sh "tar cvf ${plugin_name}.darwin_amd64.tar.bz2 ${plugin_name}"
+                  sh "rm ${plugin_name}"
 
                   archiveArtifacts(
-                      artifacts: "${plugin_name}"
+                      artifacts: "${plugin_name}.*.tar.bz2"
                       )
                 }
             }
@@ -204,7 +212,8 @@ pipeline {
 
                       def nexus_url = "https://nexus.dev.pureport.com/repository/terraform-provider-pureport/${env.BRANCH_NAME}/"
 
-                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin_name} ${nexus_url}"
+                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin_name}.darwin_amd64.tar.bz2 ${nexus_url}"
+                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin_name}.linux_amd64.tar.bz2 ${nexus_url}"
 
                       // Set the description text for the job
                       currentBuild.description = "Version: ${plugin_name}"
