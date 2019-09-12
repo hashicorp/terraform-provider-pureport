@@ -100,13 +100,13 @@ pipeline {
                   sh "GOOS=linux GOARCH=amd64 make"
                   sh "GOOS=linux GOARCH=amd64 PROVIDER_VERSION=${env.PROVIDER_VERSION} make plugin"
                   sh "chmod +x ${plugin_name}"
-                  sh "tar cvf ${plugin_name}.darwin_amd64.tar.bz2 ${plugin_name}"
+                  sh "tar cvf ${plugin_name}.linux_amd64.tar.bz2 ${plugin_name}"
                   sh "rm ${plugin_name}"
 
                   sh "GOOS=darwin GOARCH=amd64 make"
                   sh "GOOS=darwin GOARCH=amd64 PROVIDER_VERSION=${env.PROVIDER_VERSION} make plugin"
                   sh "chmod +x ${plugin_name}"
-                  sh "tar cvf ${plugin_name}.linux_amd64.tar.bz2 ${plugin_name}"
+                  sh "tar cvf ${plugin_name}.darwin_amd64.tar.bz2 ${plugin_name}"
                   sh "rm ${plugin_name}"
 
                   archiveArtifacts(
