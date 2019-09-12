@@ -196,8 +196,7 @@ pipeline {
                 // This can take a long time so we may only want to do this on develop
                 anyOf {
                   branch 'develop'
-                  branch 'release/*'
-                  branch 'hotfix/*'
+                  branch 'master'
                 }
             }
             steps {
