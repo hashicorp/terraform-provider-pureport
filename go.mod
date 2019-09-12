@@ -4,10 +4,11 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.40.0 // indirect
-	github.com/Azure/go-autorest/autorest v0.3.0 // indirect
-	github.com/Azure/go-autorest/autorest/azure/cli v0.1.0 // indirect
-	github.com/Azure/go-autorest/autorest/to v0.2.0 // indirect
-	github.com/Azure/go-autorest/autorest/validation v0.1.0 // indirect
+	github.com/Azure/go-autorest v12.4.3+incompatible // indirect
+	github.com/Azure/go-autorest/autorest v0.9.1 // indirect
+	github.com/Azure/go-autorest/autorest/azure/cli v0.3.0 // indirect
+	github.com/Azure/go-autorest/autorest/to v0.3.0 // indirect
+	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/terraform v0.12.6

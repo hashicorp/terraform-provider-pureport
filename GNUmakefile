@@ -20,7 +20,7 @@ install: plugin
 	mv terraform-provider-pureport_$(PROVIDER_VERSION) $(HOME)/.terraform.d/plugins/darwin_amd64
 
 plugin: fmtcheck
-	go build -o terraform-provider-pureport_$(PROVIDER_VERSION)
+	go build -ldflags="-X=github.com/pureport/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)" -o terraform-provider-pureport_$(PROVIDER_VERSION)
 
 test: fmtcheck
 	go test -i $(TEST) || exit 1

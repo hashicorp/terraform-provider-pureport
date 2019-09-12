@@ -44,8 +44,9 @@ pipeline {
           )
     }
     environment {
-        GOPATH                = "/go"
-        GOCACHE               = "/tmp/go/.cache"
+        GOPATH  = "/go"
+        GOCACHE = "/tmp/go/.cache"
+        GOFLAGS = "-mod=vendor"
     }
     stages {
         stage('Configure') {
