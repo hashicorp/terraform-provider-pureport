@@ -212,7 +212,8 @@ pipeline {
 
                       def nexus_url = "https://nexus.dev.pureport.com/repository/terraform-provider-pureport/${env.BRANCH_NAME}/"
 
-                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin_name} ${nexus_url}"
+                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin_name}.darwin_amd64.tar.bz2 ${nexus_url}"
+                      sh "curl -v -u ${nexusUsername}:${nexusPassword} --upload-file ${plugin_name}.linux_amd64.tar.bz2 ${nexus_url}"
 
                       // Set the description text for the job
                       currentBuild.description = "Version: ${plugin_name}"
