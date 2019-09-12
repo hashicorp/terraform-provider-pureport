@@ -5,6 +5,8 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 PKG_NAME=pureport
 PROVIDER_VERSION?=dev
+GOOS?=darwin
+GOARCH?=amd64
 
 default: build
 
@@ -16,8 +18,8 @@ sweep:
 	go test $(TEST) -v -sweep=$(SWEEP) $(SWEEPARGS)
 
 install: plugin
-	mkdir -p $(HOME)/.terraform.d/plugins/darwin_amd64
-	mv terraform-provider-pureport_$(PROVIDER_VERSION) $(HOME)/.terraform.d/plugins/darwin_amd64
+	mkdir -p $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
+	mv terraform-provider-pureport_$(PROVIDER_VERSION) $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
 
 plugin: fmtcheck
 	go build -ldflags="-X=github.com/pureport/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)" -o terraform-provider-pureport_$(PROVIDER_VERSION)
