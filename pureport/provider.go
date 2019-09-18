@@ -3,7 +3,7 @@ package pureport
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
 )
 
 var descriptions map[string]string

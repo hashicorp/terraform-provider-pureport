@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
 )
 
 func TestMain(m *testing.M) {

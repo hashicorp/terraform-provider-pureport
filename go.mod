@@ -1,10 +1,9 @@
-module github.com/pureport/terraform-provider-pureport
+module github.com/terraform-providers/terraform-provider-pureport
 
 go 1.12
 
 require (
 	cloud.google.com/go v0.40.0 // indirect
-	github.com/Azure/go-autorest v12.4.3+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.9.1 // indirect
 	github.com/Azure/go-autorest/autorest/azure/cli v0.3.0 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.3.0 // indirect

@@ -13,9 +13,9 @@ import (
 	"github.com/hashicorp/terraform/helper/structure"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
-	"github.com/pureport/terraform-provider-pureport/pureport/connection"
-	"github.com/pureport/terraform-provider-pureport/pureport/tags"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/connection"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/tags"
 )
 
 func resourceSiteVPNConnection() *schema.Resource {

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
 )
 
 func init() {
