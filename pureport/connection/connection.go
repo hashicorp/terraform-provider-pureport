@@ -235,9 +235,11 @@ func GetBaseResourceConnectionSchema() map[string]*schema.Schema {
 			Default:  "HOURLY",
 		},
 		"customer_asn": {
-			Type:         schema.TypeInt,
-			Optional:     true,
-			ValidateFunc: validation.IntBetween(0, 4294967295),
+			Type:     schema.TypeInt,
+			Optional: true,
+			// This should be 4,294,967,295(64bit) but for 32bit Arch `int` is only 32bits so
+			// 2,147,483,647.
+			ValidateFunc: validation.IntBetween(0, 2147483647),
 		},
 		"high_availability": {
 			Type:     schema.TypeBool,
