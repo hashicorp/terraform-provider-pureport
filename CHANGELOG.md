@@ -1,3 +1,9 @@
+## 1.1.4 (Unreleased)
+
+ENHANCEMENTS:
+ * Update to Terraform 0.12.10
+ * Update to Golang 1.13
+
 ## 1.1.3 (September 23, 2019)
 
 BUG FIXES:
