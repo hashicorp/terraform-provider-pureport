@@ -3,6 +3,11 @@
 ENHANCEMENTS:
  * Update to Terraform 0.12.10
  * Update to Golang 1.13
+ * Update to AzureRM 1.35.0
+
+BUG FIXES:
+ * Added unique names for Google Cloud Interconnects and Routers for Acceptance tests
+ * Remove unused Templates Provider
 
 ## 1.1.3 (September 23, 2019)
 
