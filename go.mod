@@ -17,7 +17,6 @@ require (
 	github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
 	github.com/terraform-providers/terraform-provider-azurerm v1.31.0
 	github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
-	github.com/terraform-providers/terraform-provider-template v1.0.0
 	go.opencensus.io v0.22.0 // indirect
 	google.golang.org/genproto v0.0.0-20190605220351-eb0b1bdb6ae6 // indirect
 	google.golang.org/grpc v1.21.1 // indirect
