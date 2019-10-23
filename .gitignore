@@ -43,3 +43,4 @@ envsetup-*.sh
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
+terraform-provider-pureport_dev
