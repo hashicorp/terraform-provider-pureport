@@ -9,29 +9,25 @@ import (
 	"github.com/terraform-providers/terraform-provider-aws/aws"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm"
 	"github.com/terraform-providers/terraform-provider-google/google"
-	"github.com/terraform-providers/terraform-provider-template/template"
 )
 
 var (
-	testAccProviders        map[string]terraform.ResourceProvider
-	testAccProvider         *schema.Provider
-	testAccGoogleProvider   *schema.Provider
-	testAccAWSProvider      *schema.Provider
-	testAccTemplateProvider *schema.Provider
-	testAccAzureProvider    *schema.Provider
+	testAccProviders      map[string]terraform.ResourceProvider
+	testAccProvider       *schema.Provider
+	testAccGoogleProvider *schema.Provider
+	testAccAWSProvider    *schema.Provider
+	testAccAzureProvider  *schema.Provider
 )
 
 var testEnvironmentName string = "Production"
 
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
-	testAccTemplateProvider = template.Provider().(*schema.Provider)
 	testAccGoogleProvider = google.Provider().(*schema.Provider)
 	testAccAWSProvider = aws.Provider().(*schema.Provider)
 	testAccAzureProvider = azurerm.Provider().(*schema.Provider)
 
 	testAccProviders = map[string]terraform.ResourceProvider{
-		"template": testAccTemplateProvider,
 		"pureport": testAccProvider,
 		"google":   testAccGoogleProvider,
 		"aws":      testAccAWSProvider,

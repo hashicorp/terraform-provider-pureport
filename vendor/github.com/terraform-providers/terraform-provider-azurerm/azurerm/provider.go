@@ -56,6 +56,7 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_api_management_product":                  dataSourceApiManagementProduct(),
 		"azurerm_api_management_user":                     dataSourceArmApiManagementUser(),
 		"azurerm_app_service_plan":                        dataSourceAppServicePlan(),
+		"azurerm_app_service_certificate":                 dataSourceAppServiceCertificate(),
 		"azurerm_app_service":                             dataSourceArmAppService(),
 		"azurerm_application_insights":                    dataSourceArmApplicationInsights(),
 		"azurerm_application_security_group":              dataSourceArmApplicationSecurityGroup(),
@@ -111,6 +112,7 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_proximity_placement_group":               dataSourceArmProximityPlacementGroup(),
 		"azurerm_public_ip":                               dataSourceArmPublicIP(),
 		"azurerm_public_ips":                              dataSourceArmPublicIPs(),
+		"azurerm_public_ip_prefix":                        dataSourceArmPublicIpPrefix(),
 		"azurerm_recovery_services_vault":                 dataSourceArmRecoveryServicesVault(),
 		"azurerm_recovery_services_protection_policy_vm":  dataSourceArmRecoveryServicesProtectionPolicyVm(),
 		"azurerm_redis_cache":                             dataSourceArmRedisCache(),
@@ -130,6 +132,7 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_storage_account_blob_container_sas":      dataSourceArmStorageAccountBlobContainerSharedAccessSignature(),
 		"azurerm_storage_account_sas":                     dataSourceArmStorageAccountSharedAccessSignature(),
 		"azurerm_storage_account":                         dataSourceArmStorageAccount(),
+		"azurerm_storage_management_policy":               dataSourceArmStorageManagementPolicy(),
 		"azurerm_subnet":                                  dataSourceArmSubnet(),
 		"azurerm_subscription":                            dataSourceArmSubscription(),
 		"azurerm_subscriptions":                           dataSourceArmSubscriptions(),
@@ -174,6 +177,7 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_application_gateway":                                resourceArmApplicationGateway(),
 		"azurerm_application_insights_api_key":                       resourceArmApplicationInsightsAPIKey(),
 		"azurerm_application_insights":                               resourceArmApplicationInsights(),
+		"azurerm_application_insights_analytics_item":                resourceArmApplicationInsightsAnalyticsItem(),
 		"azurerm_application_insights_web_test":                      resourceArmApplicationInsightsWebTests(),
 		"azurerm_application_security_group":                         resourceArmApplicationSecurityGroup(),
 		"azurerm_automation_account":                                 resourceArmAutomationAccount(),
@@ -195,8 +199,11 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_batch_account":                                      resourceArmBatchAccount(),
 		"azurerm_batch_application":                                  resourceArmBatchApplication(),
 		"azurerm_batch_certificate":                                  resourceArmBatchCertificate(),
+		"azurerm_bot_channel_email":                                  resourceArmBotChannelEmail(),
+		"azurerm_bot_channel_slack":                                  resourceArmBotChannelSlack(),
 		"azurerm_bot_channels_registration":                          resourceArmBotChannelsRegistration(),
 		"azurerm_bot_connection":                                     resourceArmBotConnection(),
+		"azurerm_bot_web_app":                                        resourceArmBotWebApp(),
 		"azurerm_batch_pool":                                         resourceArmBatchPool(),
 		"azurerm_cdn_endpoint":                                       resourceArmCdnEndpoint(),
 		"azurerm_cdn_profile":                                        resourceArmCdnProfile(),
@@ -213,6 +220,7 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_cosmosdb_sql_container":                             resourceArmCosmosDbSQLContainer(),
 		"azurerm_cosmosdb_sql_database":                              resourceArmCosmosDbSQLDatabase(),
 		"azurerm_cosmosdb_table":                                     resourceArmCosmosDbTable(),
+		"azurerm_dashboard":                                          resourceArmDashboard(),
 		"azurerm_data_factory":                                       resourceArmDataFactory(),
 		"azurerm_data_factory_dataset_mysql":                         resourceArmDataFactoryDatasetMySQL(),
 		"azurerm_data_factory_dataset_postgresql":                    resourceArmDataFactoryDatasetPostgreSQL(),
@@ -252,6 +260,7 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_eventhub_authorization_rule":                        resourceArmEventHubAuthorizationRule(),
 		"azurerm_eventhub_consumer_group":                            resourceArmEventHubConsumerGroup(),
 		"azurerm_eventhub_namespace_authorization_rule":              resourceArmEventHubNamespaceAuthorizationRule(),
+		"azurerm_eventhub_namespace_disaster_recovery_config":        resourceArmEventHubNamespaceDisasterRecoveryConfig(),
 		"azurerm_eventhub_namespace":                                 resourceArmEventHubNamespace(),
 		"azurerm_eventhub":                                           resourceArmEventHub(),
 		"azurerm_express_route_circuit_authorization":                resourceArmExpressRouteCircuitAuthorization(),
@@ -407,6 +416,8 @@ func Provider() terraform.ResourceProvider {
 		"azurerm_storage_account":                                                        resourceArmStorageAccount(),
 		"azurerm_storage_blob":                                                           resourceArmStorageBlob(),
 		"azurerm_storage_container":                                                      resourceArmStorageContainer(),
+		"azurerm_storage_data_lake_gen2_filesystem":                                      resourceArmStorageDataLakeGen2FileSystem(),
+		"azurerm_storage_management_policy":                                              resourceArmStorageManagementPolicy(),
 		"azurerm_storage_queue":                                                          resourceArmStorageQueue(),
 		"azurerm_storage_share":                                                          resourceArmStorageShare(),
 		"azurerm_storage_share_directory":                                                resourceArmStorageShareDirectory(),
@@ -588,7 +599,6 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(p *schema.Provider) schema.ConfigureFunc {
 	return func(d *schema.ResourceData) (interface{}, error) {
-
 		var auxTenants []string
 		if v, ok := d.Get("auxiliary_tenant_ids").([]interface{}); ok && len(v) > 0 {
 			auxTenants = *utils.ExpandStringSlice(v)
@@ -633,7 +643,14 @@ func providerConfigure(p *schema.Provider) schema.ConfigureFunc {
 		skipProviderRegistration := d.Get("skip_provider_registration").(bool)
 		disableCorrelationRequestID := d.Get("disable_correlation_request_id").(bool)
 
-		client, err := getArmClient(config, skipProviderRegistration, partnerId, disableCorrelationRequestID)
+		terraformVersion := p.TerraformVersion
+		if terraformVersion == "" {
+			// Terraform 0.12 introduced this field to the protocol
+			// We can therefore assume that if it's missing it's 0.10 or 0.11
+			terraformVersion = "0.11+compatible"
+		}
+
+		client, err := getArmClient(config, skipProviderRegistration, terraformVersion, partnerId, disableCorrelationRequestID)
 		if err != nil {
 			return nil, err
 		}
