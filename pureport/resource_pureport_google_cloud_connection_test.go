@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
@@ -67,7 +68,7 @@ data "google_compute_network" "default" {
 }
 
 resource "google_compute_router" "main" {
-  name    = "terraform-acc-router-${count.index + 1}"
+  name    = "terraform-acc-%s-${count.index + 1}"
   network = "${data.google_compute_network.default.name}"
 
   bgp {
@@ -78,7 +79,7 @@ resource "google_compute_router" "main" {
 }
 
 resource "google_compute_interconnect_attachment" "main" {
-  name   = "terraform-acc-interconnect-${count.index + 1}"
+  name   = "terraform-acc-%s-${count.index + 1}"
   router = "${element(google_compute_router.main.*.self_link, count.index)}"
   type   = "PARTNER"
   edge_availability_domain = "AVAILABILITY_DOMAIN_${count.index + 1}"
@@ -107,11 +108,14 @@ resource "pureport_google_cloud_connection" "main" {
 }
 `
 
+	router_name := acctest.RandomWithPrefix("router-")
+	interconnect_name := acctest.RandomWithPrefix("interconnect-")
+
 	if testEnvironmentName == "Production" {
-		return fmt.Sprintf(format, "prod")
+		return fmt.Sprintf(format, "prod", router_name, interconnect_name)
 	}
 
-	return fmt.Sprintf(format, "dev1")
+	return fmt.Sprintf(format, "dev1", router_name, interconnect_name)
 }
 
 func TestResourceGoogleCloudConnection_basic(t *testing.T) {

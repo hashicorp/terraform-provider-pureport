@@ -1,6 +1,73 @@
-## 0.1.1 (Unreleased)
-## 0.1.0 (September 20, 2019)
+## 1.1.4 (Unreleased)
 
-IMPROVEMENTS:
+ENHANCEMENTS:
+ * Update to Terraform 0.12.10
+ * Update to Golang 1.13
+ * Update to AzureRM 1.35.0
+
+BUG FIXES:
+ * Added unique names for Google Cloud Interconnects and Routers for Acceptance tests
+ * Remove unused Templates Provider
+
+## 1.1.3 (September 23, 2019)
+
+BUG FIXES:
+ * Fix integration issue with ASN limits on 32bit systems
+
+## 1.1.2 (September 12, 2019)
+
+BUG FIXES:
+ * Fixes issue with not building plugin images out of the vendor directory during CI/CD.
+ * Fixes upstream build issue with the git.apache.org repositories.
+
+## 1.1.1 (September 3, 2019)
+
+BUG FIXES:
+ * Removes the deprecated DummyConnection Resource from the website documentation.
+ * Include Darwin version of the Terraform Plugin
+
+## 1.1.0 (August 23, 2019)
 
 NOTES:
+Update to the latest Pureport golang SDK
+
+There shouldn't be any functional differences in this release and the previous one.
+
+## 1.0.1 (August 23, 2019)
+
+
+## 1.0.0 (July 17, 2019)
+
+NOTES:
+
+Initial feature release of the Pureport Terraform Provider.
+
+FEATURES:
+
+ * Fully automated deployment of Cloud infrastructure via Terraform
+ * Full documentation of all supported Data Sources and Resources
+ * Automated Unit Testing and Acceptance Tests
+ * Sweep target for cleaning up orphaned Pureport resources
+ * Added support for custom tagging of resources
+ * Added support for dynamic filtering of data sources
+
+ * Data Sources
+
+    pureport_accounts
+    pureport_aws_connection
+    pureport_azure_connection
+    pureport_cloud_regions
+    pureport_cloud_services
+    pureport_connections
+    pureport_google_cloud_connection
+    pureport_locations
+    pureport_networks
+    pureport_site_vpn_connection
+
+ * Resources
+
+    resource_pureport_aws_connection
+    resource_pureport_azure_connection
+    resource_pureport_google_cloud_connection
+    resource_pureport_network
+    resource_pureport_site_vpn_connection

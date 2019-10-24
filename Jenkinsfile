@@ -10,7 +10,7 @@ def plugin_name = "terraform-provider-pureport"
 pipeline {
     agent {
       docker {
-        image 'golang:1.12'
+        image 'golang:1.13'
       }
     }
     options {
@@ -196,8 +196,7 @@ pipeline {
                 // This can take a long time so we may only want to do this on develop
                 anyOf {
                   branch 'develop'
-                  branch 'release/*'
-                  branch 'hotfix/*'
+                  branch 'master'
                 }
             }
             steps {
