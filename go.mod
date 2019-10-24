@@ -1,4 +1,4 @@
-module github.com/pureport/terraform-provider-pureport
+module github.com/terraform-providers/terraform-provider-pureport
 
 go 1.13
 

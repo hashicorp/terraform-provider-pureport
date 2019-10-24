@@ -11,7 +11,7 @@ GOARCH?=amd64
 default: build
 
 build: fmtcheck
-	go install -ldflags="-X=github.com/pureport/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)"
+	go install -ldflags="-X=github.com/terraform-providers/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)"
 
 sweep:
 	@echo "WARNING: This will destroy infrastructure. Use only in development accounts."
@@ -22,7 +22,7 @@ install: plugin
 	mv terraform-provider-pureport_$(PROVIDER_VERSION) $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
 
 plugin: fmtcheck
-	go build -ldflags="-X=github.com/pureport/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)" -o terraform-provider-pureport_$(PROVIDER_VERSION)
+	go build -ldflags="-X=github.com/terraform-providers/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)" -o terraform-provider-pureport_$(PROVIDER_VERSION)
 
 test: fmtcheck
 	go test -i $(TEST) || exit 1
@@ -30,7 +30,7 @@ test: fmtcheck
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 testacc: fmtcheck
-	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 120m -ldflags="-X=github.com/pureport/terraform-provider-pureport/version.ProviderVersion=acc"
+	TF_ACC=1 TF_SCHEMA_PANIC_ON_ERROR=1 go test $(TEST) -v $(TESTARGS) -timeout 120m -ldflags="-X=github.com/terraform-providers/terraform-provider-pureport/version.ProviderVersion=acc"
 
 debugacc: fmtcheck
 	TF_ACC=1 dlv test $(TEST) -- -test.v $(TESTARGS)

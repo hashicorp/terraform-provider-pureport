@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform/helper/hashcode"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
-	"github.com/pureport/terraform-provider-pureport/pureport/configuration"
-	"github.com/pureport/terraform-provider-pureport/pureport/filter"
-	"github.com/pureport/terraform-provider-pureport/pureport/tags"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/filter"
+	"github.com/terraform-providers/terraform-provider-pureport/pureport/tags"
 )
 
 func dataSourceAccounts() *schema.Resource {

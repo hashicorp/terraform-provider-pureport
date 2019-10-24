@@ -12,7 +12,7 @@ import (
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	ppLog "github.com/pureport/pureport-sdk-go/pureport/logging"
 	"github.com/pureport/pureport-sdk-go/pureport/session"
-	"github.com/pureport/terraform-provider-pureport/version"
+	"github.com/terraform-providers/terraform-provider-pureport/version"
 )
 
 var (
