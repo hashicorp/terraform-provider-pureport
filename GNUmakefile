@@ -8,7 +8,6 @@ PROVIDER_VERSION?=dev
 GOOS?=darwin
 GOARCH?=amd64
 GOLINT_GOGC=5
-GOLINT_JOBS=5
 
 default: build
 
@@ -57,7 +56,7 @@ errcheck:
 
 lint:
 	@echo "==> Checking source code against linters..."
-	@GOGC=$(GOLINT_GOGC) golangci-lint run --concurrency $(GOLINT_JOBS) --deadline 4m ./$(PKG_NAME)
+	@GOGC=$(GOLINT_GOGC) golangci-lint run ./$(PKG_NAME)
 	@tfproviderlint -c 1 -S001 -S002 -S003 -S004 -S005 ./$(PKG_NAME)
 
 tools:
