@@ -52,7 +52,7 @@ func TestDataSourceGoogleConnection_basic(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 
-						testAccCheckDataSourceSiteVPNConnection(resourceName),
+						testAccCheckDataSourceGoogleConnection(resourceName),
 
 						resource.TestMatchResourceAttr(resourceName, "id", regexp.MustCompile("conn-.{16}")),
 						resource.TestCheckResourceAttr(resourceName, "name", "GoogleCloud_DataSource"),
