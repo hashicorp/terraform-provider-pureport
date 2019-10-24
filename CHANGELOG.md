@@ -1,4 +1,4 @@
-## 1.1.4 (Unreleased)
+## 1.1.4 (October 24, 2019)
 
 ENHANCEMENTS:
  * Update to Terraform 0.12.10
