@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform/helper/acctest"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
@@ -36,7 +37,6 @@ func init() {
 }
 
 func testAccResourceAzureConnectionConfig_common() string {
-
 	format := `
 data "pureport_accounts" "main" {
   filter {
@@ -75,9 +75,9 @@ data "azurerm_express_route_circuit" "main" {
 
 func testAccResourceAzureConnectionConfig() string {
 
-	return testAccResourceAzureConnectionConfig_common() + `
+	format = testAccResourceAzureConnectionConfig_common() + `
 resource "pureport_azure_connection" "main" {
-  name = "AzureExpressRouteTest"
+  name = "%s"
   description = "Some random description"
   speed = "100"
   high_availability = true
@@ -94,6 +94,10 @@ resource "pureport_azure_connection" "main" {
   }
 }
 `
+
+	connection_name := acctest.RandomWithPrefix("AzureExpressRouteTest-")
+
+	return fmt.Sprintf(format, connection_name)
 }
 
 func TestResourceAzureConnection_basic(t *testing.T) {
