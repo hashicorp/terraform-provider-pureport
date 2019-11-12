@@ -75,7 +75,7 @@ data "azurerm_express_route_circuit" "main" {
 
 func testAccResourceAzureConnectionConfig() string {
 
-	format = testAccResourceAzureConnectionConfig_common() + `
+	format := testAccResourceAzureConnectionConfig_common() + `
 resource "pureport_azure_connection" "main" {
   name = "%s"
   description = "Some random description"

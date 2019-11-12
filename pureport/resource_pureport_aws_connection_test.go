@@ -286,7 +286,7 @@ func TestResourceAWSConnection_basic(t *testing.T) {
 					testAccCheckResourceAWSConnection(resourceName, &instance),
 
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AwsDirectConnectTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -333,7 +333,7 @@ func TestResourceAWSConnection_basic(t *testing.T) {
 				Config: testAccResourceAWSConnectionConfig_basic_update_no_respawn(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "Aws DirectConnect Test"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AwsDirectConnectTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", "AWS Basic Test"),
 
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
@@ -348,7 +348,7 @@ func TestResourceAWSConnection_basic(t *testing.T) {
 					testAccCheckResourceAWSConnection(resourceName, &respawn_instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
 					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AwsDirectConnectTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", "AWS Basic Test"),
 					resource.TestMatchResourceAttr(resourceName, "aws_account_id", regexp.MustCompile("[0-9]{12}")),
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
@@ -375,7 +375,7 @@ func TestResourceAWSConnection_updateSpeed(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAWSConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AwsDirectConnectTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 				),
 			},
@@ -385,7 +385,7 @@ func TestResourceAWSConnection_updateSpeed(t *testing.T) {
 					testAccCheckResourceAWSConnection(resourceName, &respawn_instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
 					TestCheckResourceConnectionIdChanged(&instance.Id, &respawn_instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AwsDirectConnectTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "speed", "200"),
 				),
 			},
@@ -408,7 +408,7 @@ func TestResourceAWSConnection_cloudServices(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceAWSConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectCloudServicesTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AwsDirectConnectTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -468,7 +468,7 @@ func TestResourceAWSConnection_nat_mappings(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 
 					resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr(resourceName, "name", "AwsDirectConnectNatMappingTest"),
+						resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AwsDirectConnectTest-.*")),
 						resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "true"),
 						resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "2"),
 						resource.TestCheckResourceAttrSet(resourceName, "nat_config.0.pnat_cidr"),
