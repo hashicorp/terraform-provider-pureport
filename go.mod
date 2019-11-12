@@ -9,7 +9,7 @@ require (
 	github.com/bflad/tfproviderlint v0.2.0
 	github.com/client9/misspell v0.3.4
 	github.com/golangci/golangci-lint v1.16.1-0.20190402065613-de1d1ad903cd
-	github.com/hashicorp/terraform v0.12.10
+	github.com/hashicorp/terraform v0.12.13
 	github.com/pureport/pureport-sdk-go v1.2.1
 	github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
 	github.com/terraform-providers/terraform-provider-azurerm v1.35.0
