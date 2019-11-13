@@ -23,7 +23,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 )
 
 func resourceComputeSslCertificate() *schema.Resource {
@@ -49,11 +49,10 @@ func resourceComputeSslCertificate() *schema.Resource {
 				Sensitive: true,
 			},
 			"private_key": {
-				Type:             schema.TypeString,
-				Required:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: sha256DiffSuppress,
-				Sensitive:        true,
+				Type:      schema.TypeString,
+				Required:  true,
+				ForceNew:  true,
+				Sensitive: true,
 			},
 			"description": {
 				Type:     schema.TypeString,
@@ -61,11 +60,12 @@ func resourceComputeSslCertificate() *schema.Resource {
 				ForceNew: true,
 			},
 			"name": {
-				Type:         schema.TypeString,
-				Computed:     true,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validateGCPName,
+				Type:          schema.TypeString,
+				Computed:      true,
+				Optional:      true,
+				ForceNew:      true,
+				ValidateFunc:  validateGCPName,
+				ConflictsWith: []string{"name_prefix"},
 			},
 			"certificate_id": {
 				Type:     schema.TypeInt,
@@ -141,7 +141,7 @@ func resourceComputeSslCertificateCreate(d *schema.ResourceData, meta interface{
 	}
 
 	log.Printf("[DEBUG] Creating new SslCertificate: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating SslCertificate: %s", err)
 	}
@@ -191,30 +191,29 @@ func resourceComputeSslCertificateRead(d *schema.ResourceData, meta interface{})
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeSslCertificate %q", d.Id()))
 	}
 
+	if err := d.Set("certificate", flattenComputeSslCertificateCertificate(res["certificate"])); err != nil {
+		return fmt.Errorf("Error reading SslCertificate: %s", err)
+	}
+	if err := d.Set("creation_timestamp", flattenComputeSslCertificateCreationTimestamp(res["creationTimestamp"])); err != nil {
+		return fmt.Errorf("Error reading SslCertificate: %s", err)
+	}
+	if err := d.Set("description", flattenComputeSslCertificateDescription(res["description"])); err != nil {
+		return fmt.Errorf("Error reading SslCertificate: %s", err)
+	}
+	if err := d.Set("certificate_id", flattenComputeSslCertificateCertificate_id(res["id"])); err != nil {
+		return fmt.Errorf("Error reading SslCertificate: %s", err)
+	}
+	if err := d.Set("name", flattenComputeSslCertificateName(res["name"])); err != nil {
+		return fmt.Errorf("Error reading SslCertificate: %s", err)
+	}
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
+		return fmt.Errorf("Error reading SslCertificate: %s", err)
+	}
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
 	if err := d.Set("project", project); err != nil {
-		return fmt.Errorf("Error reading SslCertificate: %s", err)
-	}
-
-	if err := d.Set("certificate", flattenComputeSslCertificateCertificate(res["certificate"], d)); err != nil {
-		return fmt.Errorf("Error reading SslCertificate: %s", err)
-	}
-	if err := d.Set("creation_timestamp", flattenComputeSslCertificateCreationTimestamp(res["creationTimestamp"], d)); err != nil {
-		return fmt.Errorf("Error reading SslCertificate: %s", err)
-	}
-	if err := d.Set("description", flattenComputeSslCertificateDescription(res["description"], d)); err != nil {
-		return fmt.Errorf("Error reading SslCertificate: %s", err)
-	}
-	if err := d.Set("certificate_id", flattenComputeSslCertificateCertificate_id(res["id"], d)); err != nil {
-		return fmt.Errorf("Error reading SslCertificate: %s", err)
-	}
-	if err := d.Set("name", flattenComputeSslCertificateName(res["name"], d)); err != nil {
-		return fmt.Errorf("Error reading SslCertificate: %s", err)
-	}
-	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading SslCertificate: %s", err)
 	}
 
@@ -231,7 +230,7 @@ func resourceComputeSslCertificateDelete(d *schema.ResourceData, meta interface{
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting SslCertificate %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "SslCertificate")
 	}
@@ -260,9 +259,7 @@ func resourceComputeSslCertificateDelete(d *schema.ResourceData, meta interface{
 
 func resourceComputeSslCertificateImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/sslCertificates/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
-		return nil, err
-	}
+	parseImportId([]string{"projects/(?P<project>[^/]+)/global/sslCertificates/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config)
 
 	// Replace import id for the resource id
 	id, err := replaceVars(d, config, "{{name}}")
@@ -274,19 +271,19 @@ func resourceComputeSslCertificateImport(d *schema.ResourceData, meta interface{
 	return []*schema.ResourceData{d}, nil
 }
 
-func flattenComputeSslCertificateCertificate(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslCertificateCertificate(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslCertificateCreationTimestamp(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslCertificateCreationTimestamp(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslCertificateDescription(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslCertificateDescription(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslCertificateCertificate_id(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslCertificateCertificate_id(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -296,19 +293,19 @@ func flattenComputeSslCertificateCertificate_id(v interface{}, d *schema.Resourc
 	return v
 }
 
-func flattenComputeSslCertificateName(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslCertificateName(v interface{}) interface{} {
 	return v
 }
 
-func expandComputeSslCertificateCertificate(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslCertificateCertificate(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeSslCertificateDescription(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslCertificateDescription(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeSslCertificateName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslCertificateName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	var certName string
 	if v, ok := d.GetOk("name"); ok {
 		certName = v.(string)
@@ -324,6 +321,6 @@ func expandComputeSslCertificateName(v interface{}, d TerraformResourceData, con
 	return certName, nil
 }
 
-func expandComputeSslCertificatePrivateKey(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslCertificatePrivateKey(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }

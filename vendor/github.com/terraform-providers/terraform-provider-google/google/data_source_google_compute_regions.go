@@ -15,7 +15,7 @@ func dataSourceGoogleComputeRegions() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceGoogleComputeRegionsRead,
 		Schema: map[string]*schema.Schema{
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,

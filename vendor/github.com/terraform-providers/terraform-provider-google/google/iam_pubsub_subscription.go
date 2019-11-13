@@ -9,13 +9,13 @@ import (
 )
 
 var IamPubsubSubscriptionSchema = map[string]*schema.Schema{
-	"subscription": {
+	"subscription": &schema.Schema{
 		Type:             schema.TypeString,
 		Required:         true,
 		ForceNew:         true,
 		DiffSuppressFunc: compareSelfLinkOrResourceName,
 	},
-	"project": {
+	"project": &schema.Schema{
 		Type:     schema.TypeString,
 		Optional: true,
 		Computed: true,

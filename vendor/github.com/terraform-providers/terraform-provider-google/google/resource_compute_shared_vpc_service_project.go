@@ -22,12 +22,12 @@ func resourceComputeSharedVpcServiceProject() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"host_project": {
+			"host_project": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"service_project": {
+			"service_project": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,

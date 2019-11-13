@@ -19,27 +19,27 @@ func resourceStorageNotification() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"bucket": {
+			"bucket": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"payload_format": {
+			"payload_format": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"JSON_API_V1", "NONE"}, false),
 			},
 
-			"topic": {
+			"topic": &schema.Schema{
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
 
-			"custom_attributes": {
+			"custom_attributes": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
@@ -48,7 +48,7 @@ func resourceStorageNotification() *schema.Resource {
 				},
 			},
 
-			"event_types": {
+			"event_types": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
@@ -60,13 +60,13 @@ func resourceStorageNotification() *schema.Resource {
 				},
 			},
 
-			"object_name_prefix": {
+			"object_name_prefix": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"self_link": {
+			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

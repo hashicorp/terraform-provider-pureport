@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 )
 
 func resourceComputeTargetHttpProxy() *schema.Resource {
@@ -109,7 +109,7 @@ func resourceComputeTargetHttpProxyCreate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Creating new TargetHttpProxy: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating TargetHttpProxy: %s", err)
 	}
@@ -159,30 +159,29 @@ func resourceComputeTargetHttpProxyRead(d *schema.ResourceData, meta interface{}
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeTargetHttpProxy %q", d.Id()))
 	}
 
+	if err := d.Set("creation_timestamp", flattenComputeTargetHttpProxyCreationTimestamp(res["creationTimestamp"])); err != nil {
+		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
+	}
+	if err := d.Set("description", flattenComputeTargetHttpProxyDescription(res["description"])); err != nil {
+		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
+	}
+	if err := d.Set("proxy_id", flattenComputeTargetHttpProxyProxyId(res["id"])); err != nil {
+		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
+	}
+	if err := d.Set("name", flattenComputeTargetHttpProxyName(res["name"])); err != nil {
+		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
+	}
+	if err := d.Set("url_map", flattenComputeTargetHttpProxyUrlMap(res["urlMap"])); err != nil {
+		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
+	}
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
+		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
+	}
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
 	if err := d.Set("project", project); err != nil {
-		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
-	}
-
-	if err := d.Set("creation_timestamp", flattenComputeTargetHttpProxyCreationTimestamp(res["creationTimestamp"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
-	}
-	if err := d.Set("description", flattenComputeTargetHttpProxyDescription(res["description"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
-	}
-	if err := d.Set("proxy_id", flattenComputeTargetHttpProxyProxyId(res["id"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
-	}
-	if err := d.Set("name", flattenComputeTargetHttpProxyName(res["name"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
-	}
-	if err := d.Set("url_map", flattenComputeTargetHttpProxyUrlMap(res["urlMap"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
-	}
-	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading TargetHttpProxy: %s", err)
 	}
 
@@ -207,7 +206,7 @@ func resourceComputeTargetHttpProxyUpdate(d *schema.ResourceData, meta interface
 		if err != nil {
 			return err
 		}
-		res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutUpdate))
+		res, err := sendRequest(config, "POST", url, obj)
 		if err != nil {
 			return fmt.Errorf("Error updating TargetHttpProxy %q: %s", d.Id(), err)
 		}
@@ -248,7 +247,7 @@ func resourceComputeTargetHttpProxyDelete(d *schema.ResourceData, meta interface
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting TargetHttpProxy %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "TargetHttpProxy")
 	}
@@ -277,9 +276,7 @@ func resourceComputeTargetHttpProxyDelete(d *schema.ResourceData, meta interface
 
 func resourceComputeTargetHttpProxyImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/targetHttpProxies/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
-		return nil, err
-	}
+	parseImportId([]string{"projects/(?P<project>[^/]+)/global/targetHttpProxies/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config)
 
 	// Replace import id for the resource id
 	id, err := replaceVars(d, config, "{{name}}")
@@ -291,15 +288,15 @@ func resourceComputeTargetHttpProxyImport(d *schema.ResourceData, meta interface
 	return []*schema.ResourceData{d}, nil
 }
 
-func flattenComputeTargetHttpProxyCreationTimestamp(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetHttpProxyCreationTimestamp(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetHttpProxyDescription(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetHttpProxyDescription(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetHttpProxyProxyId(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetHttpProxyProxyId(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -309,26 +306,26 @@ func flattenComputeTargetHttpProxyProxyId(v interface{}, d *schema.ResourceData)
 	return v
 }
 
-func flattenComputeTargetHttpProxyName(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetHttpProxyName(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetHttpProxyUrlMap(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetHttpProxyUrlMap(v interface{}) interface{} {
 	if v == nil {
 		return v
 	}
 	return ConvertSelfLinkToV1(v.(string))
 }
 
-func expandComputeTargetHttpProxyDescription(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeTargetHttpProxyDescription(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeTargetHttpProxyName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeTargetHttpProxyName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeTargetHttpProxyUrlMap(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeTargetHttpProxyUrlMap(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	f, err := parseGlobalFieldValue("urlMaps", v.(string), "project", d, config, true)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid value for url_map: %s", err)

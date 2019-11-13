@@ -21,20 +21,6 @@ func resourceBigtableTable() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"column_family": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				ForceNew: true,
-				Elem: &schema.Resource{
-					Schema: map[string]*schema.Schema{
-						"family": {
-							Type:     schema.TypeString,
-							Required: true,
-						},
-					},
-				},
-			},
-
 			"instance_name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -93,20 +79,6 @@ func resourceBigtableTableCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	if d.Get("column_family.#").(int) > 0 {
-		columns := d.Get("column_family").(*schema.Set).List()
-
-		for _, co := range columns {
-			column := co.(map[string]interface{})
-
-			if v, ok := column["family"]; ok {
-				if err := c.CreateColumnFamily(ctx, name, v.(string)); err != nil {
-					return fmt.Errorf("Error creating column family %s. %s", v, err)
-				}
-			}
-		}
-	}
-
 	d.SetId(name)
 
 	return resourceBigtableTableRead(d, meta)
@@ -130,7 +102,7 @@ func resourceBigtableTableRead(d *schema.ResourceData, meta interface{}) error {
 	defer c.Close()
 
 	name := d.Id()
-	table, err := c.TableInfo(ctx, name)
+	_, err = c.TableInfo(ctx, name)
 	if err != nil {
 		log.Printf("[WARN] Removing %s because it's gone", name)
 		d.SetId("")
@@ -138,7 +110,6 @@ func resourceBigtableTableRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("project", project)
-	d.Set("column_family", flattenColumnFamily(table.Families))
 
 	return nil
 }
@@ -169,16 +140,4 @@ func resourceBigtableTableDestroy(d *schema.ResourceData, meta interface{}) erro
 	d.SetId("")
 
 	return nil
-}
-
-func flattenColumnFamily(families []string) []map[string]interface{} {
-	result := make([]map[string]interface{}, 0, len(families))
-
-	for _, f := range families {
-		data := make(map[string]interface{})
-		data["family"] = f
-		result = append(result, data)
-	}
-
-	return result
 }

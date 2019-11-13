@@ -36,46 +36,46 @@ func dataSourceGoogleSignedUrl() *schema.Resource {
 		Read: dataSourceGoogleSignedUrlRead,
 
 		Schema: map[string]*schema.Schema{
-			"bucket": {
+			"bucket": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"content_md5": {
+			"content_md5": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
 			},
-			"content_type": {
+			"content_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "",
 			},
-			"credentials": {
+			"credentials": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"duration": {
+			"duration": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "1h",
 			},
-			"extension_headers": {
+			"extension_headers": &schema.Schema{
 				Type:         schema.TypeMap,
 				Optional:     true,
 				Elem:         &schema.Schema{Type: schema.TypeString},
 				ValidateFunc: validateExtensionHeaders,
 			},
-			"http_method": {
+			"http_method": &schema.Schema{
 				Type:         schema.TypeString,
 				Optional:     true,
 				Default:      "GET",
 				ValidateFunc: validation.StringInSlice([]string{"GET", "HEAD", "PUT", "DELETE"}, true),
 			},
-			"path": {
+			"path": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"signed_url": {
+			"signed_url": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -85,7 +85,7 @@ func dataSourceGoogleSignedUrl() *schema.Resource {
 
 func validateExtensionHeaders(v interface{}, k string) (ws []string, errors []error) {
 	hdrMap := v.(map[string]interface{})
-	for k := range hdrMap {
+	for k, _ := range hdrMap {
 		if !strings.HasPrefix(strings.ToLower(k), "x-goog-") {
 			errors = append(errors, fmt.Errorf(
 				"extension_header (%s) not valid, header name must begin with 'x-goog-'", k))
@@ -348,9 +348,7 @@ func SignString(toSign []byte, cfg *jwt.Config) ([]byte, error) {
 
 	// Hash string
 	hasher := sha256.New()
-	if _, err := hasher.Write(toSign); err != nil {
-		return nil, errwrap.Wrapf("failed to calculate sha256: {{err}}", err)
-	}
+	hasher.Write(toSign)
 
 	// Sign string
 	signed, err := rsa.SignPKCS1v15(rand.Reader, pk, crypto.SHA256, hasher.Sum(nil))

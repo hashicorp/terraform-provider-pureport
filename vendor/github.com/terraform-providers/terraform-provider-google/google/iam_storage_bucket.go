@@ -9,7 +9,7 @@ import (
 )
 
 var IamStorageBucketSchema = map[string]*schema.Schema{
-	"bucket": {
+	"bucket": &schema.Schema{
 		Type:     schema.TypeString,
 		Required: true,
 		ForceNew: true,

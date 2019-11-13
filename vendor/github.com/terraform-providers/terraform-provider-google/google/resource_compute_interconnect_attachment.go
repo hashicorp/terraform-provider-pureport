@@ -22,8 +22,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 )
 
 func resourceComputeInterconnectAttachment() *schema.Resource {
@@ -42,6 +41,12 @@ func resourceComputeInterconnectAttachment() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"interconnect": {
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
+			},
 			"name": {
 				Type:         schema.TypeString,
 				Required:     true,
@@ -54,29 +59,10 @@ func resourceComputeInterconnectAttachment() *schema.Resource {
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
-			"candidate_subnets": {
-				Type:     schema.TypeList,
-				Optional: true,
-				ForceNew: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
-			},
-			"edge_availability_domain": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
-			},
-			"interconnect": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				ForceNew:         true,
-				DiffSuppressFunc: compareSelfLinkOrResourceName,
 			},
 			"region": {
 				Type:             schema.TypeString,
@@ -84,18 +70,6 @@ func resourceComputeInterconnectAttachment() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
-			},
-			"type": {
-				Type:         schema.TypeString,
-				Computed:     true,
-				Optional:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringInSlice([]string{"DEDICATED", "PARTNER", "PARTNER_PROVIDER", ""}, false),
-			},
-			"vlan_tag8021q": {
-				Type:     schema.TypeInt,
-				Optional: true,
-				ForceNew: true,
 			},
 			"cloud_router_ip_address": {
 				Type:     schema.TypeString,
@@ -113,14 +87,6 @@ func resourceComputeInterconnectAttachment() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"pairing_key": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-			"partner_asn": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"private_interconnect_info": {
 				Type:     schema.TypeList,
 				Computed: true,
@@ -133,10 +99,6 @@ func resourceComputeInterconnectAttachment() *schema.Resource {
 						},
 					},
 				},
-			},
-			"state": {
-				Type:     schema.TypeString,
-				Computed: true,
 			},
 			"project": {
 				Type:     schema.TypeString,
@@ -168,18 +130,6 @@ func resourceComputeInterconnectAttachmentCreate(d *schema.ResourceData, meta in
 	} else if v, ok := d.GetOkExists("description"); !isEmptyValue(reflect.ValueOf(descriptionProp)) && (ok || !reflect.DeepEqual(v, descriptionProp)) {
 		obj["description"] = descriptionProp
 	}
-	edgeAvailabilityDomainProp, err := expandComputeInterconnectAttachmentEdgeAvailabilityDomain(d.Get("edge_availability_domain"), d, config)
-	if err != nil {
-		return err
-	} else if v, ok := d.GetOkExists("edge_availability_domain"); !isEmptyValue(reflect.ValueOf(edgeAvailabilityDomainProp)) && (ok || !reflect.DeepEqual(v, edgeAvailabilityDomainProp)) {
-		obj["edgeAvailabilityDomain"] = edgeAvailabilityDomainProp
-	}
-	typeProp, err := expandComputeInterconnectAttachmentType(d.Get("type"), d, config)
-	if err != nil {
-		return err
-	} else if v, ok := d.GetOkExists("type"); !isEmptyValue(reflect.ValueOf(typeProp)) && (ok || !reflect.DeepEqual(v, typeProp)) {
-		obj["type"] = typeProp
-	}
 	routerProp, err := expandComputeInterconnectAttachmentRouter(d.Get("router"), d, config)
 	if err != nil {
 		return err
@@ -191,18 +141,6 @@ func resourceComputeInterconnectAttachmentCreate(d *schema.ResourceData, meta in
 		return err
 	} else if v, ok := d.GetOkExists("name"); !isEmptyValue(reflect.ValueOf(nameProp)) && (ok || !reflect.DeepEqual(v, nameProp)) {
 		obj["name"] = nameProp
-	}
-	candidateSubnetsProp, err := expandComputeInterconnectAttachmentCandidateSubnets(d.Get("candidate_subnets"), d, config)
-	if err != nil {
-		return err
-	} else if v, ok := d.GetOkExists("candidate_subnets"); !isEmptyValue(reflect.ValueOf(candidateSubnetsProp)) && (ok || !reflect.DeepEqual(v, candidateSubnetsProp)) {
-		obj["candidateSubnets"] = candidateSubnetsProp
-	}
-	vlanTag8021qProp, err := expandComputeInterconnectAttachmentVlanTag8021q(d.Get("vlan_tag8021q"), d, config)
-	if err != nil {
-		return err
-	} else if v, ok := d.GetOkExists("vlan_tag8021q"); !isEmptyValue(reflect.ValueOf(vlanTag8021qProp)) && (ok || !reflect.DeepEqual(v, vlanTag8021qProp)) {
-		obj["vlanTag8021q"] = vlanTag8021qProp
 	}
 	regionProp, err := expandComputeInterconnectAttachmentRegion(d.Get("region"), d, config)
 	if err != nil {
@@ -217,7 +155,7 @@ func resourceComputeInterconnectAttachmentCreate(d *schema.ResourceData, meta in
 	}
 
 	log.Printf("[DEBUG] Creating new InterconnectAttachment: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating InterconnectAttachment: %s", err)
 	}
@@ -267,66 +205,44 @@ func resourceComputeInterconnectAttachmentRead(d *schema.ResourceData, meta inte
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeInterconnectAttachment %q", d.Id()))
 	}
 
+	if err := d.Set("cloud_router_ip_address", flattenComputeInterconnectAttachmentCloudRouterIpAddress(res["cloudRouterIpAddress"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("customer_router_ip_address", flattenComputeInterconnectAttachmentCustomerRouterIpAddress(res["customerRouterIpAddress"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("interconnect", flattenComputeInterconnectAttachmentInterconnect(res["interconnect"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("description", flattenComputeInterconnectAttachmentDescription(res["description"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("private_interconnect_info", flattenComputeInterconnectAttachmentPrivateInterconnectInfo(res["privateInterconnectInfo"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("google_reference_id", flattenComputeInterconnectAttachmentGoogleReferenceId(res["googleReferenceId"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("router", flattenComputeInterconnectAttachmentRouter(res["router"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("creation_timestamp", flattenComputeInterconnectAttachmentCreationTimestamp(res["creationTimestamp"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("name", flattenComputeInterconnectAttachmentName(res["name"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("region", flattenComputeInterconnectAttachmentRegion(res["region"])); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
+		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
+	}
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
 	if err := d.Set("project", project); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-
-	if err := d.Set("cloud_router_ip_address", flattenComputeInterconnectAttachmentCloudRouterIpAddress(res["cloudRouterIpAddress"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("customer_router_ip_address", flattenComputeInterconnectAttachmentCustomerRouterIpAddress(res["customerRouterIpAddress"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("interconnect", flattenComputeInterconnectAttachmentInterconnect(res["interconnect"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("description", flattenComputeInterconnectAttachmentDescription(res["description"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("edge_availability_domain", flattenComputeInterconnectAttachmentEdgeAvailabilityDomain(res["edgeAvailabilityDomain"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("pairing_key", flattenComputeInterconnectAttachmentPairingKey(res["pairingKey"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("partner_asn", flattenComputeInterconnectAttachmentPartnerAsn(res["partnerAsn"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("private_interconnect_info", flattenComputeInterconnectAttachmentPrivateInterconnectInfo(res["privateInterconnectInfo"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("type", flattenComputeInterconnectAttachmentType(res["type"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("state", flattenComputeInterconnectAttachmentState(res["state"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("google_reference_id", flattenComputeInterconnectAttachmentGoogleReferenceId(res["googleReferenceId"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("router", flattenComputeInterconnectAttachmentRouter(res["router"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("creation_timestamp", flattenComputeInterconnectAttachmentCreationTimestamp(res["creationTimestamp"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("name", flattenComputeInterconnectAttachmentName(res["name"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("candidate_subnets", flattenComputeInterconnectAttachmentCandidateSubnets(res["candidateSubnets"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("vlan_tag8021q", flattenComputeInterconnectAttachmentVlanTag8021q(res["vlanTag8021q"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("region", flattenComputeInterconnectAttachmentRegion(res["region"], d)); err != nil {
-		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
-	}
-	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading InterconnectAttachment: %s", err)
 	}
 
@@ -343,7 +259,7 @@ func resourceComputeInterconnectAttachmentDelete(d *schema.ResourceData, meta in
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting InterconnectAttachment %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "InterconnectAttachment")
 	}
@@ -372,9 +288,7 @@ func resourceComputeInterconnectAttachmentDelete(d *schema.ResourceData, meta in
 
 func resourceComputeInterconnectAttachmentImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/regions/(?P<region>[^/]+)/interconnectAttachments/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
-		return nil, err
-	}
+	parseImportId([]string{"projects/(?P<project>[^/]+)/regions/(?P<region>[^/]+)/interconnectAttachments/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config)
 
 	// Replace import id for the resource id
 	id, err := replaceVars(d, config, "{{name}}")
@@ -386,48 +300,33 @@ func resourceComputeInterconnectAttachmentImport(d *schema.ResourceData, meta in
 	return []*schema.ResourceData{d}, nil
 }
 
-func flattenComputeInterconnectAttachmentCloudRouterIpAddress(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentCloudRouterIpAddress(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeInterconnectAttachmentCustomerRouterIpAddress(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentCustomerRouterIpAddress(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeInterconnectAttachmentInterconnect(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentInterconnect(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeInterconnectAttachmentDescription(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentDescription(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeInterconnectAttachmentEdgeAvailabilityDomain(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenComputeInterconnectAttachmentPairingKey(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenComputeInterconnectAttachmentPartnerAsn(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenComputeInterconnectAttachmentPrivateInterconnectInfo(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentPrivateInterconnectInfo(v interface{}) interface{} {
 	if v == nil {
 		return nil
 	}
 	original := v.(map[string]interface{})
-	if len(original) == 0 {
-		return nil
-	}
 	transformed := make(map[string]interface{})
 	transformed["tag8021q"] =
-		flattenComputeInterconnectAttachmentPrivateInterconnectInfoTag8021q(original["tag8021q"], d)
+		flattenComputeInterconnectAttachmentPrivateInterconnectInfoTag8021q(original["tag8021q"])
 	return []interface{}{transformed}
 }
-func flattenComputeInterconnectAttachmentPrivateInterconnectInfoTag8021q(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentPrivateInterconnectInfoTag8021q(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -437,71 +336,41 @@ func flattenComputeInterconnectAttachmentPrivateInterconnectInfoTag8021q(v inter
 	return v
 }
 
-func flattenComputeInterconnectAttachmentType(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentGoogleReferenceId(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeInterconnectAttachmentState(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenComputeInterconnectAttachmentGoogleReferenceId(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenComputeInterconnectAttachmentRouter(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentRouter(v interface{}) interface{} {
 	if v == nil {
 		return v
 	}
 	return ConvertSelfLinkToV1(v.(string))
 }
 
-func flattenComputeInterconnectAttachmentCreationTimestamp(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentCreationTimestamp(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeInterconnectAttachmentName(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentName(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeInterconnectAttachmentCandidateSubnets(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenComputeInterconnectAttachmentVlanTag8021q(v interface{}, d *schema.ResourceData) interface{} {
-	// Handles the string fixed64 format
-	if strVal, ok := v.(string); ok {
-		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
-			return intVal
-		} // let terraform core handle it if we can't convert the string to an int.
-	}
-	return v
-}
-
-func flattenComputeInterconnectAttachmentRegion(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeInterconnectAttachmentRegion(v interface{}) interface{} {
 	if v == nil {
 		return v
 	}
 	return ConvertSelfLinkToV1(v.(string))
 }
 
-func expandComputeInterconnectAttachmentInterconnect(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeInterconnectAttachmentInterconnect(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeInterconnectAttachmentDescription(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeInterconnectAttachmentDescription(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeInterconnectAttachmentEdgeAvailabilityDomain(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
-	return v, nil
-}
-
-func expandComputeInterconnectAttachmentType(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
-	return v, nil
-}
-
-func expandComputeInterconnectAttachmentRouter(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeInterconnectAttachmentRouter(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	f, err := parseRegionalFieldValue("routers", v.(string), "project", "region", "zone", d, config, true)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid value for router: %s", err)
@@ -509,19 +378,11 @@ func expandComputeInterconnectAttachmentRouter(v interface{}, d TerraformResourc
 	return f.RelativeLink(), nil
 }
 
-func expandComputeInterconnectAttachmentName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeInterconnectAttachmentName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeInterconnectAttachmentCandidateSubnets(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
-	return v, nil
-}
-
-func expandComputeInterconnectAttachmentVlanTag8021q(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
-	return v, nil
-}
-
-func expandComputeInterconnectAttachmentRegion(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeInterconnectAttachmentRegion(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	f, err := parseGlobalFieldValue("regions", v.(string), "project", d, config, true)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid value for region: %s", err)

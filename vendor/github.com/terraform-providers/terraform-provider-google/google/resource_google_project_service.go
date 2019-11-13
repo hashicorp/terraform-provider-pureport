@@ -26,19 +26,13 @@ func resourceGoogleProjectService() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
-
-			"disable_dependent_services": {
-				Type:     schema.TypeBool,
-				Optional: true,
-			},
-
-			"disable_on_destroy": {
+			"disable_on_destroy": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  true,
@@ -126,7 +120,7 @@ func resourceGoogleProjectServiceDelete(d *schema.ResourceData, meta interface{}
 		return nil
 	}
 
-	if err = disableService(id.service, id.project, config, d.Get("disable_dependent_services").(bool)); err != nil {
+	if err = disableService(id.service, id.project, config); err != nil {
 		return fmt.Errorf("Error disabling service: %s", err)
 	}
 

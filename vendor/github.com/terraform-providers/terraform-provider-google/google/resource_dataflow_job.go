@@ -9,17 +9,18 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 
-	"github.com/hashicorp/terraform/helper/resource"
 	"google.golang.org/api/dataflow/v1b3"
 	"google.golang.org/api/googleapi"
 )
 
 var dataflowTerminalStatesMap = map[string]struct{}{
-	"JOB_STATE_DONE":      {},
-	"JOB_STATE_FAILED":    {},
-	"JOB_STATE_CANCELLED": {},
-	"JOB_STATE_UPDATED":   {},
-	"JOB_STATE_DRAINED":   {},
+	"JOB_STATE_DONE":       {},
+	"JOB_STATE_FAILED":     {},
+	"JOB_STATE_CANCELLED":  {},
+	"JOB_STATE_UPDATED":    {},
+	"JOB_STATE_DRAINING":   {},
+	"JOB_STATE_DRAINED":    {},
+	"JOB_STATE_CANCELLING": {},
 }
 
 func resourceDataflowJob() *schema.Resource {
@@ -29,37 +30,37 @@ func resourceDataflowJob() *schema.Resource {
 		Delete: resourceDataflowJobDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"template_gcs_path": {
+			"template_gcs_path": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"temp_gcs_location": {
+			"temp_gcs_location": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"zone": {
+			"zone": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"region": {
+			"region": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"max_workers": {
+			"max_workers": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
@@ -71,7 +72,7 @@ func resourceDataflowJob() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"on_delete": {
+			"on_delete": &schema.Schema{
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"cancel", "drain"}, false),
 				Optional:     true,
@@ -79,22 +80,15 @@ func resourceDataflowJob() *schema.Resource {
 				ForceNew:     true,
 			},
 
-			"project": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
-			},
-
-			"state": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			"service_account_email": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+			},
+
+			"state": &schema.Schema{
+				Type:     schema.TypeString,
+				Computed: true,
 			},
 		},
 	}
@@ -121,10 +115,9 @@ func resourceDataflowJobCreate(d *schema.ResourceData, meta interface{}) error {
 	params := expandStringMap(d, "parameters")
 
 	env := dataflow.RuntimeEnvironment{
-		TempLocation:        d.Get("temp_gcs_location").(string),
-		Zone:                zone,
-		MaxWorkers:          int64(d.Get("max_workers").(int)),
-		ServiceAccountEmail: d.Get("service_account_email").(string),
+		TempLocation: d.Get("temp_gcs_location").(string),
+		Zone:         zone,
+		MaxWorkers:   int64(d.Get("max_workers").(int)),
 	}
 
 	request := dataflow.CreateJobFromTemplateRequest{
@@ -134,7 +127,7 @@ func resourceDataflowJobCreate(d *schema.ResourceData, meta interface{}) error {
 		Environment: &env,
 	}
 
-	job, err := resourceDataflowJobCreateJob(config, project, region, &request)
+	job, err := createJob(config, project, region, &request)
 	if err != nil {
 		return err
 	}
@@ -158,7 +151,7 @@ func resourceDataflowJobRead(d *schema.ResourceData, meta interface{}) error {
 
 	id := d.Id()
 
-	job, err := resourceDataflowJobGetJob(config, project, region, id)
+	job, err := getJob(config, project, region, id)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Dataflow job %s", id))
 	}
@@ -191,70 +184,51 @@ func resourceDataflowJobDelete(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	id := d.Id()
-
-	requestedState, err := resourceDataflowJobMapRequestedState(d.Get("on_delete").(string))
+	requestedState, err := mapOnDelete(d.Get("on_delete").(string))
 	if err != nil {
 		return err
 	}
-
-	// Retry updating the state while the job is not ready to be canceled/drained.
-	err = resource.Retry(time.Minute*time.Duration(15), func() *resource.RetryError {
-		// To terminate a dataflow job, we update the job with a requested
-		// terminal state.
+	for _, ok := dataflowTerminalStatesMap[d.Get("state").(string)]; !ok; _, ok = dataflowTerminalStatesMap[d.Get("state").(string)] {
 		job := &dataflow.Job{
 			RequestedState: requestedState,
 		}
 
-		_, updateErr := resourceDataflowJobUpdateJob(config, project, region, id, job)
-		if updateErr != nil {
-			gerr, isGoogleErr := err.(*googleapi.Error)
-			if !isGoogleErr {
+		_, err = updateJob(config, project, region, id, job)
+		if err != nil {
+			if gerr, err_ok := err.(*googleapi.Error); !err_ok {
 				// If we have an error and it's not a google-specific error, we should go ahead and return.
-				return resource.NonRetryableError(err)
-			}
-
-			if strings.Contains(gerr.Message, "not yet ready for canceling") {
-				// Retry cancelling job if it's not ready.
-				// Sleep to avoid hitting update quota with repeated attempts.
-				time.Sleep(5 * time.Second)
-				return resource.RetryableError(err)
-			}
-
-			if strings.Contains(gerr.Message, "Job has terminated") {
-				// Job has already been terminated, skip.
-				return nil
+				return err
+			} else if err_ok && strings.Contains(gerr.Message, "not yet ready for canceling") {
+				// We'll sleep below to wait for the job to be ready to cancel.
+			} else {
+				return err
 			}
 		}
-
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-
-	// Wait for state to reach terminal state (canceled/drained/done)
-	_, ok := dataflowTerminalStatesMap[d.Get("state").(string)]
-	for !ok {
-		log.Printf("[DEBUG] Waiting for job with job state %q to terminate...", d.Get("state").(string))
-		time.Sleep(5 * time.Second)
 
 		err = resourceDataflowJobRead(d, meta)
-		if err != nil {
-			return fmt.Errorf("Error while reading job to see if it was properly terminated: %v", err)
+		postReadState := d.Get("state").(string)
+		log.Printf("[DEBUG] Job state: '%s'.", postReadState)
+		if _, ok := dataflowTerminalStatesMap[postReadState]; !ok {
+			// If we're not yet in a terminal state, we need to sleep a few seconds so we don't
+			// exhaust our update quota with repeated attempts.
+			time.Sleep(5 * time.Second)
 		}
-		_, ok = dataflowTerminalStatesMap[d.Get("state").(string)]
+		if err != nil {
+			return err
+		}
 	}
 
 	// Only remove the job from state if it's actually successfully canceled.
 	if _, ok := dataflowTerminalStatesMap[d.Get("state").(string)]; ok {
-		log.Printf("[DEBUG] Removing dataflow job with final state %q", d.Get("state").(string))
 		d.SetId("")
 		return nil
 	}
-	return fmt.Errorf("Unable to cancel the dataflow job '%s' - final state was %q.", d.Id(), d.Get("state").(string))
+
+	return fmt.Errorf("There was a problem canceling the dataflow job '%s' - the final state was %s.", d.Id(), d.Get("state").(string))
+
 }
 
-func resourceDataflowJobMapRequestedState(policy string) (string, error) {
+func mapOnDelete(policy string) (string, error) {
 	switch policy {
 	case "cancel":
 		return "JOB_STATE_CANCELLED", nil
@@ -265,21 +239,21 @@ func resourceDataflowJobMapRequestedState(policy string) (string, error) {
 	}
 }
 
-func resourceDataflowJobCreateJob(config *Config, project string, region string, request *dataflow.CreateJobFromTemplateRequest) (*dataflow.Job, error) {
+func createJob(config *Config, project string, region string, request *dataflow.CreateJobFromTemplateRequest) (*dataflow.Job, error) {
 	if region == "" {
 		return config.clientDataflow.Projects.Templates.Create(project, request).Do()
 	}
 	return config.clientDataflow.Projects.Locations.Templates.Create(project, region, request).Do()
 }
 
-func resourceDataflowJobGetJob(config *Config, project string, region string, id string) (*dataflow.Job, error) {
+func getJob(config *Config, project string, region string, id string) (*dataflow.Job, error) {
 	if region == "" {
 		return config.clientDataflow.Projects.Jobs.Get(project, id).Do()
 	}
 	return config.clientDataflow.Projects.Locations.Jobs.Get(project, region, id).Do()
 }
 
-func resourceDataflowJobUpdateJob(config *Config, project string, region string, id string, job *dataflow.Job) (*dataflow.Job, error) {
+func updateJob(config *Config, project string, region string, id string, job *dataflow.Job) (*dataflow.Job, error) {
 	if region == "" {
 		return config.clientDataflow.Projects.Jobs.Update(project, id, job).Do()
 	}

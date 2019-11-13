@@ -109,6 +109,9 @@ github.com/BurntSushi/toml
 github.com/OpenPeeDeeP/depguard
 # github.com/agext/levenshtein v1.2.2
 github.com/agext/levenshtein
+# github.com/agl/ed25519 v0.0.0-20150830182803-278e1ec8e8a6
+github.com/agl/ed25519
+github.com/agl/ed25519/edwards25519
 # github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 github.com/antihax/optional
 # github.com/apparentlymart/go-cidr v1.0.1
@@ -323,10 +326,6 @@ github.com/dimchansky/utfbom
 github.com/fatih/color
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
-# github.com/gammazero/deque v0.0.0-20180920172122-f6adf94963e4
-github.com/gammazero/deque
-# github.com/gammazero/workerpool v0.0.0-20181230203049-86a96b5d5d92
-github.com/gammazero/workerpool
 # github.com/go-critic/go-critic v0.0.0-20181204210945-ee9bf5809ead
 github.com/go-critic/go-critic/checkers
 github.com/go-critic/go-critic/checkers/internal/lintutil
@@ -592,7 +591,7 @@ github.com/hashicorp/terraform-config-inspect/tfconfig
 github.com/hashicorp/terraform-svchost
 github.com/hashicorp/terraform-svchost/auth
 github.com/hashicorp/terraform-svchost/disco
-# github.com/hashicorp/vault v1.0.1
+# github.com/hashicorp/vault v0.10.4
 github.com/hashicorp/vault/helper/compressutil
 github.com/hashicorp/vault/helper/jsonutil
 github.com/hashicorp/vault/helper/pgpkeys
@@ -608,15 +607,11 @@ github.com/jmespath/go-jmespath
 github.com/jstemmer/go-junit-report
 github.com/jstemmer/go-junit-report/formatter
 github.com/jstemmer/go-junit-report/parser
-# github.com/keybase/go-crypto v0.0.0-20181127160227-255a5089e85a
+# github.com/keybase/go-crypto v0.0.0-20161004153544-93f5b35093ba
 github.com/keybase/go-crypto/brainpool
 github.com/keybase/go-crypto/cast5
-github.com/keybase/go-crypto/curve25519
-github.com/keybase/go-crypto/ed25519
-github.com/keybase/go-crypto/ed25519/internal/edwards25519
 github.com/keybase/go-crypto/openpgp
 github.com/keybase/go-crypto/openpgp/armor
-github.com/keybase/go-crypto/openpgp/ecdh
 github.com/keybase/go-crypto/openpgp/elgamal
 github.com/keybase/go-crypto/openpgp/errors
 github.com/keybase/go-crypto/openpgp/packet
@@ -670,9 +665,6 @@ github.com/oklog/run
 github.com/op/go-logging
 # github.com/pelletier/go-toml v1.4.0
 github.com/pelletier/go-toml
-# github.com/pierrec/lz4 v2.0.5+incompatible
-github.com/pierrec/lz4
-github.com/pierrec/lz4/internal/xxh32
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/posener/complete v1.2.1
@@ -706,7 +698,7 @@ github.com/spf13/jwalterweatherman
 github.com/spf13/pflag
 # github.com/spf13/viper v1.4.0
 github.com/spf13/viper
-# github.com/stoewer/go-strcase v1.0.2
+# github.com/stoewer/go-strcase v1.1.0
 github.com/stoewer/go-strcase
 # github.com/terraform-providers/terraform-provider-aws v0.0.0-20190606212248-6d359965bb39
 github.com/terraform-providers/terraform-provider-aws/aws
@@ -787,7 +779,7 @@ github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tags
 github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/state
 github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils
 github.com/terraform-providers/terraform-provider-azurerm/version
-# github.com/terraform-providers/terraform-provider-google v0.0.0-20190430222256-f9a9636be7cd
+# github.com/terraform-providers/terraform-provider-google v1.20.0
 github.com/terraform-providers/terraform-provider-google/google
 github.com/terraform-providers/terraform-provider-google/version
 # github.com/tombuildsstuff/giovanni v0.6.0
@@ -955,7 +947,7 @@ google.golang.org/api/cloudiot/v1
 google.golang.org/api/cloudkms/v1
 google.golang.org/api/cloudresourcemanager/v1
 google.golang.org/api/cloudresourcemanager/v2beta1
-google.golang.org/api/composer/v1beta1
+google.golang.org/api/composer/v1
 google.golang.org/api/compute/v0.beta
 google.golang.org/api/compute/v1
 google.golang.org/api/container/v1
@@ -970,20 +962,19 @@ google.golang.org/api/googleapi
 google.golang.org/api/googleapi/internal/uritemplates
 google.golang.org/api/googleapi/transport
 google.golang.org/api/iam/v1
-google.golang.org/api/iamcredentials/v1
 google.golang.org/api/internal
 google.golang.org/api/iterator
 google.golang.org/api/logging/v2
 google.golang.org/api/option
 google.golang.org/api/pubsub/v1
+google.golang.org/api/redis/v1beta1
 google.golang.org/api/runtimeconfig/v1beta1
 google.golang.org/api/servicemanagement/v1
-google.golang.org/api/serviceusage/v1
+google.golang.org/api/serviceusage/v1beta1
 google.golang.org/api/sourcerepo/v1
 google.golang.org/api/spanner/v1
 google.golang.org/api/sqladmin/v1beta4
 google.golang.org/api/storage/v1
-google.golang.org/api/storagetransfer/v1
 google.golang.org/api/transport
 google.golang.org/api/transport/grpc
 google.golang.org/api/transport/http

@@ -21,23 +21,23 @@ func resourceKmsKeyRing() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"location": {
+			"location": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
-			"self_link": {
+			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -93,7 +93,7 @@ func resourceKmsKeyRingCreate(d *schema.ResourceData, meta interface{}) error {
 
 		d.SetId(keyRingId.keyRingId())
 		return nil
-	}, 30*time.Second)
+	}, time.Duration(30*time.Second))
 	if err != nil {
 		return err
 	}

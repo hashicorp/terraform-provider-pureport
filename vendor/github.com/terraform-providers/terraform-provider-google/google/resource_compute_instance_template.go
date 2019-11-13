@@ -27,7 +27,7 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 		// instance. Please attempt to maintain consistency with the
 		// resource_compute_instance schema when updating this one.
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				Computed:      true,
@@ -36,7 +36,7 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 				ValidateFunc:  validateGCPName,
 			},
 
-			"name_prefix": {
+			"name_prefix": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -53,79 +53,79 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 				},
 			},
 
-			"disk": {
+			"disk": &schema.Schema{
 				Type:     schema.TypeList,
 				Required: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"auto_delete": {
+						"auto_delete": &schema.Schema{
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  true,
 							ForceNew: true,
 						},
 
-						"boot": {
+						"boot": &schema.Schema{
 							Type:     schema.TypeBool,
 							Optional: true,
 							ForceNew: true,
 							Computed: true,
 						},
 
-						"device_name": {
+						"device_name": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
 							ForceNew: true,
 						},
 
-						"disk_name": {
+						"disk_name": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 						},
 
-						"disk_size_gb": {
+						"disk_size_gb": &schema.Schema{
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
 						},
 
-						"disk_type": {
+						"disk_type": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 							Computed: true,
 						},
 
-						"source_image": {
+						"source_image": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
 						},
 
-						"interface": {
+						"interface": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 							Computed: true,
 						},
 
-						"mode": {
+						"mode": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 							Computed: true,
 						},
 
-						"source": {
+						"source": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 						},
 
-						"type": {
+						"type": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
@@ -152,62 +152,62 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 				},
 			},
 
-			"machine_type": {
+			"machine_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"automatic_restart": {
+			"automatic_restart": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				ForceNew: true,
 				Removed:  "Use 'scheduling.automatic_restart' instead.",
 			},
 
-			"can_ip_forward": {
+			"can_ip_forward": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
 				Default:  false,
 				ForceNew: true,
 			},
 
-			"description": {
+			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"instance_description": {
+			"instance_description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"metadata": {
+			"metadata": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"metadata_startup_script": {
+			"metadata_startup_script": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"metadata_fingerprint": {
+			"metadata_fingerprint": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"network_interface": {
+			"network_interface": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"network": {
+						"network": &schema.Schema{
 							Type:             schema.TypeString,
 							Optional:         true,
 							ForceNew:         true,
@@ -215,13 +215,22 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 							DiffSuppressFunc: compareSelfLinkOrResourceName,
 						},
 
-						"network_ip": {
+						"address": &schema.Schema{
+							Type:       schema.TypeString,
+							Computed:   true, // Computed because it is set if network_ip is set.
+							Optional:   true,
+							ForceNew:   true,
+							Deprecated: "Please use network_ip",
+						},
+
+						"network_ip": &schema.Schema{
 							Type:     schema.TypeString,
+							Computed: true, // Computed because it is set if address is set.
 							Optional: true,
 							ForceNew: true,
 						},
 
-						"subnetwork": {
+						"subnetwork": &schema.Schema{
 							Type:             schema.TypeString,
 							Optional:         true,
 							ForceNew:         true,
@@ -229,53 +238,57 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 							DiffSuppressFunc: compareSelfLinkOrResourceName,
 						},
 
-						"subnetwork_project": {
+						"subnetwork_project": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
 							Computed: true,
 						},
 
-						"access_config": {
+						"access_config": &schema.Schema{
 							Type:     schema.TypeList,
 							Optional: true,
 							ForceNew: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"nat_ip": {
+									"nat_ip": &schema.Schema{
 										Type:     schema.TypeString,
 										Optional: true,
 										ForceNew: true,
 										Computed: true,
 									},
-									"network_tier": {
+									"network_tier": &schema.Schema{
 										Type:         schema.TypeString,
 										Optional:     true,
 										Computed:     true,
 										ValidateFunc: validation.StringInSlice([]string{"PREMIUM", "STANDARD"}, false),
 									},
-									"assigned_nat_ip": {
-										Type:     schema.TypeString,
-										Computed: true,
-										Removed:  "Use network_interface.access_config.nat_ip instead.",
+									// Instance templates will never have an
+									// 'assigned NAT IP', but we need this in
+									// the schema to allow us to share flatten
+									// code with an instance, which could.
+									"assigned_nat_ip": &schema.Schema{
+										Type:       schema.TypeString,
+										Computed:   true,
+										Deprecated: "Use network_interface.access_config.nat_ip instead.",
 									},
 								},
 							},
 						},
 
-						"alias_ip_range": {
+						"alias_ip_range": &schema.Schema{
 							Type:     schema.TypeList,
 							Optional: true,
 							ForceNew: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"ip_cidr_range": {
+									"ip_cidr_range": &schema.Schema{
 										Type:             schema.TypeString,
 										Required:         true,
 										ForceNew:         true,
 										DiffSuppressFunc: ipCidrRangeDiffSuppress,
 									},
-									"subnetwork_range_name": {
+									"subnetwork_range_name": &schema.Schema{
 										Type:     schema.TypeString,
 										Optional: true,
 										ForceNew: true,
@@ -283,60 +296,53 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 								},
 							},
 						},
-
-						"address": {
-							Type:     schema.TypeString,
-							Computed: true,
-							Optional: true,
-							Removed:  "Please use network_ip",
-						},
 					},
 				},
 			},
 
-			"on_host_maintenance": {
+			"on_host_maintenance": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Removed:  "Use 'scheduling.on_host_maintenance' instead.",
 			},
 
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Computed: true,
 			},
 
-			"region": {
+			"region": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Computed: true,
 			},
 
-			"scheduling": {
+			"scheduling": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"preemptible": {
+						"preemptible": &schema.Schema{
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  false,
 							ForceNew: true,
 						},
 
-						"automatic_restart": {
+						"automatic_restart": &schema.Schema{
 							Type:     schema.TypeBool,
 							Optional: true,
 							Default:  true,
 							ForceNew: true,
 						},
 
-						"on_host_maintenance": {
+						"on_host_maintenance": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
@@ -346,26 +352,26 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 				},
 			},
 
-			"self_link": {
+			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"service_account": {
+			"service_account": &schema.Schema{
 				Type:     schema.TypeList,
 				MaxItems: 1,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"email": {
+						"email": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 							Computed: true,
 							ForceNew: true,
 						},
 
-						"scopes": {
+						"scopes": &schema.Schema{
 							Type:     schema.TypeSet,
 							Required: true,
 							ForceNew: true,
@@ -381,18 +387,18 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 				},
 			},
 
-			"guest_accelerator": {
+			"guest_accelerator": &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"count": {
+						"count": &schema.Schema{
 							Type:     schema.TypeInt,
 							Required: true,
 							ForceNew: true,
 						},
-						"type": {
+						"type": &schema.Schema{
 							Type:             schema.TypeString,
 							Required:         true,
 							ForceNew:         true,
@@ -402,13 +408,13 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 				},
 			},
 
-			"min_cpu_platform": {
+			"min_cpu_platform": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"tags": {
+			"tags": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
@@ -416,12 +422,12 @@ func resourceComputeInstanceTemplate() *schema.Resource {
 				Set:      schema.HashString,
 			},
 
-			"tags_fingerprint": {
+			"tags_fingerprint": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"labels": {
+			"labels": &schema.Schema{
 				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,

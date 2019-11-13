@@ -48,8 +48,9 @@ func flattenAccessConfigs(accessConfigs []*computeBeta.AccessConfig) ([]map[stri
 	natIP := ""
 	for i, ac := range accessConfigs {
 		flattened[i] = map[string]interface{}{
-			"nat_ip":       ac.NatIP,
-			"network_tier": ac.NetworkTier,
+			"nat_ip":          ac.NatIP,
+			"network_tier":    ac.NetworkTier,
+			"assigned_nat_ip": ac.NatIP,
 		}
 		if ac.SetPublicPtr {
 			flattened[i]["public_ptr_domain_name"] = ac.PublicPtrDomainName
@@ -76,6 +77,7 @@ func flattenNetworkInterfaces(d *schema.ResourceData, config *Config, networkInt
 		region = subnet.Region
 
 		flattened[i] = map[string]interface{}{
+			"address":            iface.NetworkIP,
 			"network_ip":         iface.NetworkIP,
 			"network":            ConvertSelfLinkToV1(iface.Network),
 			"subnetwork":         ConvertSelfLinkToV1(iface.Subnetwork),
@@ -114,7 +116,7 @@ func expandAccessConfigs(configs []interface{}) []*computeBeta.AccessConfig {
 	return acs
 }
 
-func expandNetworkInterfaces(d TerraformResourceData, config *Config) ([]*computeBeta.NetworkInterface, error) {
+func expandNetworkInterfaces(d *schema.ResourceData, config *Config) ([]*computeBeta.NetworkInterface, error) {
 	configs := d.Get("network_interface").([]interface{})
 	ifaces := make([]*computeBeta.NetworkInterface, len(configs))
 	for i, raw := range configs {
@@ -122,7 +124,7 @@ func expandNetworkInterfaces(d TerraformResourceData, config *Config) ([]*comput
 
 		network := data["network"].(string)
 		subnetwork := data["subnetwork"].(string)
-		if network == "" && subnetwork == "" {
+		if (network == "" && subnetwork == "") || (network != "" && subnetwork != "") {
 			return nil, fmt.Errorf("exactly one of network or subnetwork must be provided")
 		}
 
@@ -143,6 +145,12 @@ func expandNetworkInterfaces(d TerraformResourceData, config *Config) ([]*comput
 			Subnetwork:    sf.RelativeLink(),
 			AccessConfigs: expandAccessConfigs(data["access_config"].([]interface{})),
 			AliasIpRanges: expandAliasIpRanges(data["alias_ip_range"].([]interface{})),
+		}
+
+		// address is deprecated, but address took priority over networkIP before
+		// so it should until it's removed.
+		if data["address"].(string) != "" {
+			ifaces[i].NetworkIP = data["address"].(string)
 		}
 
 	}
@@ -188,7 +196,7 @@ func flattenGuestAccelerators(accelerators []*computeBeta.AcceleratorConfig) []m
 	return acceleratorsSchema
 }
 
-func resourceInstanceTags(d TerraformResourceData) *computeBeta.Tags {
+func resourceInstanceTags(d *schema.ResourceData) *computeBeta.Tags {
 	// Calculate the tags
 	var tags *computeBeta.Tags
 	if v := d.Get("tags"); v != nil {

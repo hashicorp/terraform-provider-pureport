@@ -2,7 +2,6 @@ package google
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"log"
 
@@ -20,14 +19,14 @@ func resourceComputeRegionBackendService() *schema.Resource {
 		Delete: resourceComputeRegionBackendServiceDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateGCPName,
 			},
 
-			"health_checks": {
+			"health_checks": &schema.Schema{
 				Type:     schema.TypeSet,
 				Elem:     &schema.Schema{Type: schema.TypeString},
 				Set:      schema.HashString,
@@ -36,16 +35,16 @@ func resourceComputeRegionBackendService() *schema.Resource {
 				MaxItems: 1,
 			},
 
-			"backend": {
+			"backend": &schema.Schema{
 				Type: schema.TypeSet,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"group": {
+						"group": &schema.Schema{
 							Type:             schema.TypeString,
 							Optional:         true,
 							DiffSuppressFunc: compareSelfLinkRelativePaths,
 						},
-						"description": {
+						"description": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
@@ -55,54 +54,54 @@ func resourceComputeRegionBackendService() *schema.Resource {
 				Set:      resourceGoogleComputeRegionBackendServiceBackendHash,
 			},
 
-			"description": {
+			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"fingerprint": {
+			"fingerprint": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"project": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
-			},
-
-			"protocol": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			"session_affinity": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			"region": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"self_link": {
+			"protocol": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			"session_affinity": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+
+			"region": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+			},
+
+			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"timeout_sec": {
+			"timeout_sec": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				Computed: true,
 			},
 
-			"connection_draining_timeout_sec": {
+			"connection_draining_timeout_sec": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  0,
@@ -359,64 +358,4 @@ func flattenRegionBackends(backends []*compute.Backend) []map[string]interface{}
 	}
 
 	return result
-}
-
-func expandBackends(configured []interface{}) ([]*computeBeta.Backend, error) {
-	backends := make([]*computeBeta.Backend, 0, len(configured))
-
-	for _, raw := range configured {
-		data := raw.(map[string]interface{})
-
-		g, ok := data["group"]
-		if !ok {
-			return nil, errors.New("google_compute_backend_service.backend.group must be set")
-		}
-
-		b := computeBeta.Backend{
-			Group: g.(string),
-		}
-
-		if v, ok := data["balancing_mode"]; ok {
-			b.BalancingMode = v.(string)
-		}
-		if v, ok := data["capacity_scaler"]; ok {
-			b.CapacityScaler = v.(float64)
-			b.ForceSendFields = append(b.ForceSendFields, "CapacityScaler")
-		}
-		if v, ok := data["description"]; ok {
-			b.Description = v.(string)
-		}
-		if v, ok := data["max_rate"]; ok {
-			b.MaxRate = int64(v.(int))
-			if b.MaxRate == 0 {
-				b.NullFields = append(b.NullFields, "MaxRate")
-			}
-		}
-		if v, ok := data["max_rate_per_instance"]; ok {
-			b.MaxRatePerInstance = v.(float64)
-			if b.MaxRatePerInstance == 0 {
-				b.NullFields = append(b.NullFields, "MaxRatePerInstance")
-			}
-		}
-		if v, ok := data["max_connections"]; ok {
-			b.MaxConnections = int64(v.(int))
-			if b.MaxConnections == 0 {
-				b.NullFields = append(b.NullFields, "MaxConnections")
-			}
-		}
-		if v, ok := data["max_connections_per_instance"]; ok {
-			b.MaxConnectionsPerInstance = int64(v.(int))
-			if b.MaxConnectionsPerInstance == 0 {
-				b.NullFields = append(b.NullFields, "MaxConnectionsPerInstance")
-			}
-		}
-		if v, ok := data["max_utilization"]; ok {
-			b.MaxUtilization = v.(float64)
-			b.ForceSendFields = append(b.ForceSendFields, "MaxUtilization")
-		}
-
-		backends = append(backends, &b)
-	}
-
-	return backends, nil
 }

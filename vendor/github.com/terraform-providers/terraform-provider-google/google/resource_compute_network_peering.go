@@ -19,37 +19,37 @@ func resourceComputeNetworkPeering() *schema.Resource {
 		Delete: resourceComputeNetworkPeeringDelete,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateGCPName,
 			},
-			"network": {
+			"network": &schema.Schema{
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				ValidateFunc:     validateRegexp(peerNetworkLinkRegex),
 				DiffSuppressFunc: compareSelfLinkRelativePaths,
 			},
-			"peer_network": {
+			"peer_network": &schema.Schema{
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				ValidateFunc:     validateRegexp(peerNetworkLinkRegex),
 				DiffSuppressFunc: compareSelfLinkRelativePaths,
 			},
-			"auto_create_routes": {
+			"auto_create_routes": &schema.Schema{
 				Type:     schema.TypeBool,
 				ForceNew: true,
 				Optional: true,
 				Default:  true,
 			},
-			"state": {
+			"state": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"state_details": {
+			"state_details": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

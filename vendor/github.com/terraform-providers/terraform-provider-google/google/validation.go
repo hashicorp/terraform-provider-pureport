@@ -6,7 +6,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
@@ -14,10 +13,9 @@ import (
 
 const (
 	// Copied from the official Google Cloud auto-generated client.
-	ProjectRegex         = "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?))"
-	ProjectRegexWildCard = "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?)|-)"
-	RegionRegex          = "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
-	SubnetworkRegex      = "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
+	ProjectRegex    = "(?:(?:[-a-z0-9]{1,63}\\.)*(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?):)?(?:[0-9]{1,19}|(?:[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?))"
+	RegionRegex     = "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
+	SubnetworkRegex = "[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?"
 
 	SubnetworkLinkRegex = "projects/(" + ProjectRegex + ")/regions/(" + RegionRegex + ")/subnetworks/(" + SubnetworkRegex + ")$"
 
@@ -36,7 +34,7 @@ var (
 	// 4 and 28 since the first and last character are excluded.
 	ServiceAccountNameRegex = fmt.Sprintf(RFC1035NameTemplate, 4, 28)
 
-	ServiceAccountLinkRegexPrefix = "projects/" + ProjectRegexWildCard + "/serviceAccounts/"
+	ServiceAccountLinkRegexPrefix = "projects/" + ProjectRegex + "/serviceAccounts/"
 	PossibleServiceAccountNames   = []string{
 		AppEngineServiceAccountNameRegex,
 		ComputeServiceAccountNameRegex,
@@ -185,45 +183,6 @@ func validateProjectName() schema.SchemaValidateFunc {
 			errors = append(errors, fmt.Errorf(
 				"%q name must be 4 to 30 characters with lowercase and uppercase letters, numbers, hyphen, single-quote, double-quote, space, and exclamation point.", value))
 		}
-		return
-	}
-}
-
-func validateDuration() schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (s []string, es []error) {
-		v, ok := i.(string)
-		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be string", k))
-			return
-		}
-
-		if _, err := time.ParseDuration(v); err != nil {
-			es = append(es, fmt.Errorf("expected %s to be a duration, but parsing gave an error: %s", k, err.Error()))
-			return
-		}
-
-		return
-	}
-}
-
-// StringNotInSlice returns a SchemaValidateFunc which tests if the provided value
-// is of type string and that it matches none of the element in the invalid slice.
-// if ignorecase is true, case is ignored.
-func StringNotInSlice(invalid []string, ignoreCase bool) schema.SchemaValidateFunc {
-	return func(i interface{}, k string) (s []string, es []error) {
-		v, ok := i.(string)
-		if !ok {
-			es = append(es, fmt.Errorf("expected type of %s to be string", k))
-			return
-		}
-
-		for _, str := range invalid {
-			if v == str || (ignoreCase && strings.ToLower(v) == strings.ToLower(str)) {
-				es = append(es, fmt.Errorf("expected %s to not match any of %v, got %s", k, invalid, v))
-				return
-			}
-		}
-
 		return
 	}
 }

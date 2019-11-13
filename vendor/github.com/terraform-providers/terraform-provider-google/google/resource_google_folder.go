@@ -21,27 +21,27 @@ func resourceGoogleFolder() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			// Format is either folders/{folder_id} or organizations/{org_id}.
-			"parent": {
+			"parent": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 			// Must be unique amongst its siblings.
-			"display_name": {
+			"display_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
 			// Format is 'folders/{folder_id}.
 			// The terraform id holds the same value.
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"lifecycle_state": {
+			"lifecycle_state": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"create_time": {
+			"create_time": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -63,12 +63,8 @@ func resourceGoogleFolderCreate(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error creating folder '%s' in '%s': %s", displayName, parent, err)
 	}
 
-	opAsMap, err := ConvertToMap(op)
-	if err != nil {
-		return err
-	}
+	err = resourceManagerV2Beta1OperationWait(config.clientResourceManager, op, "creating folder")
 
-	err = resourceManagerOperationWaitTime(config, opAsMap, "creating folder", int(d.Timeout(schema.TimeoutCreate).Minutes()))
 	if err != nil {
 		return fmt.Errorf("Error creating folder '%s' in '%s': %s", displayName, parent, err)
 	}
@@ -136,12 +132,7 @@ func resourceGoogleFolderUpdate(d *schema.ResourceData, meta interface{}) error 
 			return fmt.Errorf("Error moving folder '%s' to '%s': %s", displayName, newParent, err)
 		}
 
-		opAsMap, err := ConvertToMap(op)
-		if err != nil {
-			return err
-		}
-
-		err = resourceManagerOperationWaitTime(config, opAsMap, "move folder", int(d.Timeout(schema.TimeoutCreate).Minutes()))
+		err = resourceManagerV2Beta1OperationWait(config.clientResourceManager, op, "move folder")
 		if err != nil {
 			return fmt.Errorf("Error moving folder '%s' to '%s': %s", displayName, newParent, err)
 		}

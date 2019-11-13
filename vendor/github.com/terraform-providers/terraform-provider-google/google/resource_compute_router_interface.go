@@ -21,36 +21,36 @@ func resourceComputeRouterInterface() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"router": {
+			"router": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"vpn_tunnel": {
+			"vpn_tunnel": &schema.Schema{
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: linkDiffSuppress,
 			},
 
-			"ip_range": {
+			"ip_range": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"region": {
+			"region": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,

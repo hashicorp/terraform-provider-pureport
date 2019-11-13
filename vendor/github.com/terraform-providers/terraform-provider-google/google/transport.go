@@ -3,18 +3,14 @@ package google
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
-	"time"
 
 	"google.golang.org/api/googleapi"
 )
-
-var DefaultRequestTimeout = 5 * time.Minute
 
 func isEmptyValue(v reflect.Value) bool {
 	switch v.Kind() {
@@ -35,69 +31,43 @@ func isEmptyValue(v reflect.Value) bool {
 }
 
 func sendRequest(config *Config, method, rawurl string, body map[string]interface{}) (map[string]interface{}, error) {
-	return sendRequestWithTimeout(config, method, rawurl, body, DefaultRequestTimeout)
-}
-
-func sendRequestWithTimeout(config *Config, method, rawurl string, body map[string]interface{}, timeout time.Duration) (map[string]interface{}, error) {
 	reqHeaders := make(http.Header)
 	reqHeaders.Set("User-Agent", config.userAgent)
 	reqHeaders.Set("Content-Type", "application/json")
 
-	if timeout == 0 {
-		timeout = time.Duration(1) * time.Hour
+	var buf bytes.Buffer
+	if body != nil {
+		err := json.NewEncoder(&buf).Encode(body)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	var res *http.Response
-	err := retryTimeDuration(
-		func() error {
-			var buf bytes.Buffer
-			if body != nil {
-				err := json.NewEncoder(&buf).Encode(body)
-				if err != nil {
-					return err
-				}
-			}
-
-			u, err := addQueryParams(rawurl, map[string]string{"alt": "json"})
-			if err != nil {
-				return err
-			}
-			req, err := http.NewRequest(method, u, &buf)
-			if err != nil {
-				return err
-			}
-
-			req.Header = reqHeaders
-			res, err = config.client.Do(req)
-			if err != nil {
-				return err
-			}
-
-			if err := googleapi.CheckResponse(res); err != nil {
-				googleapi.CloseBody(res)
-				return err
-			}
-
-			return nil
-		},
-		timeout,
-	)
+	u, err := addQueryParams(rawurl, map[string]string{"alt": "json"})
 	if err != nil {
 		return nil, err
 	}
 
-	if res == nil {
-		return nil, fmt.Errorf("Unable to parse server response. This is most likely a terraform problem, please file a bug at https://github.com/terraform-providers/terraform-provider-google/issues.")
+	req, err := http.NewRequest(method, u, &buf)
+	if err != nil {
+		return nil, err
 	}
-
-	// The defer call must be made outside of the retryFunc otherwise it's closed too soon.
+	req.Header = reqHeaders
+	res, err := config.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
 
 	// 204 responses will have no body, so we're going to error with "EOF" if we
 	// try to parse it. Instead, we can just return nil.
 	if res.StatusCode == 204 {
 		return nil, nil
 	}
+
 	result := make(map[string]interface{})
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 		return nil, err
@@ -121,39 +91,31 @@ func addQueryParams(rawurl string, params map[string]string) (string, error) {
 
 func replaceVars(d TerraformResourceData, config *Config, linkTmpl string) (string, error) {
 	re := regexp.MustCompile("{{([[:word:]]+)}}")
-	f, err := buildReplacementFunc(re, d, config, linkTmpl)
-	if err != nil {
-		return "", err
-	}
-	return re.ReplaceAllStringFunc(linkTmpl, f), nil
-}
-
-func buildReplacementFunc(re *regexp.Regexp, d TerraformResourceData, config *Config, linkTmpl string) (func(string) string, error) {
 	var project, region, zone string
 	var err error
 
 	if strings.Contains(linkTmpl, "{{project}}") {
 		project, err = getProject(d, config)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
 	if strings.Contains(linkTmpl, "{{region}}") {
 		region, err = getRegion(d, config)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
 	if strings.Contains(linkTmpl, "{{zone}}") {
 		zone, err = getZone(d, config)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
 
-	f := func(s string) string {
+	replaceFunc := func(s string) string {
 		m := re.FindStringSubmatch(s)[1]
 		if m == "project" {
 			return project
@@ -166,10 +128,10 @@ func buildReplacementFunc(re *regexp.Regexp, d TerraformResourceData, config *Co
 		}
 		v, ok := d.GetOk(m)
 		if ok {
-			return fmt.Sprintf("%v", v)
+			return v.(string)
 		}
 		return ""
 	}
 
-	return f, nil
+	return re.ReplaceAllStringFunc(linkTmpl, replaceFunc), nil
 }

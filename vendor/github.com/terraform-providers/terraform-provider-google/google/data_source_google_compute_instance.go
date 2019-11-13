@@ -2,7 +2,6 @@ package google
 
 import (
 	"fmt"
-
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -10,8 +9,11 @@ func dataSourceGoogleComputeInstance() *schema.Resource {
 	// Generate datasource schema from resource
 	dsSchema := datasourceSchemaFromResourceSchema(resourceComputeInstance().Schema)
 
+	// Set 'Required' schema elements
+	addRequiredFieldsToSchema(dsSchema, "name")
+
 	// Set 'Optional' schema elements
-	addOptionalFieldsToSchema(dsSchema, "name", "self_link", "project", "zone")
+	addOptionalFieldsToSchema(dsSchema, "project", "zone")
 
 	return &schema.Resource{
 		Read:   dataSourceGoogleComputeInstanceRead,

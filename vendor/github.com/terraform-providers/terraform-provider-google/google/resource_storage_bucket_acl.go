@@ -20,25 +20,25 @@ func resourceStorageBucketAcl() *schema.Resource {
 		CustomizeDiff: resourceStorageRoleEntityCustomizeDiff,
 
 		Schema: map[string]*schema.Schema{
-			"bucket": {
+			"bucket": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"default_acl": {
+			"default_acl": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"predefined_acl": {
+			"predefined_acl": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"role_entity"},
 			},
 
-			"role_entity": {
+			"role_entity": &schema.Schema{
 				Type:          schema.TypeList,
 				Optional:      true,
 				Computed:      true,
@@ -68,7 +68,7 @@ func resourceStorageRoleEntityCustomizeDiff(diff *schema.ResourceDiff, meta inte
 	if len(state) != len(conf) {
 		return nil
 	}
-	for k := range state {
+	for k, _ := range state {
 		if _, ok := conf[k]; !ok {
 			return nil
 		}
@@ -122,7 +122,7 @@ func resourceStorageBucketAclCreate(d *schema.ResourceData, meta interface{}) er
 			return fmt.Errorf("Error reading bucket %s: %v", bucket, err)
 		}
 
-		_, err = config.clientStorage.Buckets.Update(bucket,
+		res, err = config.clientStorage.Buckets.Update(bucket,
 			res).PredefinedAcl(predefined_acl).Do()
 
 		if err != nil {
@@ -175,7 +175,7 @@ func resourceStorageBucketAclCreate(d *schema.ResourceData, meta interface{}) er
 			return fmt.Errorf("Error reading bucket %s: %v", bucket, err)
 		}
 
-		_, err = config.clientStorage.Buckets.Update(bucket,
+		res, err = config.clientStorage.Buckets.Update(bucket,
 			res).PredefinedDefaultObjectAcl(default_acl).Do()
 
 		if err != nil {
@@ -297,7 +297,7 @@ func resourceStorageBucketAclUpdate(d *schema.ResourceData, meta interface{}) er
 			return fmt.Errorf("Error reading bucket %s: %v", bucket, err)
 		}
 
-		_, err = config.clientStorage.Buckets.Update(bucket,
+		res, err = config.clientStorage.Buckets.Update(bucket,
 			res).PredefinedDefaultObjectAcl(default_acl).Do()
 
 		if err != nil {

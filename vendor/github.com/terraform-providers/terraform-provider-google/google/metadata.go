@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform/helper/schema"
 	computeBeta "google.golang.org/api/compute/v0.beta"
 	"google.golang.org/api/compute/v1"
 )
@@ -110,15 +111,18 @@ func BetaMetadataUpdate(oldMDMap map[string]interface{}, newMDMap map[string]int
 	}
 }
 
-func expandComputeMetadata(m map[string]interface{}) []*compute.MetadataItems {
+// expandComputeMetadata transforms a map representing computing metadata into a list of compute.MetadataItems suitable
+// for the GCP client.
+func expandComputeMetadata(m map[string]string) []*compute.MetadataItems {
 	metadata := make([]*compute.MetadataItems, len(m))
-	// Append new metadata to existing metadata
-	for key, val := range m {
-		v := val.(string)
-		metadata = append(metadata, &compute.MetadataItems{
-			Key:   key,
-			Value: &v,
-		})
+
+	idx := 0
+	for key, value := range m {
+		// Make a copy of value as we need a ptr type; if we directly use 'value' then all items will reference the same
+		// memory address
+		vtmp := value
+		metadata[idx] = &compute.MetadataItems{Key: key, Value: &vtmp}
+		idx++
 	}
 
 	return metadata
@@ -136,15 +140,15 @@ func flattenMetadataBeta(metadata *computeBeta.Metadata) map[string]string {
 // compute.metadata rather than computeBeta.metadata as an argument. It should
 // be removed in favour of flattenMetadataBeta if/when all resources using it get
 // beta support.
-func flattenMetadata(metadata *compute.Metadata) map[string]interface{} {
-	metadataMap := make(map[string]interface{})
+func flattenMetadata(metadata *compute.Metadata) map[string]string {
+	metadataMap := make(map[string]string)
 	for _, item := range metadata.Items {
 		metadataMap[item.Key] = *item.Value
 	}
 	return metadataMap
 }
 
-func resourceInstanceMetadata(d TerraformResourceData) (*computeBeta.Metadata, error) {
+func resourceInstanceMetadata(d *schema.ResourceData) (*computeBeta.Metadata, error) {
 	m := &computeBeta.Metadata{}
 	mdMap := d.Get("metadata").(map[string]interface{})
 	if v, ok := d.GetOk("metadata_startup_script"); ok && v.(string) != "" {

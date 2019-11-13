@@ -12,27 +12,27 @@ func dataSourceGoogleComputeGlobalAddress() *schema.Resource {
 		Read: dataSourceGoogleComputeGlobalAddressRead,
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
 
-			"address": {
+			"address": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"status": {
+			"status": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"self_link": {
+			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
@@ -59,6 +59,6 @@ func dataSourceGoogleComputeGlobalAddressRead(d *schema.ResourceData, meta inter
 	d.Set("self_link", address.SelfLink)
 	d.Set("project", project)
 
-	d.SetId(strconv.FormatUint(address.Id, 10))
+	d.SetId(strconv.FormatUint(uint64(address.Id), 10))
 	return nil
 }

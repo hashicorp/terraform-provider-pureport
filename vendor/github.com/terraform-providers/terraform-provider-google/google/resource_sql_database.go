@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 
-	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"google.golang.org/api/sqladmin/v1beta4"
 )
 
 func resourceSqlDatabase() *schema.Resource {
@@ -21,37 +21,37 @@ func resourceSqlDatabase() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"instance": {
+			"instance": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"self_link": {
+			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"charset": {
+			"charset": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
 
-			"collation": {
+			"collation": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
@@ -206,10 +206,10 @@ func resourceSqlDatabaseDelete(d *schema.ResourceData, meta interface{}) error {
 	defer mutexKV.Unlock(instanceMutexKey(project, instance_name))
 
 	var op *sqladmin.Operation
-	err = retryTimeDuration(func() error {
+	err = retryTime(func() error {
 		op, err = config.clientSqlAdmin.Databases.Delete(project, instance_name, database_name).Do()
 		return err
-	}, d.Timeout(schema.TimeoutDelete))
+	}, 5 /* minutes */)
 
 	if err != nil {
 		return fmt.Errorf("Error, failed to delete"+
@@ -229,15 +229,13 @@ func resourceSqlDatabaseDelete(d *schema.ResourceData, meta interface{}) error {
 
 func resourceSqlDatabaseImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{
+	parseImportId([]string{
 		"projects/(?P<project>[^/]+)/instances/(?P<instance>[^/]+)/databases/(?P<name>[^/]+)",
 		"instances/(?P<instance>[^/]+)/databases/(?P<name>[^/]+)",
 		"(?P<project>[^/]+)/(?P<instance>[^/]+)/(?P<name>[^/]+)",
 		"(?P<instance>[^/]+)/(?P<name>[^/]+)",
 		"(?P<instance>[^/]+):(?P<name>[^/]+)",
-	}, d, config); err != nil {
-		return nil, err
-	}
+	}, d, config)
 
 	// Replace import id for the resource id
 	id, err := replaceVars(d, config, "{{instance}}:{{name}}")

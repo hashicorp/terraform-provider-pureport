@@ -18,17 +18,17 @@ func resourceProjectUsageBucket() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"bucket_name": {
+			"bucket_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"prefix": {
+			"prefix": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,

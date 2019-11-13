@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"google.golang.org/api/servicemanagement/v1"
 )
@@ -21,75 +20,74 @@ func resourceEndpointsService() *schema.Resource {
 		MigrateState:  migrateEndpointsService,
 
 		Schema: map[string]*schema.Schema{
-			"service_name": {
+			"service_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"openapi_config": {
+			"openapi_config": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				ConflictsWith: []string{"grpc_config", "protoc_output_base64"},
 			},
-			"grpc_config": {
+			"grpc_config": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"protoc_output": {
+			"protoc_output": &schema.Schema{
+				Type:       schema.TypeString,
+				Optional:   true,
+				Deprecated: "Please use protoc_output_base64 instead.",
+			},
+			"protoc_output_base64": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				Computed: true,
-				Removed:  "Please use protoc_output_base64 instead.",
 			},
-			"protoc_output_base64": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
-			"config_id": {
+			"config_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"apis": {
+			"apis": &schema.Schema{
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
+						"name": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"syntax": {
+						"syntax": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"version": {
+						"version": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"methods": {
+						"methods": &schema.Schema{
 							Type:     schema.TypeList,
 							Computed: true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"name": {
+									"name": &schema.Schema{
 										Type:     schema.TypeString,
 										Computed: true,
 									},
-									"syntax": {
+									"syntax": &schema.Schema{
 										Type:     schema.TypeString,
 										Computed: true,
 									},
-									"request_type": {
+									"request_type": &schema.Schema{
 										Type:     schema.TypeString,
 										Computed: true,
 									},
-									"response_type": {
+									"response_type": &schema.Schema{
 										Type:     schema.TypeString,
 										Computed: true,
 									},
@@ -99,20 +97,20 @@ func resourceEndpointsService() *schema.Resource {
 					},
 				},
 			},
-			"dns_address": {
+			"dns_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"endpoints": {
+			"endpoints": &schema.Schema{
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"name": {
+						"name": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
 						},
-						"address": {
+						"address": &schema.Schema{
 							Type:     schema.TypeString,
 							Computed: true,
 						},
@@ -207,6 +205,14 @@ func resourceEndpointsServiceUpdate(d *schema.ResourceData, meta interface{}) er
 		grpcConfig, gok := d.GetOk("grpc_config")
 		protocOutput, pok := d.GetOk("protoc_output_base64")
 
+		// Support conversion from raw file -> base64 until the field is totally removed.
+		if !pok {
+			protocOutput, pok = d.GetOk("protoc_output")
+			if pok {
+				protocOutput = base64.StdEncoding.EncodeToString([]byte(protocOutput.(string)))
+			}
+		}
+
 		if gok && pok {
 			source = getGRPCConfigSource(grpcConfig.(string), protocOutput.(string))
 		} else {
@@ -229,9 +235,7 @@ func resourceEndpointsServiceUpdate(d *schema.ResourceData, meta interface{}) er
 		return err
 	}
 	var serviceConfig servicemanagement.SubmitConfigSourceResponse
-	if err := json.Unmarshal(s, &serviceConfig); err != nil {
-		return err
-	}
+	json.Unmarshal(s, &serviceConfig)
 
 	// Next, we create a new rollout with the new config value, and wait for it to complete.
 	rolloutService := servicemanagement.NewServicesRolloutsService(config.clientServiceMan)

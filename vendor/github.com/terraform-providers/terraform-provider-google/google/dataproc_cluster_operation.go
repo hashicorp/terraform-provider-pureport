@@ -2,28 +2,65 @@ package google
 
 import (
 	"fmt"
+	"log"
+	"time"
 
+	"github.com/hashicorp/terraform/helper/resource"
 	"google.golang.org/api/dataproc/v1"
 )
 
 type DataprocClusterOperationWaiter struct {
 	Service *dataproc.Service
-	CommonOperationWaiter
+	Op      *dataproc.Operation
 }
 
-func (w *DataprocClusterOperationWaiter) QueryOp() (interface{}, error) {
-	if w == nil {
-		return nil, fmt.Errorf("Cannot query operation, it's unset or nil.")
+func (w *DataprocClusterOperationWaiter) Conf() *resource.StateChangeConf {
+	return &resource.StateChangeConf{
+		Pending: []string{"false"},
+		Target:  []string{"true"},
+		Refresh: w.RefreshFunc(),
 	}
-	return w.Service.Projects.Regions.Operations.Get(w.Op.Name).Do()
 }
 
-func dataprocClusterOperationWait(config *Config, op *dataproc.Operation, activity string, timeoutMinutes int) error {
+func (w *DataprocClusterOperationWaiter) RefreshFunc() resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		op, err := w.Service.Projects.Regions.Operations.Get(w.Op.Name).Do()
+
+		if err != nil {
+			return nil, "", err
+		}
+
+		log.Printf("[DEBUG] Got %v while polling for operation %s's 'done' status", op.Done, w.Op.Name)
+
+		return op, fmt.Sprint(op.Done), nil
+	}
+}
+
+func dataprocClusterOperationWait(config *Config, op *dataproc.Operation, activity string, timeoutMinutes, minTimeoutSeconds int) error {
+	if op.Done {
+		if op.Error != nil {
+			return fmt.Errorf("Error code %v, message: %s", op.Error.Code, op.Error.Message)
+		}
+		return nil
+	}
+
 	w := &DataprocClusterOperationWaiter{
 		Service: config.clientDataproc,
+		Op:      op,
 	}
-	if err := w.SetOp(op); err != nil {
-		return err
+
+	state := w.Conf()
+	state.Timeout = time.Duration(timeoutMinutes) * time.Minute
+	state.MinTimeout = time.Duration(minTimeoutSeconds) * time.Second
+	opRaw, err := state.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for %s: %s", activity, err)
 	}
-	return OperationWait(w, activity, timeoutMinutes)
+
+	op = opRaw.(*dataproc.Operation)
+	if op.Error != nil {
+		return fmt.Errorf("Error code %v, message: %s", op.Error.Code, op.Error.Message)
+	}
+
+	return nil
 }

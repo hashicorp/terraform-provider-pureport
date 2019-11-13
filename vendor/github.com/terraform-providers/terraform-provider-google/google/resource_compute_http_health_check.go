@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 )
 
 func resourceComputeHttpHealthCheck() *schema.Resource {
@@ -169,7 +169,7 @@ func resourceComputeHttpHealthCheckCreate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Creating new HttpHealthCheck: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating HttpHealthCheck: %s", err)
 	}
@@ -219,45 +219,44 @@ func resourceComputeHttpHealthCheckRead(d *schema.ResourceData, meta interface{}
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeHttpHealthCheck %q", d.Id()))
 	}
 
+	if err := d.Set("check_interval_sec", flattenComputeHttpHealthCheckCheckIntervalSec(res["checkIntervalSec"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("creation_timestamp", flattenComputeHttpHealthCheckCreationTimestamp(res["creationTimestamp"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("description", flattenComputeHttpHealthCheckDescription(res["description"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("healthy_threshold", flattenComputeHttpHealthCheckHealthyThreshold(res["healthyThreshold"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("host", flattenComputeHttpHealthCheckHost(res["host"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("name", flattenComputeHttpHealthCheckName(res["name"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("port", flattenComputeHttpHealthCheckPort(res["port"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("request_path", flattenComputeHttpHealthCheckRequestPath(res["requestPath"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("timeout_sec", flattenComputeHttpHealthCheckTimeoutSec(res["timeoutSec"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("unhealthy_threshold", flattenComputeHttpHealthCheckUnhealthyThreshold(res["unhealthyThreshold"])); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
+		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
+	}
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
 	if err := d.Set("project", project); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-
-	if err := d.Set("check_interval_sec", flattenComputeHttpHealthCheckCheckIntervalSec(res["checkIntervalSec"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("creation_timestamp", flattenComputeHttpHealthCheckCreationTimestamp(res["creationTimestamp"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("description", flattenComputeHttpHealthCheckDescription(res["description"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("healthy_threshold", flattenComputeHttpHealthCheckHealthyThreshold(res["healthyThreshold"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("host", flattenComputeHttpHealthCheckHost(res["host"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("name", flattenComputeHttpHealthCheckName(res["name"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("port", flattenComputeHttpHealthCheckPort(res["port"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("request_path", flattenComputeHttpHealthCheckRequestPath(res["requestPath"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("timeout_sec", flattenComputeHttpHealthCheckTimeoutSec(res["timeoutSec"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("unhealthy_threshold", flattenComputeHttpHealthCheckUnhealthyThreshold(res["unhealthyThreshold"], d)); err != nil {
-		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
-	}
-	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading HttpHealthCheck: %s", err)
 	}
 
@@ -329,7 +328,7 @@ func resourceComputeHttpHealthCheckUpdate(d *schema.ResourceData, meta interface
 	}
 
 	log.Printf("[DEBUG] Updating HttpHealthCheck %q: %#v", d.Id(), obj)
-	res, err := sendRequestWithTimeout(config, "PUT", url, obj, d.Timeout(schema.TimeoutUpdate))
+	res, err := sendRequest(config, "PUT", url, obj)
 
 	if err != nil {
 		return fmt.Errorf("Error updating HttpHealthCheck %q: %s", d.Id(), err)
@@ -366,7 +365,7 @@ func resourceComputeHttpHealthCheckDelete(d *schema.ResourceData, meta interface
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting HttpHealthCheck %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "HttpHealthCheck")
 	}
@@ -395,9 +394,7 @@ func resourceComputeHttpHealthCheckDelete(d *schema.ResourceData, meta interface
 
 func resourceComputeHttpHealthCheckImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/httpHealthChecks/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
-		return nil, err
-	}
+	parseImportId([]string{"projects/(?P<project>[^/]+)/global/httpHealthChecks/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config)
 
 	// Replace import id for the resource id
 	id, err := replaceVars(d, config, "{{name}}")
@@ -409,7 +406,7 @@ func resourceComputeHttpHealthCheckImport(d *schema.ResourceData, meta interface
 	return []*schema.ResourceData{d}, nil
 }
 
-func flattenComputeHttpHealthCheckCheckIntervalSec(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckCheckIntervalSec(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -419,15 +416,15 @@ func flattenComputeHttpHealthCheckCheckIntervalSec(v interface{}, d *schema.Reso
 	return v
 }
 
-func flattenComputeHttpHealthCheckCreationTimestamp(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckCreationTimestamp(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeHttpHealthCheckDescription(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckDescription(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeHttpHealthCheckHealthyThreshold(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckHealthyThreshold(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -437,15 +434,15 @@ func flattenComputeHttpHealthCheckHealthyThreshold(v interface{}, d *schema.Reso
 	return v
 }
 
-func flattenComputeHttpHealthCheckHost(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckHost(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeHttpHealthCheckName(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckName(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeHttpHealthCheckPort(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckPort(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -455,11 +452,11 @@ func flattenComputeHttpHealthCheckPort(v interface{}, d *schema.ResourceData) in
 	return v
 }
 
-func flattenComputeHttpHealthCheckRequestPath(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckRequestPath(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeHttpHealthCheckTimeoutSec(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckTimeoutSec(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -469,7 +466,7 @@ func flattenComputeHttpHealthCheckTimeoutSec(v interface{}, d *schema.ResourceDa
 	return v
 }
 
-func flattenComputeHttpHealthCheckUnhealthyThreshold(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeHttpHealthCheckUnhealthyThreshold(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -479,38 +476,38 @@ func flattenComputeHttpHealthCheckUnhealthyThreshold(v interface{}, d *schema.Re
 	return v
 }
 
-func expandComputeHttpHealthCheckCheckIntervalSec(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckCheckIntervalSec(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckDescription(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckDescription(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckHealthyThreshold(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckHealthyThreshold(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckHost(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckHost(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckPort(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckPort(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckRequestPath(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckRequestPath(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckTimeoutSec(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckTimeoutSec(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeHttpHealthCheckUnhealthyThreshold(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeHttpHealthCheckUnhealthyThreshold(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }

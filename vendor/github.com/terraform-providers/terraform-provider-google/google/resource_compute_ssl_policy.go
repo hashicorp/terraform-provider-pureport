@@ -22,7 +22,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 )
 
 func sslPolicyCustomizeDiff(diff *schema.ResourceDiff, v interface{}) error {
@@ -62,7 +62,6 @@ func resourceComputeSslPolicy() *schema.Resource {
 			Update: schema.DefaultTimeout(240 * time.Second),
 			Delete: schema.DefaultTimeout(240 * time.Second),
 		},
-
 		CustomizeDiff: sslPolicyCustomizeDiff,
 
 		Schema: map[string]*schema.Schema{
@@ -167,7 +166,7 @@ func resourceComputeSslPolicyCreate(d *schema.ResourceData, meta interface{}) er
 	}
 
 	log.Printf("[DEBUG] Creating new SslPolicy: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating SslPolicy: %s", err)
 	}
@@ -217,39 +216,38 @@ func resourceComputeSslPolicyRead(d *schema.ResourceData, meta interface{}) erro
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeSslPolicy %q", d.Id()))
 	}
 
+	if err := d.Set("creation_timestamp", flattenComputeSslPolicyCreationTimestamp(res["creationTimestamp"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("description", flattenComputeSslPolicyDescription(res["description"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("name", flattenComputeSslPolicyName(res["name"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("profile", flattenComputeSslPolicyProfile(res["profile"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("min_tls_version", flattenComputeSslPolicyMinTlsVersion(res["minTlsVersion"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("enabled_features", flattenComputeSslPolicyEnabledFeatures(res["enabledFeatures"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("custom_features", flattenComputeSslPolicyCustomFeatures(res["customFeatures"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("fingerprint", flattenComputeSslPolicyFingerprint(res["fingerprint"])); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
+		return fmt.Errorf("Error reading SslPolicy: %s", err)
+	}
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
 	if err := d.Set("project", project); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-
-	if err := d.Set("creation_timestamp", flattenComputeSslPolicyCreationTimestamp(res["creationTimestamp"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("description", flattenComputeSslPolicyDescription(res["description"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("name", flattenComputeSslPolicyName(res["name"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("profile", flattenComputeSslPolicyProfile(res["profile"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("min_tls_version", flattenComputeSslPolicyMinTlsVersion(res["minTlsVersion"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("enabled_features", flattenComputeSslPolicyEnabledFeatures(res["enabledFeatures"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("custom_features", flattenComputeSslPolicyCustomFeatures(res["customFeatures"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("fingerprint", flattenComputeSslPolicyFingerprint(res["fingerprint"], d)); err != nil {
-		return fmt.Errorf("Error reading SslPolicy: %s", err)
-	}
-	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading SslPolicy: %s", err)
 	}
 
@@ -260,6 +258,18 @@ func resourceComputeSslPolicyUpdate(d *schema.ResourceData, meta interface{}) er
 	config := meta.(*Config)
 
 	obj := make(map[string]interface{})
+	descriptionProp, err := expandComputeSslPolicyDescription(d.Get("description"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("description"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, descriptionProp)) {
+		obj["description"] = descriptionProp
+	}
+	nameProp, err := expandComputeSslPolicyName(d.Get("name"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("name"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, nameProp)) {
+		obj["name"] = nameProp
+	}
 	profileProp, err := expandComputeSslPolicyProfile(d.Get("profile"), d, config)
 	if err != nil {
 		return err
@@ -280,9 +290,6 @@ func resourceComputeSslPolicyUpdate(d *schema.ResourceData, meta interface{}) er
 	}
 
 	obj, err = resourceComputeSslPolicyUpdateEncoder(d, meta, obj)
-	if err != nil {
-		return err
-	}
 
 	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/sslPolicies/{{name}}")
 	if err != nil {
@@ -290,7 +297,7 @@ func resourceComputeSslPolicyUpdate(d *schema.ResourceData, meta interface{}) er
 	}
 
 	log.Printf("[DEBUG] Updating SslPolicy %q: %#v", d.Id(), obj)
-	res, err := sendRequestWithTimeout(config, "PATCH", url, obj, d.Timeout(schema.TimeoutUpdate))
+	res, err := sendRequest(config, "PATCH", url, obj)
 
 	if err != nil {
 		return fmt.Errorf("Error updating SslPolicy %q: %s", d.Id(), err)
@@ -327,7 +334,7 @@ func resourceComputeSslPolicyDelete(d *schema.ResourceData, meta interface{}) er
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting SslPolicy %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "SslPolicy")
 	}
@@ -356,9 +363,7 @@ func resourceComputeSslPolicyDelete(d *schema.ResourceData, meta interface{}) er
 
 func resourceComputeSslPolicyImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/sslPolicies/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
-		return nil, err
-	}
+	parseImportId([]string{"projects/(?P<project>[^/]+)/global/sslPolicies/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config)
 
 	// Replace import id for the resource id
 	id, err := replaceVars(d, config, "{{name}}")
@@ -370,61 +375,61 @@ func resourceComputeSslPolicyImport(d *schema.ResourceData, meta interface{}) ([
 	return []*schema.ResourceData{d}, nil
 }
 
-func flattenComputeSslPolicyCreationTimestamp(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyCreationTimestamp(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslPolicyDescription(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyDescription(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslPolicyName(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyName(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslPolicyProfile(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyProfile(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslPolicyMinTlsVersion(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyMinTlsVersion(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeSslPolicyEnabledFeatures(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyEnabledFeatures(v interface{}) interface{} {
 	if v == nil {
 		return v
 	}
 	return schema.NewSet(schema.HashString, v.([]interface{}))
 }
 
-func flattenComputeSslPolicyCustomFeatures(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyCustomFeatures(v interface{}) interface{} {
 	if v == nil {
 		return v
 	}
 	return schema.NewSet(schema.HashString, v.([]interface{}))
 }
 
-func flattenComputeSslPolicyFingerprint(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeSslPolicyFingerprint(v interface{}) interface{} {
 	return v
 }
 
-func expandComputeSslPolicyDescription(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslPolicyDescription(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeSslPolicyName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslPolicyName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeSslPolicyProfile(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslPolicyProfile(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeSslPolicyMinTlsVersion(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslPolicyMinTlsVersion(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeSslPolicyCustomFeatures(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeSslPolicyCustomFeatures(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	v = v.(*schema.Set).List()
 	return v, nil
 }

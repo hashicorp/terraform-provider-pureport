@@ -11,10 +11,9 @@ import (
 
 	"crypto/md5"
 	"encoding/base64"
-	"io/ioutil"
-
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/storage/v1"
+	"io/ioutil"
 )
 
 func resourceStorageBucketObject() *schema.Resource {
@@ -24,75 +23,74 @@ func resourceStorageBucketObject() *schema.Resource {
 		Delete: resourceStorageBucketObjectDelete,
 
 		Schema: map[string]*schema.Schema{
-			"bucket": {
+			"bucket": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"cache_control": {
+			"cache_control": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
 			},
 
-			"content_disposition": {
+			"content_disposition": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
 			},
 
-			"content_encoding": {
+			"content_encoding": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
 			},
 
-			"content_language": {
+			"content_language": &schema.Schema{
 				Type:     schema.TypeString,
 				ForceNew: true,
 				Optional: true,
 			},
 
-			"content_type": {
+			"content_type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 				Computed: true,
 			},
 
-			"content": {
+			"content": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
 				ConflictsWith: []string{"source"},
-				Sensitive:     true,
 			},
 
-			"crc32c": {
+			"crc32c": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"md5hash": {
+			"md5hash": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"predefined_acl": {
+			"predefined_acl": &schema.Schema{
 				Type:     schema.TypeString,
 				Removed:  "Please use resource \"storage_object_acl.predefined_acl\" instead.",
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"source": {
+			"source": &schema.Schema{
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
@@ -100,7 +98,7 @@ func resourceStorageBucketObject() *schema.Resource {
 			},
 
 			// Detect changes to local file or changes made outside of Terraform to the file stored on the server.
-			"detect_md5hash": {
+			"detect_md5hash": &schema.Schema{
 				Type: schema.TypeString,
 				// This field is not Computed because it needs to trigger a diff.
 				Optional: true,
@@ -139,21 +137,10 @@ func resourceStorageBucketObject() *schema.Resource {
 				},
 			},
 
-			"storage_class": {
+			"storage_class": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
-				Computed: true,
-			},
-
-			"self_link": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
-
-			// https://github.com/hashicorp/terraform/issues/19052
-			"output_name": {
-				Type:     schema.TypeString,
 				Computed: true,
 			},
 		},
@@ -172,7 +159,7 @@ func resourceStorageBucketObjectCreate(d *schema.ResourceData, meta interface{})
 	var media io.Reader
 
 	if v, ok := d.GetOk("source"); ok {
-		var err error
+		err := error(nil)
 		media, err = os.Open(v.(string))
 		if err != nil {
 			return err
@@ -247,8 +234,6 @@ func resourceStorageBucketObjectRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("content_language", res.ContentLanguage)
 	d.Set("content_type", res.ContentType)
 	d.Set("storage_class", res.StorageClass)
-	d.Set("self_link", res.SelfLink)
-	d.Set("output_name", res.Name)
 
 	d.SetId(objectGetId(res))
 
@@ -293,8 +278,6 @@ func getFileMd5Hash(filename string) string {
 
 func getContentMd5Hash(content []byte) string {
 	h := md5.New()
-	if _, err := h.Write(content); err != nil {
-		log.Printf("[WARN] Failed to compute md5 hash for content: %v", err)
-	}
+	h.Write(content)
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

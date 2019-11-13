@@ -10,7 +10,7 @@ func dataSourceGoogleIamRole() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceGoogleIamRoleRead,
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},

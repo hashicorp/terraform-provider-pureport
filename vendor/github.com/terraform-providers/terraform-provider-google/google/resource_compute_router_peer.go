@@ -21,53 +21,53 @@ func resourceComputeRouterPeer() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"router": {
+			"router": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
-			"interface": {
+			"interface": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"peer_ip_address": {
+			"peer_ip_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"peer_asn": {
+			"peer_asn": &schema.Schema{
 				Type:     schema.TypeInt,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"advertised_route_priority": {
+			"advertised_route_priority": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"ip_address": {
+			"ip_address": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"region": {
+			"region": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,

@@ -23,7 +23,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	"google.golang.org/api/compute/v1"
+	compute "google.golang.org/api/compute/v1"
 )
 
 func resourceComputeTargetTcpProxy() *schema.Resource {
@@ -122,7 +122,7 @@ func resourceComputeTargetTcpProxyCreate(d *schema.ResourceData, meta interface{
 	}
 
 	log.Printf("[DEBUG] Creating new TargetTcpProxy: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequest(config, "POST", url, obj)
 	if err != nil {
 		return fmt.Errorf("Error creating TargetTcpProxy: %s", err)
 	}
@@ -172,33 +172,32 @@ func resourceComputeTargetTcpProxyRead(d *schema.ResourceData, meta interface{})
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeTargetTcpProxy %q", d.Id()))
 	}
 
+	if err := d.Set("creation_timestamp", flattenComputeTargetTcpProxyCreationTimestamp(res["creationTimestamp"])); err != nil {
+		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
+	}
+	if err := d.Set("description", flattenComputeTargetTcpProxyDescription(res["description"])); err != nil {
+		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
+	}
+	if err := d.Set("proxy_id", flattenComputeTargetTcpProxyProxyId(res["id"])); err != nil {
+		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
+	}
+	if err := d.Set("name", flattenComputeTargetTcpProxyName(res["name"])); err != nil {
+		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
+	}
+	if err := d.Set("proxy_header", flattenComputeTargetTcpProxyProxyHeader(res["proxyHeader"])); err != nil {
+		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
+	}
+	if err := d.Set("backend_service", flattenComputeTargetTcpProxyBackendService(res["service"])); err != nil {
+		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
+	}
+	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
+		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
+	}
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
 	if err := d.Set("project", project); err != nil {
-		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
-	}
-
-	if err := d.Set("creation_timestamp", flattenComputeTargetTcpProxyCreationTimestamp(res["creationTimestamp"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
-	}
-	if err := d.Set("description", flattenComputeTargetTcpProxyDescription(res["description"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
-	}
-	if err := d.Set("proxy_id", flattenComputeTargetTcpProxyProxyId(res["id"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
-	}
-	if err := d.Set("name", flattenComputeTargetTcpProxyName(res["name"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
-	}
-	if err := d.Set("proxy_header", flattenComputeTargetTcpProxyProxyHeader(res["proxyHeader"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
-	}
-	if err := d.Set("backend_service", flattenComputeTargetTcpProxyBackendService(res["service"], d)); err != nil {
-		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
-	}
-	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading TargetTcpProxy: %s", err)
 	}
 
@@ -223,7 +222,7 @@ func resourceComputeTargetTcpProxyUpdate(d *schema.ResourceData, meta interface{
 		if err != nil {
 			return err
 		}
-		res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutUpdate))
+		res, err := sendRequest(config, "POST", url, obj)
 		if err != nil {
 			return fmt.Errorf("Error updating TargetTcpProxy %q: %s", d.Id(), err)
 		}
@@ -261,7 +260,7 @@ func resourceComputeTargetTcpProxyUpdate(d *schema.ResourceData, meta interface{
 		if err != nil {
 			return err
 		}
-		res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutUpdate))
+		res, err := sendRequest(config, "POST", url, obj)
 		if err != nil {
 			return fmt.Errorf("Error updating TargetTcpProxy %q: %s", d.Id(), err)
 		}
@@ -302,7 +301,7 @@ func resourceComputeTargetTcpProxyDelete(d *schema.ResourceData, meta interface{
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting TargetTcpProxy %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+	res, err := sendRequest(config, "DELETE", url, obj)
 	if err != nil {
 		return handleNotFoundError(err, d, "TargetTcpProxy")
 	}
@@ -331,9 +330,7 @@ func resourceComputeTargetTcpProxyDelete(d *schema.ResourceData, meta interface{
 
 func resourceComputeTargetTcpProxyImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/targetTcpProxies/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
-		return nil, err
-	}
+	parseImportId([]string{"projects/(?P<project>[^/]+)/global/targetTcpProxies/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config)
 
 	// Replace import id for the resource id
 	id, err := replaceVars(d, config, "{{name}}")
@@ -345,15 +342,15 @@ func resourceComputeTargetTcpProxyImport(d *schema.ResourceData, meta interface{
 	return []*schema.ResourceData{d}, nil
 }
 
-func flattenComputeTargetTcpProxyCreationTimestamp(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetTcpProxyCreationTimestamp(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetTcpProxyDescription(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetTcpProxyDescription(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetTcpProxyProxyId(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetTcpProxyProxyId(v interface{}) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -363,34 +360,34 @@ func flattenComputeTargetTcpProxyProxyId(v interface{}, d *schema.ResourceData) 
 	return v
 }
 
-func flattenComputeTargetTcpProxyName(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetTcpProxyName(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetTcpProxyProxyHeader(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetTcpProxyProxyHeader(v interface{}) interface{} {
 	return v
 }
 
-func flattenComputeTargetTcpProxyBackendService(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeTargetTcpProxyBackendService(v interface{}) interface{} {
 	if v == nil {
 		return v
 	}
 	return ConvertSelfLinkToV1(v.(string))
 }
 
-func expandComputeTargetTcpProxyDescription(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeTargetTcpProxyDescription(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeTargetTcpProxyName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeTargetTcpProxyName(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeTargetTcpProxyProxyHeader(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeTargetTcpProxyProxyHeader(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
-func expandComputeTargetTcpProxyBackendService(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeTargetTcpProxyBackendService(v interface{}, d *schema.ResourceData, config *Config) (interface{}, error) {
 	f, err := parseGlobalFieldValue("backendServices", v.(string), "project", d, config, true)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid value for backend_service: %s", err)

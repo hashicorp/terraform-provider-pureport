@@ -14,15 +14,15 @@ func dataSourceGoogleKmsSecret() *schema.Resource {
 	return &schema.Resource{
 		Read: dataSourceGoogleKmsSecretRead,
 		Schema: map[string]*schema.Schema{
-			"crypto_key": {
+			"crypto_key": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"ciphertext": {
+			"ciphertext": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"plaintext": {
+			"plaintext": &schema.Schema{
 				Type:      schema.TypeString,
 				Computed:  true,
 				Sensitive: true,

@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"time"
 
-	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"github.com/hashicorp/terraform/helper/resource"
+	"google.golang.org/api/googleapi"
+	"google.golang.org/api/sqladmin/v1beta4"
 )
 
 type SqlAdminOperationWaiter struct {
@@ -14,101 +17,29 @@ type SqlAdminOperationWaiter struct {
 	Project string
 }
 
-func (w *SqlAdminOperationWaiter) State() string {
-	if w == nil {
-		return "Operation Waiter is nil!"
-	}
+func (w *SqlAdminOperationWaiter) RefreshFunc() resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		log.Printf("[DEBUG] self_link: %s", w.Op.SelfLink)
+		op, err := w.Service.Operations.Get(w.Project, w.Op.Name).Do()
 
-	if w.Op == nil {
-		return "Operation is nil!"
-	}
+		if e, ok := err.(*googleapi.Error); ok && (e.Code == 429 || e.Code == 503) {
+			return w.Op, "PENDING", nil
+		} else if err != nil {
+			return nil, "", err
+		}
 
-	return w.Op.Status
+		log.Printf("[DEBUG] Got %q when asking for operation %q", op.Status, w.Op.Name)
+
+		return op, op.Status, nil
+	}
 }
 
-func (w *SqlAdminOperationWaiter) Error() error {
-	if w != nil && w.Op != nil && w.Op.Error != nil {
-		return SqlAdminOperationError(*w.Op.Error)
+func (w *SqlAdminOperationWaiter) Conf() *resource.StateChangeConf {
+	return &resource.StateChangeConf{
+		Pending: []string{"PENDING", "RUNNING"},
+		Target:  []string{"DONE"},
+		Refresh: w.RefreshFunc(),
 	}
-	return nil
-}
-
-func (w *SqlAdminOperationWaiter) SetOp(op interface{}) error {
-	if op == nil {
-		// Starting as a log statement, this may be a useful error in the future
-		log.Printf("[DEBUG] attempted to set nil op")
-	}
-
-	sqlOp, ok := op.(*sqladmin.Operation)
-	w.Op = sqlOp
-	if !ok {
-		return fmt.Errorf("Unable to set operation. Bad type!")
-	}
-
-	return nil
-}
-
-func (w *SqlAdminOperationWaiter) QueryOp() (interface{}, error) {
-	if w == nil {
-		return nil, fmt.Errorf("Cannot query operation, waiter is unset or nil.")
-	}
-
-	if w.Op == nil {
-		return nil, fmt.Errorf("Cannot query operation, it's unset or nil.")
-	}
-
-	if w.Service == nil {
-		return nil, fmt.Errorf("Cannot query operation, service is nil.")
-	}
-
-	var op interface{}
-	var err error
-	err = retryTimeDuration(
-		func() error {
-			op, err = w.Service.Operations.Get(w.Project, w.Op.Name).Do()
-			return err
-		},
-
-		DefaultRequestTimeout,
-	)
-
-	return op, err
-}
-
-func (w *SqlAdminOperationWaiter) OpName() string {
-	if w == nil {
-		return "<nil waiter>"
-	}
-
-	if w.Op == nil {
-		return "<nil op>"
-	}
-
-	return w.Op.Name
-}
-
-func (w *SqlAdminOperationWaiter) PendingStates() []string {
-	return []string{"PENDING", "RUNNING"}
-}
-
-func (w *SqlAdminOperationWaiter) TargetStates() []string {
-	return []string{"DONE"}
-}
-
-func sqladminOperationWait(config *Config, op *sqladmin.Operation, project, activity string) error {
-	return sqladminOperationWaitTime(config, op, project, activity, 10)
-}
-
-func sqladminOperationWaitTime(config *Config, op *sqladmin.Operation, project, activity string, timeoutMinutes int) error {
-	w := &SqlAdminOperationWaiter{
-		Service: config.clientSqlAdmin,
-		Op:      op,
-		Project: project,
-	}
-	if err := w.SetOp(op); err != nil {
-		return err
-	}
-	return OperationWait(w, activity, timeoutMinutes)
 }
 
 // SqlAdminOperationError wraps sqladmin.OperationError and implements the
@@ -123,4 +54,39 @@ func (e SqlAdminOperationError) Error() string {
 	}
 
 	return buf.String()
+}
+
+func sqladminOperationWait(config *Config, op *sqladmin.Operation, project, activity string) error {
+	return sqladminOperationWaitTime(config, op, project, activity, 10)
+}
+
+func sqladminOperationWaitTime(config *Config, op *sqladmin.Operation, project, activity string, timeoutMinutes int) error {
+	if op.Status == "DONE" {
+		if op.Error != nil {
+			return SqlAdminOperationError(*op.Error)
+		}
+		return nil
+	}
+
+	w := &SqlAdminOperationWaiter{
+		Service: config.clientSqlAdmin,
+		Op:      op,
+		Project: project,
+	}
+
+	state := w.Conf()
+	state.Timeout = time.Duration(timeoutMinutes) * time.Minute
+	state.MinTimeout = 2 * time.Second
+	state.Delay = 5 * time.Second
+	opRaw, err := state.WaitForState()
+	if err != nil {
+		return fmt.Errorf("Error waiting for %s (op %s): %s", activity, op.Name, err)
+	}
+
+	op = opRaw.(*sqladmin.Operation)
+	if op.Error != nil {
+		return SqlAdminOperationError(*op.Error)
+	}
+
+	return nil
 }

@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	sqladmin "google.golang.org/api/sqladmin/v1beta4"
+	"google.golang.org/api/sqladmin/v1beta4"
 )
 
 func resourceSqlSslCert() *schema.Resource {
@@ -17,57 +17,50 @@ func resourceSqlSslCert() *schema.Resource {
 		SchemaVersion: 1,
 
 		Schema: map[string]*schema.Schema{
-			"common_name": {
+			"common_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"instance": {
+			"instance": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
 			},
 
-			"project": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-				ForceNew: true,
-			},
-
-			"cert": {
+			"cert": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"cert_serial_number": {
+			"cert_serial_number": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"create_time": {
+			"create_time": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"expiration_time": {
+			"expiration_time": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"private_key": {
+			"private_key": &schema.Schema{
 				Type:      schema.TypeString,
 				Computed:  true,
 				Sensitive: true,
 			},
 
-			"server_ca_cert": {
+			"server_ca_cert": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"sha1_fingerprint": {
+			"sha1_fingerprint": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
@@ -140,7 +133,6 @@ func resourceSqlSslCertRead(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.Set("instance", sslCerts.Instance)
-	d.Set("project", project)
 	d.Set("sha1_fingerprint", sslCerts.Sha1Fingerprint)
 	d.Set("common_name", sslCerts.CommonName)
 	d.Set("cert", sslCerts.Cert)

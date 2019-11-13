@@ -29,55 +29,55 @@ func resourceComputeSecurityPolicy() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"name": {
+			"name": &schema.Schema{
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateGCPName,
 			},
 
-			"description": {
+			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 
-			"project": {
+			"project": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
 
-			"rule": {
+			"rule": &schema.Schema{
 				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true, // If no rules are set, a default rule is added
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"action": {
+						"action": &schema.Schema{
 							Type:         schema.TypeString,
 							Required:     true,
 							ValidateFunc: validation.StringInSlice([]string{"allow", "deny(403)", "deny(404)", "deny(502)"}, false),
 						},
 
-						"priority": {
+						"priority": &schema.Schema{
 							Type:     schema.TypeInt,
 							Required: true,
 						},
 
-						"match": {
+						"match": &schema.Schema{
 							Type:     schema.TypeList,
 							Required: true,
 							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"config": {
+									"config": &schema.Schema{
 										Type:     schema.TypeList,
 										Required: true,
 										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
-												"src_ip_ranges": {
+												"src_ip_ranges": &schema.Schema{
 													Type:     schema.TypeSet,
 													Required: true,
 													MinItems: 1,
@@ -88,7 +88,7 @@ func resourceComputeSecurityPolicy() *schema.Resource {
 										},
 									},
 
-									"versioned_expr": {
+									"versioned_expr": &schema.Schema{
 										Type:         schema.TypeString,
 										Required:     true,
 										ValidateFunc: validation.StringInSlice([]string{"SRC_IPS_V1"}, false),
@@ -97,12 +97,12 @@ func resourceComputeSecurityPolicy() *schema.Resource {
 							},
 						},
 
-						"description": {
+						"description": &schema.Schema{
 							Type:     schema.TypeString,
 							Optional: true,
 						},
 
-						"preview": {
+						"preview": &schema.Schema{
 							Type:     schema.TypeBool,
 							Optional: true,
 						},
@@ -110,12 +110,12 @@ func resourceComputeSecurityPolicy() *schema.Resource {
 				},
 			},
 
-			"fingerprint": {
+			"fingerprint": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},
 
-			"self_link": {
+			"self_link": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

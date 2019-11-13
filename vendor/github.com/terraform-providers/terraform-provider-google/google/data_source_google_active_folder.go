@@ -13,15 +13,15 @@ func dataSourceGoogleActiveFolder() *schema.Resource {
 		Read: dataSourceGoogleActiveFolderRead,
 
 		Schema: map[string]*schema.Schema{
-			"parent": {
+			"parent": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"display_name": {
+			"display_name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"name": {
+			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Computed: true,
 			},

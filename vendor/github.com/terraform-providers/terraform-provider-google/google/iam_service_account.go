@@ -9,7 +9,7 @@ import (
 )
 
 var IamServiceAccountSchema = map[string]*schema.Schema{
-	"service_account_id": {
+	"service_account_id": &schema.Schema{
 		Type:         schema.TypeString,
 		Required:     true,
 		ForceNew:     true,
