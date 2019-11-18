@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -20,7 +20,7 @@ func resourceComputeTargetPool() *schema.Resource {
 		Delete: resourceComputeTargetPoolDelete,
 		Update: resourceComputeTargetPoolUpdate,
 		Importer: &schema.ResourceImporter{
-			State: schema.ImportStatePassthrough,
+			State: resourceTargetPoolStateImporter,
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -60,29 +60,18 @@ func resourceComputeTargetPool() *schema.Resource {
 			},
 
 			"instances": {
-				Type:     schema.TypeList,
+				Type:     schema.TypeSet,
 				Optional: true,
 				Computed: true,
 				ForceNew: false,
-				Elem:     &schema.Schema{Type: schema.TypeString},
-				DiffSuppressFunc: func(k, old, new string, d *schema.ResourceData) bool {
-					// instances are stored in state as "zone/name"
-					oldParts := strings.Split(old, "/")
-
-					// instances can also be specified in the config as a URL
-					if parts := instancesSelfLinkPattern.FindStringSubmatch(new); len(oldParts) == 2 && len(parts) == 4 {
-						// parts[0] = full match
-						// parts[1] = project
-						// parts[2] = zone
-						// parts[3] = instance name
-
-						oZone, oName := oldParts[0], oldParts[1]
-						nZone, nName := parts[2], parts[3]
-						if oZone == nZone && oName == nName {
-							return true
-						}
-					}
-					return false
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+					StateFunc: func(v interface{}) string {
+						return canonicalizeInstanceRef(v.(string))
+					},
+				},
+				Set: func(v interface{}) int {
+					return schema.HashString(canonicalizeInstanceRef(v.(string)))
 				},
 			},
 
@@ -115,6 +104,22 @@ func resourceComputeTargetPool() *schema.Resource {
 	}
 }
 
+func canonicalizeInstanceRef(instanceRef string) string {
+	// instances can also be specified in the config as a URL or <zone>/<project>
+	parts := instancesSelfLinkPattern.FindStringSubmatch(instanceRef)
+	// parts[0] = full match
+	// parts[1] = project
+	// parts[2] = zone
+	// parts[3] = instance name
+
+	if len(parts) < 4 {
+		return instanceRef
+	}
+
+	return fmt.Sprintf("%s/%s", parts[2], parts[3])
+	// return fmt.Sprintf("%s/%s/%s", parts[1], parts[2], parts[3])
+}
+
 // Healthchecks need to exist before being referred to from the target pool.
 func convertHealthChecks(healthChecks []interface{}, d *schema.ResourceData, config *Config) ([]string, error) {
 	if healthChecks == nil || len(healthChecks) == 0 {
@@ -131,19 +136,25 @@ func convertHealthChecks(healthChecks []interface{}, d *schema.ResourceData, con
 
 // Instances do not need to exist yet, so we simply generate URLs.
 // Instances can be full URLS or zone/name
-func convertInstancesToUrls(config *Config, project string, names []string) ([]string, error) {
-	urls := make([]string, len(names))
-	for i, name := range names {
-		if strings.HasPrefix(name, "https://www.googleapis.com/compute/v1/") {
+func convertInstancesToUrls(d *schema.ResourceData, config *Config, project string, names *schema.Set) ([]string, error) {
+	urls := make([]string, len(names.List()))
+	for i, nameI := range names.List() {
+		name := nameI.(string)
+		// assume that any URI will start with https://
+		if strings.HasPrefix(name, "https://") {
 			urls[i] = name
 		} else {
 			splitName := strings.Split(name, "/")
 			if len(splitName) != 2 {
 				return nil, fmt.Errorf("Invalid instance name, require URL or zone/name: %s", name)
 			} else {
-				urls[i] = fmt.Sprintf(
-					"https://www.googleapis.com/compute/v1/projects/%s/zones/%s/instances/%s",
-					project, splitName[0], splitName[1])
+				url, err := replaceVars(d, config, fmt.Sprintf(
+					"{{ComputeBasePath}}projects/%s/zones/%s/instances/%s",
+					project, splitName[0], splitName[1]))
+				if err != nil {
+					return nil, err
+				}
+				urls[i] = url
 			}
 		}
 	}
@@ -168,8 +179,7 @@ func resourceComputeTargetPoolCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	instanceUrls, err := convertInstancesToUrls(
-		config, project, convertStringArr(d.Get("instances").([]interface{})))
+	instanceUrls, err := convertInstancesToUrls(d, config, project, d.Get("instances").(*schema.Set))
 	if err != nil {
 		return err
 	}
@@ -197,43 +207,17 @@ func resourceComputeTargetPoolCreate(d *schema.ResourceData, meta interface{}) e
 	}
 
 	// It probably maybe worked, so store the ID now
-	d.SetId(tpool.Name)
+	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/targetPools/{{name}}")
+	if err != nil {
+		return fmt.Errorf("Error constructing id: %s", err)
+	}
+	d.SetId(id)
 
 	err = computeOperationWait(config.clientCompute, op, project, "Creating Target Pool")
 	if err != nil {
 		return err
 	}
 	return resourceComputeTargetPoolRead(d, meta)
-}
-
-func calcAddRemove(from []string, to []string) ([]string, []string) {
-	add := make([]string, 0)
-	remove := make([]string, 0)
-	for _, u := range to {
-		found := false
-		for _, v := range from {
-			if u == v {
-				found = true
-				break
-			}
-		}
-		if !found {
-			add = append(add, u)
-		}
-	}
-	for _, u := range from {
-		found := false
-		for _, v := range to {
-			if u == v {
-				found = true
-				break
-			}
-		}
-		if !found {
-			remove = append(remove, u)
-		}
-	}
-	return add, remove
 }
 
 func resourceComputeTargetPoolUpdate(d *schema.ResourceData, meta interface{}) error {
@@ -248,6 +232,8 @@ func resourceComputeTargetPoolUpdate(d *schema.ResourceData, meta interface{}) e
 	if err != nil {
 		return err
 	}
+
+	name := d.Get("name").(string)
 
 	d.Partial(true)
 
@@ -271,7 +257,7 @@ func resourceComputeTargetPoolUpdate(d *schema.ResourceData, meta interface{}) e
 			removeReq.HealthChecks[i] = &compute.HealthCheckReference{HealthCheck: v}
 		}
 		op, err := config.clientCompute.TargetPools.RemoveHealthCheck(
-			project, region, d.Id(), removeReq).Do()
+			project, region, name, removeReq).Do()
 		if err != nil {
 			return fmt.Errorf("Error updating health_check: %s", err)
 		}
@@ -287,7 +273,7 @@ func resourceComputeTargetPoolUpdate(d *schema.ResourceData, meta interface{}) e
 			addReq.HealthChecks[i] = &compute.HealthCheckReference{HealthCheck: v}
 		}
 		op, err = config.clientCompute.TargetPools.AddHealthCheck(
-			project, region, d.Id(), addReq).Do()
+			project, region, name, addReq).Do()
 		if err != nil {
 			return fmt.Errorf("Error updating health_check: %s", err)
 		}
@@ -301,27 +287,27 @@ func resourceComputeTargetPoolUpdate(d *schema.ResourceData, meta interface{}) e
 
 	if d.HasChange("instances") {
 
-		from_, to_ := d.GetChange("instances")
-		from := convertStringArr(from_.([]interface{}))
-		to := convertStringArr(to_.([]interface{}))
-		fromUrls, err := convertInstancesToUrls(config, project, from)
+		old_, new_ := d.GetChange("instances")
+		old := old_.(*schema.Set)
+		new := new_.(*schema.Set)
+
+		addUrls, err := convertInstancesToUrls(d, config, project, new.Difference(old))
 		if err != nil {
 			return err
 		}
-		toUrls, err := convertInstancesToUrls(config, project, to)
+		removeUrls, err := convertInstancesToUrls(d, config, project, old.Difference(new))
 		if err != nil {
 			return err
 		}
-		add, remove := calcAddRemove(fromUrls, toUrls)
 
 		addReq := &compute.TargetPoolsAddInstanceRequest{
-			Instances: make([]*compute.InstanceReference, len(add)),
+			Instances: make([]*compute.InstanceReference, len(addUrls)),
 		}
-		for i, v := range add {
+		for i, v := range addUrls {
 			addReq.Instances[i] = &compute.InstanceReference{Instance: v}
 		}
 		op, err := config.clientCompute.TargetPools.AddInstance(
-			project, region, d.Id(), addReq).Do()
+			project, region, name, addReq).Do()
 		if err != nil {
 			return fmt.Errorf("Error updating instances: %s", err)
 		}
@@ -331,13 +317,13 @@ func resourceComputeTargetPoolUpdate(d *schema.ResourceData, meta interface{}) e
 			return err
 		}
 		removeReq := &compute.TargetPoolsRemoveInstanceRequest{
-			Instances: make([]*compute.InstanceReference, len(remove)),
+			Instances: make([]*compute.InstanceReference, len(removeUrls)),
 		}
-		for i, v := range remove {
+		for i, v := range removeUrls {
 			removeReq.Instances[i] = &compute.InstanceReference{Instance: v}
 		}
 		op, err = config.clientCompute.TargetPools.RemoveInstance(
-			project, region, d.Id(), removeReq).Do()
+			project, region, name, removeReq).Do()
 		if err != nil {
 			return fmt.Errorf("Error updating instances: %s", err)
 		}
@@ -354,7 +340,7 @@ func resourceComputeTargetPoolUpdate(d *schema.ResourceData, meta interface{}) e
 			Target: bpool_name,
 		}
 		op, err := config.clientCompute.TargetPools.SetBackup(
-			project, region, d.Id(), tref).Do()
+			project, region, name, tref).Do()
 		if err != nil {
 			return fmt.Errorf("Error updating backup_pool: %s", err)
 		}
@@ -395,7 +381,7 @@ func resourceComputeTargetPoolRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	tpool, err := config.clientCompute.TargetPools.Get(
-		project, region, d.Id()).Do()
+		project, region, d.Get("name").(string)).Do()
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Target Pool %q", d.Get("name").(string)))
 	}
@@ -432,7 +418,7 @@ func resourceComputeTargetPoolDelete(d *schema.ResourceData, meta interface{}) e
 
 	// Delete the TargetPool
 	op, err := config.clientCompute.TargetPools.Delete(
-		project, region, d.Id()).Do()
+		project, region, d.Get("name").(string)).Do()
 	if err != nil {
 		return fmt.Errorf("Error deleting TargetPool: %s", err)
 	}
@@ -443,4 +429,25 @@ func resourceComputeTargetPoolDelete(d *schema.ResourceData, meta interface{}) e
 	}
 	d.SetId("")
 	return nil
+}
+
+func resourceTargetPoolStateImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	config := meta.(*Config)
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/regions/(?P<region>[^/]+)/targetPools/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
+		return nil, err
+	}
+
+	// Replace import id for the resource id
+	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/targetPools/{{name}}")
+	if err != nil {
+		return nil, fmt.Errorf("Error constructing id: %s", err)
+	}
+	d.SetId(id)
+
+	return []*schema.ResourceData{d}, nil
 }
