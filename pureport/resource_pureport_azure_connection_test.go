@@ -117,7 +117,7 @@ func TestResourceAzureConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 
 					resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr(resourceName, "name", "AzureExpressRouteTest"),
+						resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AzureExpressRouteTest-.*")),
 						resource.TestCheckResourceAttr(resourceName, "description", "Some random description"),
 						resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 						resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),

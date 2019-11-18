@@ -134,7 +134,7 @@ func TestResourceGoogleCloudConnection_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceGoogleCloudConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "GoogleCloudTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^GoogleCloudTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),

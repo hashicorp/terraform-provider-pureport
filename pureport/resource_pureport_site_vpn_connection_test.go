@@ -204,7 +204,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP-")
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedStatic-")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -244,7 +244,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP-")
+	connection_name := acctest.RandomWithPrefix("SiteVPN_PolicyBased-")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -265,7 +265,7 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -324,7 +324,7 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 				Config: testAccResourceSiteVPNConnectionConfig_route_based_bgp_update_router_ip(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "primary_customer_router_ip", "123.123.123.100"),
 					resource.TestCheckResourceAttr(resourceName, "secondary_customer_router_ip", "124.124.124.100"),
@@ -335,7 +335,7 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &respawn_instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedStatic"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedStatic-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", "Some Description"),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -409,7 +409,7 @@ func TestResourceSiteVPNConnection_with_ikeconfig(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -482,7 +482,7 @@ func TestResourceSiteVPNConnection_with_policy_based(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_PolicyBased"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_PolicyBased-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
