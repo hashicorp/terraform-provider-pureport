@@ -86,7 +86,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP-")
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -117,7 +117,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP-")
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -163,7 +163,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP-")
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -204,7 +204,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedStatic-")
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedStatic")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -244,7 +244,7 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("SiteVPN_PolicyBased-")
+	connection_name := acctest.RandomWithPrefix("SiteVPN_PolicyBased")
 
 	return fmt.Sprintf(format, connection_name)
 }

@@ -60,7 +60,7 @@ resource "pureport_network" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("NetworkTest-")
+	connection_name := acctest.RandomWithPrefix("NetworkTest")
 
 	return fmt.Sprintf(format, connection_name)
 }

@@ -90,7 +90,7 @@ resource "pureport_aws_connection" "basic" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest-")
+	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -117,7 +117,7 @@ resource "pureport_aws_connection" "basic" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest-")
+	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -125,7 +125,7 @@ resource "pureport_aws_connection" "basic" {
 func testAccResourceAWSConnectionConfig_basic_update_respawn() string {
 	format := testAccResourceAWSConnectionConfig_common + `
 resource "pureport_aws_connection" "basic" {
-  name = "AwsDirectConnectTest"
+  name = "%s"
   description = "AWS Basic Test"
   speed = "50"
   high_availability = false
@@ -137,8 +137,7 @@ resource "pureport_aws_connection" "basic" {
   aws_account_id = "${data.aws_caller_identity.current.account_id}"
 }
 `
-
-	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest-")
+	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -163,8 +162,7 @@ resource "pureport_aws_connection" "updateSpeed" {
   }
 }
 `
-
-	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest-")
+	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -189,8 +187,7 @@ resource "pureport_aws_connection" "updateSpeed" {
   }
 }
 `
-
-	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest-")
+	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -225,8 +222,7 @@ resource "pureport_aws_connection" "cloudServices" {
   }
 }
 `
-
-	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest-")
+	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -263,8 +259,7 @@ resource "pureport_aws_connection" "nat_mapping" {
   }
 }
 `
-
-	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest-")
+	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
@@ -323,6 +318,7 @@ func TestResourceAWSConnection_basic(t *testing.T) {
 
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.blocks.#", "0"),
+					resource.TestCheckResourceAttr(resourceName, "nat_config.0.mappings.#", "0"),
 					resource.TestCheckResourceAttr(resourceName, "nat_config.0.pnat_cidr", ""),
 
 					resource.TestCheckResourceAttr(resourceName, "tags.Environment", "tf-test"),

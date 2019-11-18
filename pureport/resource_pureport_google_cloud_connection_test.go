@@ -107,9 +107,9 @@ resource "pureport_google_cloud_connection" "main" {
 }
 `
 
-	router_name := acctest.RandomWithPrefix("router-")
-	interconnect_name := acctest.RandomWithPrefix("interconnect-")
-	connection_name := acctest.RandomWithPrefix("GoogleCloudTest-")
+	router_name := acctest.RandomWithPrefix("router")
+	interconnect_name := acctest.RandomWithPrefix("interconnect")
+	connection_name := acctest.RandomWithPrefix("GoogleCloudTest")
 	environment_name := "dev1"
 
 	if testEnvironmentName == "Production" {

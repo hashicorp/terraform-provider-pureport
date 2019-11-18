@@ -95,7 +95,7 @@ resource "pureport_azure_connection" "main" {
 }
 `
 
-	connection_name := acctest.RandomWithPrefix("AzureExpressRouteTest-")
+	connection_name := acctest.RandomWithPrefix("AzureExpressRouteTest")
 
 	return fmt.Sprintf(format, connection_name)
 }
