@@ -19,12 +19,95 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"google.golang.org/api/compute/v1"
 )
+
+// Whether the port should be set or not
+func validatePortSpec(diff *schema.ResourceDiff, blockName string) error {
+	block := diff.Get(blockName + ".0").(map[string]interface{})
+	portSpec := block["port_specification"]
+	portName := block["port_name"]
+	port := block["port"]
+
+	hasPort := (port != nil && port != 0)
+	noName := (portName == nil || portName == "")
+
+	if portSpec == "USE_NAMED_PORT" && hasPort {
+		return fmt.Errorf("Error in %s: port cannot be specified when using port_specification USE_NAMED_PORT.", blockName)
+	}
+	if portSpec == "USE_NAMED_PORT" && noName {
+		return fmt.Errorf("Error in %s: Must specify port_name when using USE_NAMED_PORT as port_specification.", blockName)
+	}
+
+	if portSpec == "USE_SERVING_PORT" && hasPort {
+		return fmt.Errorf("Error in %s: port cannot be specified when using port_specification USE_SERVING_PORT.", blockName)
+	}
+	if portSpec == "USE_SERVING_PORT" && !noName {
+		return fmt.Errorf("Error in %s: port_name cannot be specified when using port_specification USE_SERVING_PORT.", blockName)
+	}
+
+	return nil
+}
+
+func healthCheckCustomizeDiff(diff *schema.ResourceDiff, v interface{}) error {
+	if diff.Get("http_health_check") != nil {
+		return validatePortSpec(diff, "http_health_check")
+	}
+	if diff.Get("https_health_check") != nil {
+		return validatePortSpec(diff, "https_health_check")
+	}
+	if diff.Get("http2_health_check") != nil {
+		return validatePortSpec(diff, "http2_health_check")
+	}
+	if diff.Get("tcp_health_check") != nil {
+		return validatePortSpec(diff, "tcp_health_check")
+	}
+	if diff.Get("ssl_health_check") != nil {
+		return validatePortSpec(diff, "ssl_health_check")
+	}
+
+	return nil
+}
+
+func portDiffSuppress(k, old, new string, _ *schema.ResourceData) bool {
+	b := strings.Split(k, ".")
+	if len(b) > 2 {
+		attr := b[2]
+
+		if attr == "port" {
+			var defaultPort int64
+
+			blockType := b[0]
+
+			switch blockType {
+			case "http_health_check":
+				defaultPort = 80
+			case "https_health_check":
+				defaultPort = 443
+			case "http2_health_check":
+				defaultPort = 443
+			case "tcp_health_check":
+				defaultPort = 80
+			case "ssl_health_check":
+				defaultPort = 443
+			}
+
+			oldPort, _ := strconv.Atoi(old)
+			newPort, _ := strconv.Atoi(new)
+
+			if int64(oldPort) == defaultPort && newPort == 0 {
+				return true
+			}
+		}
+	}
+
+	return false
+}
 
 func resourceComputeHealthCheck() *schema.Resource {
 	return &schema.Resource{
@@ -38,174 +121,451 @@ func resourceComputeHealthCheck() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(240 * time.Second),
-			Update: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(4 * time.Minute),
+			Update: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
+
+		CustomizeDiff: healthCheckCustomizeDiff,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `Name of the resource. Provided by the client when the resource is
+created. The name must be 1-63 characters long, and comply with
+RFC1035.  Specifically, the name must be 1-63 characters long and
+match the regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means
+the first character must be a lowercase letter, and all following
+characters must be a dash, lowercase letter, or digit, except the
+last character, which cannot be a dash.`,
 			},
 			"check_interval_sec": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  5,
+				Description: `How often (in seconds) to send a health check. The default value is 5
+seconds.`,
+				Default: 5,
 			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Description: `An optional description of this resource. Provide this property when
+you create the resource.`,
 			},
 			"healthy_threshold": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  2,
+				Description: `A so-far unhealthy instance will be marked healthy after this many
+consecutive successes. The default value is 2.`,
+				Default: 2,
+			},
+			"http2_health_check": {
+				Type:             schema.TypeList,
+				Optional:         true,
+				DiffSuppressFunc: portDiffSuppress,
+				Description:      `A nested object resource`,
+				MaxItems:         1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"host": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `The value of the host header in the HTTP2 health check request.
+If left empty (default value), the public IP on behalf of which this health
+check is performed will be used.`,
+							AtLeastOneOf: []string{"http2_health_check.0.host", "http2_health_check.0.request_path", "http2_health_check.0.response", "http2_health_check.0.port", "http2_health_check.0.port_name", "http2_health_check.0.proxy_header", "http2_health_check.0.port_specification"},
+						},
+						"port": {
+							Type:     schema.TypeInt,
+							Optional: true,
+							Description: `The TCP port number for the HTTP2 health check request.
+The default value is 443.`,
+							AtLeastOneOf: []string{"http2_health_check.0.host", "http2_health_check.0.request_path", "http2_health_check.0.response", "http2_health_check.0.port", "http2_health_check.0.port_name", "http2_health_check.0.proxy_header", "http2_health_check.0.port_specification"},
+						},
+						"port_name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `Port name as defined in InstanceGroup#NamedPort#name. If both port and
+port_name are defined, port takes precedence.`,
+							AtLeastOneOf: []string{"http2_health_check.0.host", "http2_health_check.0.request_path", "http2_health_check.0.response", "http2_health_check.0.port", "http2_health_check.0.port_name", "http2_health_check.0.proxy_header", "http2_health_check.0.port_specification"},
+						},
+						"port_specification": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"USE_FIXED_PORT", "USE_NAMED_PORT", "USE_SERVING_PORT", ""}, false),
+							Description: `Specifies how port is selected for health checking, can be one of the
+following values:
+
+  * 'USE_FIXED_PORT': The port number in 'port' is used for health checking.
+
+  * 'USE_NAMED_PORT': The 'portName' is used for health checking.
+
+  * 'USE_SERVING_PORT': For NetworkEndpointGroup, the port specified for each
+  network endpoint is used for health checking. For other backends, the
+  port or named port specified in the Backend Service is used for health
+  checking.
+
+If not specified, HTTP2 health check follows behavior specified in 'port' and
+'portName' fields.`,
+							AtLeastOneOf: []string{"http2_health_check.0.host", "http2_health_check.0.request_path", "http2_health_check.0.response", "http2_health_check.0.port", "http2_health_check.0.port_name", "http2_health_check.0.proxy_header", "http2_health_check.0.port_specification"},
+						},
+						"proxy_header": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
+							Description: `Specifies the type of proxy header to append before sending data to the
+backend, either NONE or PROXY_V1. The default is NONE.`,
+							Default:      "NONE",
+							AtLeastOneOf: []string{"http2_health_check.0.host", "http2_health_check.0.request_path", "http2_health_check.0.response", "http2_health_check.0.port", "http2_health_check.0.port_name", "http2_health_check.0.proxy_header", "http2_health_check.0.port_specification"},
+						},
+						"request_path": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `The request path of the HTTP2 health check request.
+The default value is /.`,
+							Default:      "/",
+							AtLeastOneOf: []string{"http2_health_check.0.host", "http2_health_check.0.request_path", "http2_health_check.0.response", "http2_health_check.0.port", "http2_health_check.0.port_name", "http2_health_check.0.proxy_header", "http2_health_check.0.port_specification"},
+						},
+						"response": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `The bytes to match against the beginning of the response data. If left empty
+(the default value), any response will indicate health. The response data
+can only be ASCII.`,
+							AtLeastOneOf: []string{"http2_health_check.0.host", "http2_health_check.0.request_path", "http2_health_check.0.response", "http2_health_check.0.port", "http2_health_check.0.port_name", "http2_health_check.0.proxy_header", "http2_health_check.0.port_specification"},
+						},
+					},
+				},
+				ExactlyOneOf: []string{"http_health_check", "https_health_check", "http2_health_check", "tcp_health_check", "ssl_health_check"},
 			},
 			"http_health_check": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
+				Type:             schema.TypeList,
+				Optional:         true,
+				DiffSuppressFunc: portDiffSuppress,
+				Description:      `A nested object resource`,
+				MaxItems:         1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"host": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The value of the host header in the HTTP health check request.
+If left empty (default value), the public IP on behalf of which this health
+check is performed will be used.`,
+							AtLeastOneOf: []string{"http_health_check.0.host", "http_health_check.0.request_path", "http_health_check.0.response", "http_health_check.0.port", "http_health_check.0.port_name", "http_health_check.0.proxy_header", "http_health_check.0.port_specification"},
 						},
 						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
-							Default:  80,
+							Description: `The TCP port number for the HTTP health check request.
+The default value is 80.`,
+							AtLeastOneOf: []string{"http_health_check.0.host", "http_health_check.0.request_path", "http_health_check.0.response", "http_health_check.0.port", "http_health_check.0.port_name", "http_health_check.0.proxy_header", "http_health_check.0.port_specification"},
+						},
+						"port_name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `Port name as defined in InstanceGroup#NamedPort#name. If both port and
+port_name are defined, port takes precedence.`,
+							AtLeastOneOf: []string{"http_health_check.0.host", "http_health_check.0.request_path", "http_health_check.0.response", "http_health_check.0.port", "http_health_check.0.port_name", "http_health_check.0.proxy_header", "http_health_check.0.port_specification"},
+						},
+						"port_specification": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"USE_FIXED_PORT", "USE_NAMED_PORT", "USE_SERVING_PORT", ""}, false),
+							Description: `Specifies how port is selected for health checking, can be one of the
+following values:
+
+  * 'USE_FIXED_PORT': The port number in 'port' is used for health checking.
+
+  * 'USE_NAMED_PORT': The 'portName' is used for health checking.
+
+  * 'USE_SERVING_PORT': For NetworkEndpointGroup, the port specified for each
+  network endpoint is used for health checking. For other backends, the
+  port or named port specified in the Backend Service is used for health
+  checking.
+
+If not specified, HTTP health check follows behavior specified in 'port' and
+'portName' fields.`,
+							AtLeastOneOf: []string{"http_health_check.0.host", "http_health_check.0.request_path", "http_health_check.0.response", "http_health_check.0.port", "http_health_check.0.port_name", "http_health_check.0.proxy_header", "http_health_check.0.port_specification"},
 						},
 						"proxy_header": {
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
+							Description: `Specifies the type of proxy header to append before sending data to the
+backend, either NONE or PROXY_V1. The default is NONE.`,
 							Default:      "NONE",
+							AtLeastOneOf: []string{"http_health_check.0.host", "http_health_check.0.request_path", "http_health_check.0.response", "http_health_check.0.port", "http_health_check.0.port_name", "http_health_check.0.proxy_header", "http_health_check.0.port_specification"},
 						},
 						"request_path": {
 							Type:     schema.TypeString,
 							Optional: true,
-							Default:  "/",
+							Description: `The request path of the HTTP health check request.
+The default value is /.`,
+							Default:      "/",
+							AtLeastOneOf: []string{"http_health_check.0.host", "http_health_check.0.request_path", "http_health_check.0.response", "http_health_check.0.port", "http_health_check.0.port_name", "http_health_check.0.proxy_header", "http_health_check.0.port_specification"},
 						},
 						"response": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The bytes to match against the beginning of the response data. If left empty
+(the default value), any response will indicate health. The response data
+can only be ASCII.`,
+							AtLeastOneOf: []string{"http_health_check.0.host", "http_health_check.0.request_path", "http_health_check.0.response", "http_health_check.0.port", "http_health_check.0.port_name", "http_health_check.0.proxy_header", "http_health_check.0.port_specification"},
 						},
 					},
 				},
-				ConflictsWith: []string{"https_health_check", "tcp_health_check", "ssl_health_check"},
+				ExactlyOneOf: []string{"http_health_check", "https_health_check", "http2_health_check", "tcp_health_check", "ssl_health_check"},
 			},
 			"https_health_check": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
+				Type:             schema.TypeList,
+				Optional:         true,
+				DiffSuppressFunc: portDiffSuppress,
+				Description:      `A nested object resource`,
+				MaxItems:         1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"host": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The value of the host header in the HTTPS health check request.
+If left empty (default value), the public IP on behalf of which this health
+check is performed will be used.`,
+							AtLeastOneOf: []string{"https_health_check.0.host", "https_health_check.0.request_path", "https_health_check.0.response", "https_health_check.0.port", "https_health_check.0.port_name", "https_health_check.0.proxy_header", "https_health_check.0.port_specification"},
 						},
 						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
-							Default:  443,
+							Description: `The TCP port number for the HTTPS health check request.
+The default value is 443.`,
+							AtLeastOneOf: []string{"https_health_check.0.host", "https_health_check.0.request_path", "https_health_check.0.response", "https_health_check.0.port", "https_health_check.0.port_name", "https_health_check.0.proxy_header", "https_health_check.0.port_specification"},
+						},
+						"port_name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `Port name as defined in InstanceGroup#NamedPort#name. If both port and
+port_name are defined, port takes precedence.`,
+							AtLeastOneOf: []string{"https_health_check.0.host", "https_health_check.0.request_path", "https_health_check.0.response", "https_health_check.0.port", "https_health_check.0.port_name", "https_health_check.0.proxy_header", "https_health_check.0.port_specification"},
+						},
+						"port_specification": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"USE_FIXED_PORT", "USE_NAMED_PORT", "USE_SERVING_PORT", ""}, false),
+							Description: `Specifies how port is selected for health checking, can be one of the
+following values:
+
+  * 'USE_FIXED_PORT': The port number in 'port' is used for health checking.
+
+  * 'USE_NAMED_PORT': The 'portName' is used for health checking.
+
+  * 'USE_SERVING_PORT': For NetworkEndpointGroup, the port specified for each
+  network endpoint is used for health checking. For other backends, the
+  port or named port specified in the Backend Service is used for health
+  checking.
+
+If not specified, HTTPS health check follows behavior specified in 'port' and
+'portName' fields.`,
+							AtLeastOneOf: []string{"https_health_check.0.host", "https_health_check.0.request_path", "https_health_check.0.response", "https_health_check.0.port", "https_health_check.0.port_name", "https_health_check.0.proxy_header", "https_health_check.0.port_specification"},
 						},
 						"proxy_header": {
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
+							Description: `Specifies the type of proxy header to append before sending data to the
+backend, either NONE or PROXY_V1. The default is NONE.`,
 							Default:      "NONE",
+							AtLeastOneOf: []string{"https_health_check.0.host", "https_health_check.0.request_path", "https_health_check.0.response", "https_health_check.0.port", "https_health_check.0.port_name", "https_health_check.0.proxy_header", "https_health_check.0.port_specification"},
 						},
 						"request_path": {
 							Type:     schema.TypeString,
 							Optional: true,
-							Default:  "/",
+							Description: `The request path of the HTTPS health check request.
+The default value is /.`,
+							Default:      "/",
+							AtLeastOneOf: []string{"https_health_check.0.host", "https_health_check.0.request_path", "https_health_check.0.response", "https_health_check.0.port", "https_health_check.0.port_name", "https_health_check.0.proxy_header", "https_health_check.0.port_specification"},
 						},
 						"response": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The bytes to match against the beginning of the response data. If left empty
+(the default value), any response will indicate health. The response data
+can only be ASCII.`,
+							AtLeastOneOf: []string{"https_health_check.0.host", "https_health_check.0.request_path", "https_health_check.0.response", "https_health_check.0.port", "https_health_check.0.port_name", "https_health_check.0.proxy_header", "https_health_check.0.port_specification"},
 						},
 					},
 				},
-				ConflictsWith: []string{"http_health_check", "tcp_health_check", "ssl_health_check"},
+				ExactlyOneOf: []string{"http_health_check", "https_health_check", "http2_health_check", "tcp_health_check", "ssl_health_check"},
 			},
 			"ssl_health_check": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
+				Type:             schema.TypeList,
+				Optional:         true,
+				DiffSuppressFunc: portDiffSuppress,
+				Description:      `A nested object resource`,
+				MaxItems:         1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
-							Default:  443,
+							Description: `The TCP port number for the SSL health check request.
+The default value is 443.`,
+							AtLeastOneOf: []string{"ssl_health_check.0.request", "ssl_health_check.0.response", "ssl_health_check.0.port", "ssl_health_check.0.port_name", "ssl_health_check.0.proxy_header", "ssl_health_check.0.port_specification"},
+						},
+						"port_name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `Port name as defined in InstanceGroup#NamedPort#name. If both port and
+port_name are defined, port takes precedence.`,
+							AtLeastOneOf: []string{"ssl_health_check.0.request", "ssl_health_check.0.response", "ssl_health_check.0.port", "ssl_health_check.0.port_name", "ssl_health_check.0.proxy_header", "ssl_health_check.0.port_specification"},
+						},
+						"port_specification": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"USE_FIXED_PORT", "USE_NAMED_PORT", "USE_SERVING_PORT", ""}, false),
+							Description: `Specifies how port is selected for health checking, can be one of the
+following values:
+
+  * 'USE_FIXED_PORT': The port number in 'port' is used for health checking.
+
+  * 'USE_NAMED_PORT': The 'portName' is used for health checking.
+
+  * 'USE_SERVING_PORT': For NetworkEndpointGroup, the port specified for each
+  network endpoint is used for health checking. For other backends, the
+  port or named port specified in the Backend Service is used for health
+  checking.
+
+If not specified, SSL health check follows behavior specified in 'port' and
+'portName' fields.`,
+							AtLeastOneOf: []string{"ssl_health_check.0.request", "ssl_health_check.0.response", "ssl_health_check.0.port", "ssl_health_check.0.port_name", "ssl_health_check.0.proxy_header", "ssl_health_check.0.port_specification"},
 						},
 						"proxy_header": {
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
+							Description: `Specifies the type of proxy header to append before sending data to the
+backend, either NONE or PROXY_V1. The default is NONE.`,
 							Default:      "NONE",
+							AtLeastOneOf: []string{"ssl_health_check.0.request", "ssl_health_check.0.response", "ssl_health_check.0.port", "ssl_health_check.0.port_name", "ssl_health_check.0.proxy_header", "ssl_health_check.0.port_specification"},
 						},
 						"request": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The application data to send once the SSL connection has been
+established (default value is empty). If both request and response are
+empty, the connection establishment alone will indicate health. The request
+data can only be ASCII.`,
+							AtLeastOneOf: []string{"ssl_health_check.0.request", "ssl_health_check.0.response", "ssl_health_check.0.port", "ssl_health_check.0.port_name", "ssl_health_check.0.proxy_header", "ssl_health_check.0.port_specification"},
 						},
 						"response": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The bytes to match against the beginning of the response data. If left empty
+(the default value), any response will indicate health. The response data
+can only be ASCII.`,
+							AtLeastOneOf: []string{"ssl_health_check.0.request", "ssl_health_check.0.response", "ssl_health_check.0.port", "ssl_health_check.0.port_name", "ssl_health_check.0.proxy_header", "ssl_health_check.0.port_specification"},
 						},
 					},
 				},
-				ConflictsWith: []string{"http_health_check", "https_health_check", "tcp_health_check"},
+				ExactlyOneOf: []string{"http_health_check", "https_health_check", "http2_health_check", "tcp_health_check", "ssl_health_check"},
 			},
 			"tcp_health_check": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
+				Type:             schema.TypeList,
+				Optional:         true,
+				DiffSuppressFunc: portDiffSuppress,
+				Description:      `A nested object resource`,
+				MaxItems:         1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"port": {
 							Type:     schema.TypeInt,
 							Optional: true,
-							Default:  80,
+							Description: `The TCP port number for the TCP health check request.
+The default value is 443.`,
+							AtLeastOneOf: []string{"tcp_health_check.0.request", "tcp_health_check.0.response", "tcp_health_check.0.port", "tcp_health_check.0.port_name", "tcp_health_check.0.proxy_header", "tcp_health_check.0.port_specification"},
+						},
+						"port_name": {
+							Type:     schema.TypeString,
+							Optional: true,
+							Description: `Port name as defined in InstanceGroup#NamedPort#name. If both port and
+port_name are defined, port takes precedence.`,
+							AtLeastOneOf: []string{"tcp_health_check.0.request", "tcp_health_check.0.response", "tcp_health_check.0.port", "tcp_health_check.0.port_name", "tcp_health_check.0.proxy_header", "tcp_health_check.0.port_specification"},
+						},
+						"port_specification": {
+							Type:         schema.TypeString,
+							Optional:     true,
+							ValidateFunc: validation.StringInSlice([]string{"USE_FIXED_PORT", "USE_NAMED_PORT", "USE_SERVING_PORT", ""}, false),
+							Description: `Specifies how port is selected for health checking, can be one of the
+following values:
+
+  * 'USE_FIXED_PORT': The port number in 'port' is used for health checking.
+
+  * 'USE_NAMED_PORT': The 'portName' is used for health checking.
+
+  * 'USE_SERVING_PORT': For NetworkEndpointGroup, the port specified for each
+  network endpoint is used for health checking. For other backends, the
+  port or named port specified in the Backend Service is used for health
+  checking.
+
+If not specified, TCP health check follows behavior specified in 'port' and
+'portName' fields.`,
+							AtLeastOneOf: []string{"tcp_health_check.0.request", "tcp_health_check.0.response", "tcp_health_check.0.port", "tcp_health_check.0.port_name", "tcp_health_check.0.proxy_header", "tcp_health_check.0.port_specification"},
 						},
 						"proxy_header": {
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"NONE", "PROXY_V1", ""}, false),
+							Description: `Specifies the type of proxy header to append before sending data to the
+backend, either NONE or PROXY_V1. The default is NONE.`,
 							Default:      "NONE",
+							AtLeastOneOf: []string{"tcp_health_check.0.request", "tcp_health_check.0.response", "tcp_health_check.0.port", "tcp_health_check.0.port_name", "tcp_health_check.0.proxy_header", "tcp_health_check.0.port_specification"},
 						},
 						"request": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The application data to send once the TCP connection has been
+established (default value is empty). If both request and response are
+empty, the connection establishment alone will indicate health. The request
+data can only be ASCII.`,
+							AtLeastOneOf: []string{"tcp_health_check.0.request", "tcp_health_check.0.response", "tcp_health_check.0.port", "tcp_health_check.0.port_name", "tcp_health_check.0.proxy_header", "tcp_health_check.0.port_specification"},
 						},
 						"response": {
 							Type:     schema.TypeString,
 							Optional: true,
+							Description: `The bytes to match against the beginning of the response data. If left empty
+(the default value), any response will indicate health. The response data
+can only be ASCII.`,
+							AtLeastOneOf: []string{"tcp_health_check.0.request", "tcp_health_check.0.response", "tcp_health_check.0.port", "tcp_health_check.0.port_name", "tcp_health_check.0.proxy_header", "tcp_health_check.0.port_specification"},
 						},
 					},
 				},
-				ConflictsWith: []string{"http_health_check", "https_health_check", "ssl_health_check"},
+				ExactlyOneOf: []string{"http_health_check", "https_health_check", "http2_health_check", "tcp_health_check", "ssl_health_check"},
 			},
 			"timeout_sec": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  5,
+				Description: `How long (in seconds) to wait before claiming failure.
+The default value is 5 seconds.  It is invalid for timeoutSec to have
+greater value than checkIntervalSec.`,
+				Default: 5,
 			},
 			"unhealthy_threshold": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  2,
+				Description: `A so-far healthy instance will be marked unhealthy after this many
+consecutive failures. The default value is 2.`,
+				Default: 2,
 			},
 			"creation_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Creation timestamp in RFC3339 text format.`,
 			},
 			"type": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `The type of the health check. One of HTTP, HTTPS, TCP, or SSL.`,
 			},
 			"project": {
 				Type:     schema.TypeString,
@@ -285,34 +645,40 @@ func resourceComputeHealthCheckCreate(d *schema.ResourceData, meta interface{}) 
 	} else if v, ok := d.GetOkExists("ssl_health_check"); !isEmptyValue(reflect.ValueOf(sslHealthCheckProp)) && (ok || !reflect.DeepEqual(v, sslHealthCheckProp)) {
 		obj["sslHealthCheck"] = sslHealthCheckProp
 	}
+	http2HealthCheckProp, err := expandComputeHealthCheckHttp2HealthCheck(d.Get("http2_health_check"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("http2_health_check"); !isEmptyValue(reflect.ValueOf(http2HealthCheckProp)) && (ok || !reflect.DeepEqual(v, http2HealthCheckProp)) {
+		obj["http2HealthCheck"] = http2HealthCheckProp
+	}
 
 	obj, err = resourceComputeHealthCheckEncoder(d, meta, obj)
 	if err != nil {
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/healthChecks")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/healthChecks")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new HealthCheck: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating HealthCheck: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/global/healthChecks/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -337,20 +703,20 @@ func resourceComputeHealthCheckCreate(d *schema.ResourceData, meta interface{}) 
 func resourceComputeHealthCheckRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/healthChecks/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/healthChecks/{{name}}")
 	if err != nil {
 		return err
-	}
-
-	res, err := sendRequest(config, "GET", url, nil)
-	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("ComputeHealthCheck %q", d.Id()))
 	}
 
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
+	res, err := sendRequest(config, "GET", project, url, nil)
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("ComputeHealthCheck %q", d.Id()))
+	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading HealthCheck: %s", err)
 	}
@@ -391,6 +757,9 @@ func resourceComputeHealthCheckRead(d *schema.ResourceData, meta interface{}) er
 	if err := d.Set("ssl_health_check", flattenComputeHealthCheckSslHealthCheck(res["sslHealthCheck"], d)); err != nil {
 		return fmt.Errorf("Error reading HealthCheck: %s", err)
 	}
+	if err := d.Set("http2_health_check", flattenComputeHealthCheckHttp2HealthCheck(res["http2HealthCheck"], d)); err != nil {
+		return fmt.Errorf("Error reading HealthCheck: %s", err)
+	}
 	if err := d.Set("self_link", ConvertSelfLinkToV1(res["selfLink"].(string))); err != nil {
 		return fmt.Errorf("Error reading HealthCheck: %s", err)
 	}
@@ -400,6 +769,11 @@ func resourceComputeHealthCheckRead(d *schema.ResourceData, meta interface{}) er
 
 func resourceComputeHealthCheckUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
+
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
 
 	obj := make(map[string]interface{})
 	checkIntervalSecProp, err := expandComputeHealthCheckCheckIntervalSec(d.Get("check_interval_sec"), d, config)
@@ -462,28 +836,30 @@ func resourceComputeHealthCheckUpdate(d *schema.ResourceData, meta interface{}) 
 	} else if v, ok := d.GetOkExists("ssl_health_check"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, sslHealthCheckProp)) {
 		obj["sslHealthCheck"] = sslHealthCheckProp
 	}
+	http2HealthCheckProp, err := expandComputeHealthCheckHttp2HealthCheck(d.Get("http2_health_check"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("http2_health_check"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, http2HealthCheckProp)) {
+		obj["http2HealthCheck"] = http2HealthCheckProp
+	}
 
 	obj, err = resourceComputeHealthCheckEncoder(d, meta, obj)
 	if err != nil {
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/healthChecks/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/healthChecks/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Updating HealthCheck %q: %#v", d.Id(), obj)
-	res, err := sendRequestWithTimeout(config, "PUT", url, obj, d.Timeout(schema.TimeoutUpdate))
+	res, err := sendRequestWithTimeout(config, "PUT", project, url, obj, d.Timeout(schema.TimeoutUpdate))
 
 	if err != nil {
 		return fmt.Errorf("Error updating HealthCheck %q: %s", d.Id(), err)
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -504,22 +880,24 @@ func resourceComputeHealthCheckUpdate(d *schema.ResourceData, meta interface{}) 
 func resourceComputeHealthCheckDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/healthChecks/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/healthChecks/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting HealthCheck %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "HealthCheck")
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -540,12 +918,16 @@ func resourceComputeHealthCheckDelete(d *schema.ResourceData, meta interface{}) 
 
 func resourceComputeHealthCheckImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/healthChecks/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/global/healthChecks/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/global/healthChecks/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -627,8 +1009,12 @@ func flattenComputeHealthCheckHttpHealthCheck(v interface{}, d *schema.ResourceD
 		flattenComputeHealthCheckHttpHealthCheckResponse(original["response"], d)
 	transformed["port"] =
 		flattenComputeHealthCheckHttpHealthCheckPort(original["port"], d)
+	transformed["port_name"] =
+		flattenComputeHealthCheckHttpHealthCheckPortName(original["portName"], d)
 	transformed["proxy_header"] =
 		flattenComputeHealthCheckHttpHealthCheckProxyHeader(original["proxyHeader"], d)
+	transformed["port_specification"] =
+		flattenComputeHealthCheckHttpHealthCheckPortSpecification(original["portSpecification"], d)
 	return []interface{}{transformed}
 }
 func flattenComputeHealthCheckHttpHealthCheckHost(v interface{}, d *schema.ResourceData) interface{} {
@@ -653,7 +1039,15 @@ func flattenComputeHealthCheckHttpHealthCheckPort(v interface{}, d *schema.Resou
 	return v
 }
 
+func flattenComputeHealthCheckHttpHealthCheckPortName(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
 func flattenComputeHealthCheckHttpHealthCheckProxyHeader(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttpHealthCheckPortSpecification(v interface{}, d *schema.ResourceData) interface{} {
 	return v
 }
 
@@ -674,8 +1068,12 @@ func flattenComputeHealthCheckHttpsHealthCheck(v interface{}, d *schema.Resource
 		flattenComputeHealthCheckHttpsHealthCheckResponse(original["response"], d)
 	transformed["port"] =
 		flattenComputeHealthCheckHttpsHealthCheckPort(original["port"], d)
+	transformed["port_name"] =
+		flattenComputeHealthCheckHttpsHealthCheckPortName(original["portName"], d)
 	transformed["proxy_header"] =
 		flattenComputeHealthCheckHttpsHealthCheckProxyHeader(original["proxyHeader"], d)
+	transformed["port_specification"] =
+		flattenComputeHealthCheckHttpsHealthCheckPortSpecification(original["portSpecification"], d)
 	return []interface{}{transformed}
 }
 func flattenComputeHealthCheckHttpsHealthCheckHost(v interface{}, d *schema.ResourceData) interface{} {
@@ -700,7 +1098,15 @@ func flattenComputeHealthCheckHttpsHealthCheckPort(v interface{}, d *schema.Reso
 	return v
 }
 
+func flattenComputeHealthCheckHttpsHealthCheckPortName(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
 func flattenComputeHealthCheckHttpsHealthCheckProxyHeader(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttpsHealthCheckPortSpecification(v interface{}, d *schema.ResourceData) interface{} {
 	return v
 }
 
@@ -719,8 +1125,12 @@ func flattenComputeHealthCheckTcpHealthCheck(v interface{}, d *schema.ResourceDa
 		flattenComputeHealthCheckTcpHealthCheckResponse(original["response"], d)
 	transformed["port"] =
 		flattenComputeHealthCheckTcpHealthCheckPort(original["port"], d)
+	transformed["port_name"] =
+		flattenComputeHealthCheckTcpHealthCheckPortName(original["portName"], d)
 	transformed["proxy_header"] =
 		flattenComputeHealthCheckTcpHealthCheckProxyHeader(original["proxyHeader"], d)
+	transformed["port_specification"] =
+		flattenComputeHealthCheckTcpHealthCheckPortSpecification(original["portSpecification"], d)
 	return []interface{}{transformed}
 }
 func flattenComputeHealthCheckTcpHealthCheckRequest(v interface{}, d *schema.ResourceData) interface{} {
@@ -741,7 +1151,15 @@ func flattenComputeHealthCheckTcpHealthCheckPort(v interface{}, d *schema.Resour
 	return v
 }
 
+func flattenComputeHealthCheckTcpHealthCheckPortName(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
 func flattenComputeHealthCheckTcpHealthCheckProxyHeader(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckTcpHealthCheckPortSpecification(v interface{}, d *schema.ResourceData) interface{} {
 	return v
 }
 
@@ -760,8 +1178,12 @@ func flattenComputeHealthCheckSslHealthCheck(v interface{}, d *schema.ResourceDa
 		flattenComputeHealthCheckSslHealthCheckResponse(original["response"], d)
 	transformed["port"] =
 		flattenComputeHealthCheckSslHealthCheckPort(original["port"], d)
+	transformed["port_name"] =
+		flattenComputeHealthCheckSslHealthCheckPortName(original["portName"], d)
 	transformed["proxy_header"] =
 		flattenComputeHealthCheckSslHealthCheckProxyHeader(original["proxyHeader"], d)
+	transformed["port_specification"] =
+		flattenComputeHealthCheckSslHealthCheckPortSpecification(original["portSpecification"], d)
 	return []interface{}{transformed}
 }
 func flattenComputeHealthCheckSslHealthCheckRequest(v interface{}, d *schema.ResourceData) interface{} {
@@ -782,7 +1204,74 @@ func flattenComputeHealthCheckSslHealthCheckPort(v interface{}, d *schema.Resour
 	return v
 }
 
+func flattenComputeHealthCheckSslHealthCheckPortName(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
 func flattenComputeHealthCheckSslHealthCheckProxyHeader(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckSslHealthCheckPortSpecification(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttp2HealthCheck(v interface{}, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+	original := v.(map[string]interface{})
+	if len(original) == 0 {
+		return nil
+	}
+	transformed := make(map[string]interface{})
+	transformed["host"] =
+		flattenComputeHealthCheckHttp2HealthCheckHost(original["host"], d)
+	transformed["request_path"] =
+		flattenComputeHealthCheckHttp2HealthCheckRequestPath(original["requestPath"], d)
+	transformed["response"] =
+		flattenComputeHealthCheckHttp2HealthCheckResponse(original["response"], d)
+	transformed["port"] =
+		flattenComputeHealthCheckHttp2HealthCheckPort(original["port"], d)
+	transformed["port_name"] =
+		flattenComputeHealthCheckHttp2HealthCheckPortName(original["portName"], d)
+	transformed["proxy_header"] =
+		flattenComputeHealthCheckHttp2HealthCheckProxyHeader(original["proxyHeader"], d)
+	transformed["port_specification"] =
+		flattenComputeHealthCheckHttp2HealthCheckPortSpecification(original["portSpecification"], d)
+	return []interface{}{transformed}
+}
+func flattenComputeHealthCheckHttp2HealthCheckHost(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttp2HealthCheckRequestPath(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttp2HealthCheckResponse(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttp2HealthCheckPort(v interface{}, d *schema.ResourceData) interface{} {
+	// Handles the string fixed64 format
+	if strVal, ok := v.(string); ok {
+		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
+			return intVal
+		} // let terraform core handle it if we can't convert the string to an int.
+	}
+	return v
+}
+
+func flattenComputeHealthCheckHttp2HealthCheckPortName(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttp2HealthCheckProxyHeader(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeHealthCheckHttp2HealthCheckPortSpecification(v interface{}, d *schema.ResourceData) interface{} {
 	return v
 }
 
@@ -847,11 +1336,25 @@ func expandComputeHealthCheckHttpHealthCheck(v interface{}, d TerraformResourceD
 		transformed["port"] = transformedPort
 	}
 
+	transformedPortName, err := expandComputeHealthCheckHttpHealthCheckPortName(original["port_name"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortName); val.IsValid() && !isEmptyValue(val) {
+		transformed["portName"] = transformedPortName
+	}
+
 	transformedProxyHeader, err := expandComputeHealthCheckHttpHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
 	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
 		transformed["proxyHeader"] = transformedProxyHeader
+	}
+
+	transformedPortSpecification, err := expandComputeHealthCheckHttpHealthCheckPortSpecification(original["port_specification"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortSpecification); val.IsValid() && !isEmptyValue(val) {
+		transformed["portSpecification"] = transformedPortSpecification
 	}
 
 	return transformed, nil
@@ -873,7 +1376,15 @@ func expandComputeHealthCheckHttpHealthCheckPort(v interface{}, d TerraformResou
 	return v, nil
 }
 
+func expandComputeHealthCheckHttpHealthCheckPortName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
 func expandComputeHealthCheckHttpHealthCheckProxyHeader(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttpHealthCheckPortSpecification(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
@@ -914,11 +1425,25 @@ func expandComputeHealthCheckHttpsHealthCheck(v interface{}, d TerraformResource
 		transformed["port"] = transformedPort
 	}
 
+	transformedPortName, err := expandComputeHealthCheckHttpsHealthCheckPortName(original["port_name"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortName); val.IsValid() && !isEmptyValue(val) {
+		transformed["portName"] = transformedPortName
+	}
+
 	transformedProxyHeader, err := expandComputeHealthCheckHttpsHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
 	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
 		transformed["proxyHeader"] = transformedProxyHeader
+	}
+
+	transformedPortSpecification, err := expandComputeHealthCheckHttpsHealthCheckPortSpecification(original["port_specification"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortSpecification); val.IsValid() && !isEmptyValue(val) {
+		transformed["portSpecification"] = transformedPortSpecification
 	}
 
 	return transformed, nil
@@ -940,7 +1465,15 @@ func expandComputeHealthCheckHttpsHealthCheckPort(v interface{}, d TerraformReso
 	return v, nil
 }
 
+func expandComputeHealthCheckHttpsHealthCheckPortName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
 func expandComputeHealthCheckHttpsHealthCheckProxyHeader(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttpsHealthCheckPortSpecification(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
@@ -974,11 +1507,25 @@ func expandComputeHealthCheckTcpHealthCheck(v interface{}, d TerraformResourceDa
 		transformed["port"] = transformedPort
 	}
 
+	transformedPortName, err := expandComputeHealthCheckTcpHealthCheckPortName(original["port_name"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortName); val.IsValid() && !isEmptyValue(val) {
+		transformed["portName"] = transformedPortName
+	}
+
 	transformedProxyHeader, err := expandComputeHealthCheckTcpHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
 	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
 		transformed["proxyHeader"] = transformedProxyHeader
+	}
+
+	transformedPortSpecification, err := expandComputeHealthCheckTcpHealthCheckPortSpecification(original["port_specification"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortSpecification); val.IsValid() && !isEmptyValue(val) {
+		transformed["portSpecification"] = transformedPortSpecification
 	}
 
 	return transformed, nil
@@ -996,7 +1543,15 @@ func expandComputeHealthCheckTcpHealthCheckPort(v interface{}, d TerraformResour
 	return v, nil
 }
 
+func expandComputeHealthCheckTcpHealthCheckPortName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
 func expandComputeHealthCheckTcpHealthCheckProxyHeader(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckTcpHealthCheckPortSpecification(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
@@ -1030,11 +1585,25 @@ func expandComputeHealthCheckSslHealthCheck(v interface{}, d TerraformResourceDa
 		transformed["port"] = transformedPort
 	}
 
+	transformedPortName, err := expandComputeHealthCheckSslHealthCheckPortName(original["port_name"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortName); val.IsValid() && !isEmptyValue(val) {
+		transformed["portName"] = transformedPortName
+	}
+
 	transformedProxyHeader, err := expandComputeHealthCheckSslHealthCheckProxyHeader(original["proxy_header"], d, config)
 	if err != nil {
 		return nil, err
 	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
 		transformed["proxyHeader"] = transformedProxyHeader
+	}
+
+	transformedPortSpecification, err := expandComputeHealthCheckSslHealthCheckPortSpecification(original["port_specification"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortSpecification); val.IsValid() && !isEmptyValue(val) {
+		transformed["portSpecification"] = transformedPortSpecification
 	}
 
 	return transformed, nil
@@ -1052,24 +1621,176 @@ func expandComputeHealthCheckSslHealthCheckPort(v interface{}, d TerraformResour
 	return v, nil
 }
 
+func expandComputeHealthCheckSslHealthCheckPortName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
 func expandComputeHealthCheckSslHealthCheckProxyHeader(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
+func expandComputeHealthCheckSslHealthCheckPortSpecification(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheck(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	l := v.([]interface{})
+	if len(l) == 0 || l[0] == nil {
+		return nil, nil
+	}
+	raw := l[0]
+	original := raw.(map[string]interface{})
+	transformed := make(map[string]interface{})
+
+	transformedHost, err := expandComputeHealthCheckHttp2HealthCheckHost(original["host"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedHost); val.IsValid() && !isEmptyValue(val) {
+		transformed["host"] = transformedHost
+	}
+
+	transformedRequestPath, err := expandComputeHealthCheckHttp2HealthCheckRequestPath(original["request_path"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedRequestPath); val.IsValid() && !isEmptyValue(val) {
+		transformed["requestPath"] = transformedRequestPath
+	}
+
+	transformedResponse, err := expandComputeHealthCheckHttp2HealthCheckResponse(original["response"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedResponse); val.IsValid() && !isEmptyValue(val) {
+		transformed["response"] = transformedResponse
+	}
+
+	transformedPort, err := expandComputeHealthCheckHttp2HealthCheckPort(original["port"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPort); val.IsValid() && !isEmptyValue(val) {
+		transformed["port"] = transformedPort
+	}
+
+	transformedPortName, err := expandComputeHealthCheckHttp2HealthCheckPortName(original["port_name"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortName); val.IsValid() && !isEmptyValue(val) {
+		transformed["portName"] = transformedPortName
+	}
+
+	transformedProxyHeader, err := expandComputeHealthCheckHttp2HealthCheckProxyHeader(original["proxy_header"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedProxyHeader); val.IsValid() && !isEmptyValue(val) {
+		transformed["proxyHeader"] = transformedProxyHeader
+	}
+
+	transformedPortSpecification, err := expandComputeHealthCheckHttp2HealthCheckPortSpecification(original["port_specification"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedPortSpecification); val.IsValid() && !isEmptyValue(val) {
+		transformed["portSpecification"] = transformedPortSpecification
+	}
+
+	return transformed, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheckHost(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheckRequestPath(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheckResponse(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheckPort(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheckPortName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheckProxyHeader(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeHealthCheckHttp2HealthCheckPortSpecification(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
 func resourceComputeHealthCheckEncoder(d *schema.ResourceData, meta interface{}, obj map[string]interface{}) (map[string]interface{}, error) {
+
 	if _, ok := d.GetOk("http_health_check"); ok {
+		hc := d.Get("http_health_check").([]interface{})[0]
+		ps := hc.(map[string]interface{})["port_specification"]
+		pn := hc.(map[string]interface{})["port_name"]
+
+		if ps == "USE_FIXED_PORT" || (ps == "" && pn == "") {
+			m := obj["httpHealthCheck"].(map[string]interface{})
+			if m["port"] == nil {
+				m["port"] = 80
+			}
+		}
 		obj["type"] = "HTTP"
 		return obj, nil
 	}
 	if _, ok := d.GetOk("https_health_check"); ok {
+		hc := d.Get("https_health_check").([]interface{})[0]
+		ps := hc.(map[string]interface{})["port_specification"]
+		pn := hc.(map[string]interface{})["port_name"]
+
+		if ps == "USE_FIXED_PORT" || (ps == "" && pn == "") {
+			m := obj["httpsHealthCheck"].(map[string]interface{})
+			if m["port"] == nil {
+				m["port"] = 443
+			}
+		}
 		obj["type"] = "HTTPS"
 		return obj, nil
 	}
+	if _, ok := d.GetOk("http2_health_check"); ok {
+		hc := d.Get("http2_health_check").([]interface{})[0]
+		ps := hc.(map[string]interface{})["port_specification"]
+		pn := hc.(map[string]interface{})["port_name"]
+
+		if ps == "USE_FIXED_PORT" || (ps == "" && pn == "") {
+			m := obj["http2HealthCheck"].(map[string]interface{})
+			if m["port"] == nil {
+				m["port"] = 443
+			}
+		}
+		obj["type"] = "HTTP2"
+		return obj, nil
+	}
 	if _, ok := d.GetOk("tcp_health_check"); ok {
+		hc := d.Get("tcp_health_check").([]interface{})[0]
+		ps := hc.(map[string]interface{})["port_specification"]
+		pn := hc.(map[string]interface{})["port_name"]
+
+		if ps == "USE_FIXED_PORT" || (ps == "" && pn == "") {
+			m := obj["tcpHealthCheck"].(map[string]interface{})
+			if m["port"] == nil {
+				m["port"] = 80
+			}
+		}
 		obj["type"] = "TCP"
 		return obj, nil
 	}
 	if _, ok := d.GetOk("ssl_health_check"); ok {
+		hc := d.Get("ssl_health_check").([]interface{})[0]
+		ps := hc.(map[string]interface{})["port_specification"]
+		pn := hc.(map[string]interface{})["port_name"]
+
+		if ps == "USE_FIXED_PORT" || (ps == "" && pn == "") {
+			m := obj["sslHealthCheck"].(map[string]interface{})
+			if m["port"] == nil {
+				m["port"] = 443
+			}
+		}
 		obj["type"] = "SSL"
 		return obj, nil
 	}

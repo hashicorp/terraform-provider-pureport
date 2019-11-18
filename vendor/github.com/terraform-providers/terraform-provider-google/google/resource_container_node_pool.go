@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	containerBeta "google.golang.org/api/container/v1beta1"
 )
 
@@ -33,6 +34,10 @@ func resourceContainerNodePool() *schema.Resource {
 			State: resourceContainerNodePoolStateImporter,
 		},
 
+		CustomizeDiff: customdiff.All(
+			resourceNodeConfigEmptyGuestAccelerator,
+		),
+
 		Schema: mergeSchemas(
 			schemaNodePool,
 			map[string]*schema.Schema{
@@ -48,18 +53,14 @@ func resourceContainerNodePool() *schema.Resource {
 					ForceNew: true,
 				},
 				"zone": {
-					Type:       schema.TypeString,
-					Optional:   true,
-					Computed:   true,
-					Deprecated: "use location instead",
-					ForceNew:   true,
+					Type:     schema.TypeString,
+					Optional: true,
+					Removed:  "use location instead",
 				},
 				"region": {
-					Type:       schema.TypeString,
-					Optional:   true,
-					Computed:   true,
-					Deprecated: "use location instead",
-					ForceNew:   true,
+					Type:     schema.TypeString,
+					Optional: true,
+					Removed:  "use location instead",
 				},
 				"location": {
 					Type:     schema.TypeString,
@@ -94,7 +95,6 @@ var schemaNodePool = map[string]*schema.Schema{
 	},
 
 	"max_pods_per_node": {
-		Removed:  "This field is in beta. Use it in the the google-beta provider instead. See https://terraform.io/docs/providers/google/provider_versions.html for more details.",
 		Type:     schema.TypeInt,
 		Optional: true,
 		ForceNew: true,
@@ -256,7 +256,7 @@ func resourceContainerNodePoolCreate(d *schema.ResourceData, meta interface{}) e
 	}
 	timeout -= time.Since(startTime)
 
-	d.SetId(fmt.Sprintf("%s/%s/%s", nodePoolInfo.location, nodePoolInfo.cluster, nodePool.Name))
+	d.SetId(fmt.Sprintf("projects/%s/locations/%s/clusters/%s/nodePools/%s", nodePoolInfo.project, nodePoolInfo.location, nodePoolInfo.cluster, nodePool.Name))
 
 	waitErr := containerOperationWait(config,
 		operation, nodePoolInfo.project,
@@ -308,12 +308,6 @@ func resourceContainerNodePoolRead(d *schema.ResourceData, meta interface{}) err
 
 	for k, v := range npMap {
 		d.Set(k, v)
-	}
-
-	if isZone(nodePoolInfo.location) {
-		d.Set("zone", nodePoolInfo.location)
-	} else {
-		d.Set("region", nodePoolInfo.location)
 	}
 
 	d.Set("location", nodePoolInfo.location)
@@ -411,39 +405,16 @@ func resourceContainerNodePoolExists(d *schema.ResourceData, meta interface{}) (
 }
 
 func resourceContainerNodePoolStateImporter(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	parts := strings.Split(d.Id(), "/")
-
-	switch len(parts) {
-	case 3:
-		location := parts[0]
-		if isZone(location) {
-			d.Set("zone", location)
-		} else {
-			d.Set("region", location)
-		}
-
-		d.Set("location", location)
-		d.Set("cluster", parts[1])
-		d.Set("name", parts[2])
-	case 4:
-		d.Set("project", parts[0])
-
-		location := parts[1]
-		if isZone(location) {
-			d.Set("zone", location)
-		} else {
-			d.Set("region", location)
-		}
-
-		d.Set("location", location)
-		d.Set("cluster", parts[2])
-		d.Set("name", parts[3])
-
-		// override the inputted ID with the <location>/<cluster>/<name> format
-		d.SetId(strings.Join(parts[1:], "/"))
-	default:
-		return nil, fmt.Errorf("Invalid container cluster specifier. Expecting {location}/{cluster}/{name} or {project}/{location}/{cluster}/{name}")
+	config := meta.(*Config)
+	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/locations/(?P<location>[^/]+)/clusters/(?P<cluster>[^/]+)/nodePools/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<location>[^/]+)/(?P<cluster>[^/]+)/(?P<name>[^/]+)", "(?P<location>[^/]+)/(?P<cluster>[^/]+)/(?P<name>[^/]+)"}, d, config); err != nil {
+		return nil, err
 	}
+
+	id, err := replaceVars(d, config, "projects/{{project}}/locations/{{location}}/clusters/{{cluster}}/nodePools/{{name}}")
+	if err != nil {
+		return nil, err
+	}
+	d.SetId(id)
 
 	return []*schema.ResourceData{d}, nil
 }
@@ -486,6 +457,12 @@ func expandNodePool(d *schema.ResourceData, prefix string) (*containerBeta.NodeP
 			MinNodeCount:    int64(autoscaling["min_node_count"].(int)),
 			MaxNodeCount:    int64(autoscaling["max_node_count"].(int)),
 			ForceSendFields: []string{"MinNodeCount"},
+		}
+	}
+
+	if v, ok := d.GetOk(prefix + "max_pods_per_node"); ok {
+		np.MaxPodsConstraint = &containerBeta.MaxPodsConstraint{
+			MaxPodsPerNode: int64(v.(int)),
 		}
 	}
 
@@ -532,13 +509,21 @@ func flattenNodePool(d *schema.ResourceData, config *Config, np *containerBeta.N
 		"version":             np.Version,
 	}
 
-	if np.Autoscaling != nil && np.Autoscaling.Enabled {
-		nodePool["autoscaling"] = []map[string]interface{}{
-			{
-				"min_node_count": np.Autoscaling.MinNodeCount,
-				"max_node_count": np.Autoscaling.MaxNodeCount,
-			},
+	if np.Autoscaling != nil {
+		if np.Autoscaling.Enabled {
+			nodePool["autoscaling"] = []map[string]interface{}{
+				{
+					"min_node_count": np.Autoscaling.MinNodeCount,
+					"max_node_count": np.Autoscaling.MaxNodeCount,
+				},
+			}
+		} else {
+			nodePool["autoscaling"] = []map[string]interface{}{}
 		}
+	}
+
+	if np.MaxPodsConstraint != nil {
+		nodePool["max_pods_per_node"] = np.MaxPodsConstraint.MaxPodsPerNode
 	}
 
 	nodePool["management"] = []map[string]interface{}{
@@ -745,5 +730,6 @@ func nodePoolUpdate(d *schema.ResourceData, meta interface{}, nodePoolInfo *Node
 
 func getNodePoolName(id string) string {
 	// name can be specified with name, name_prefix, or neither, so read it from the id.
-	return strings.Split(id, "/")[2]
+	splits := strings.Split(id, "/")
+	return splits[len(splits)-1]
 }

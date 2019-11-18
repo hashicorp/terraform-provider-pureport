@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceRedisInstance() *schema.Resource {
@@ -38,26 +38,32 @@ func resourceRedisInstance() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(600 * time.Second),
-			Update: schema.DefaultTimeout(600 * time.Second),
-			Delete: schema.DefaultTimeout(600 * time.Second),
+			Create: schema.DefaultTimeout(10 * time.Minute),
+			Update: schema.DefaultTimeout(10 * time.Minute),
+			Delete: schema.DefaultTimeout(10 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
 			"memory_size_gb": {
-				Type:     schema.TypeInt,
-				Required: true,
+				Type:        schema.TypeInt,
+				Required:    true,
+				Description: `Redis memory size in GiB.`,
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: `The ID of the instance or a fully qualified identifier for the instance.`,
 			},
 			"alternative_location_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
+				Description: `Only applicable to STANDARD_HA tier which protects the instance
+against zonal failures by provisioning it across two zones.
+If provided, it must be a different zone from the one provided in
+[locationId].`,
 			},
 			"authorized_network": {
 				Type:             schema.TypeString,
@@ -65,67 +71,105 @@ func resourceRedisInstance() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description: `The full name of the Google Compute Engine network to which the
+instance is connected. If left unspecified, the default network
+will be used.`,
 			},
 			"display_name": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: `An arbitrary and optional user-provided name for the instance.`,
 			},
 			"labels": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: `Resource labels to represent user provided metadata.`,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"location_id": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
+				Description: `The zone where the instance will be provisioned. If not provided,
+the service will choose a zone for the instance. For STANDARD_HA tier,
+instances will be created across two zones for protection against
+zonal failures. If [alternativeLocationId] is also provided, it must
+be different from [locationId].`,
 			},
 			"redis_configs": {
 				Type:     schema.TypeMap,
 				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Description: `Redis configuration parameters, according to http://redis.io/topics/config.
+Please check Memorystore documentation for the list of supported parameters:
+https://cloud.google.com/memorystore/docs/redis/reference/rest/v1/projects.locations.instances#Instance.FIELDS.redis_configs`,
+				Elem: &schema.Schema{Type: schema.TypeString},
 			},
 			"redis_version": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
+				Description: `The version of Redis software. If not provided, latest supported
+version will be used. Currently, the supported values are:
+
+- REDIS_4_0 for Redis 4.0 compatibility
+- REDIS_3_2 for Redis 3.2 compatibility`,
 			},
 			"region": {
-				Type:     schema.TypeString,
-				Computed: true,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				ForceNew:    true,
+				Description: `The name of the Redis region of the instance.`,
 			},
 			"reserved_ip_range": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
+				Description: `The CIDR range of internal addresses that are reserved for this
+instance. If not provided, the service will choose an unused /29
+block, for example, 10.0.0.0/29 or 192.168.0.0/29. Ranges must be
+unique and non-overlapping with existing subnets in an authorized
+network.`,
 			},
 			"tier": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"BASIC", "STANDARD_HA", ""}, false),
-				Default:      "BASIC",
+				Description: `The service tier of the instance. Must be one of these values:
+
+- BASIC: standalone instance
+- STANDARD_HA: highly available primary/replica instances`,
+				Default: "BASIC",
 			},
 			"create_time": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `The time the instance was created in RFC3339 UTC "Zulu" format,
+accurate to nanoseconds.`,
 			},
 			"current_location_id": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `The current zone where the Redis endpoint is placed.
+For Basic Tier instances, this will always be the same as the
+[locationId] provided by the user at creation time. For Standard Tier
+instances, this can be either [locationId] or [alternativeLocationId]
+and can change after a failover event.`,
 			},
 			"host": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `Hostname or IP address of the exposed Redis endpoint used by clients
+to connect to the service.`,
 			},
 			"port": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: `The port number of the exposed Redis endpoint.`,
 			},
 			"project": {
 				Type:     schema.TypeString,
@@ -208,28 +252,33 @@ func resourceRedisInstanceCreate(d *schema.ResourceData, meta interface{}) error
 		obj["tier"] = tierProp
 	}
 
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances?instanceId={{name}}")
+	obj, err = resourceRedisInstanceEncoder(d, meta, obj)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{RedisBasePath}}projects/{{project}}/locations/{{region}}/instances?instanceId={{name}}")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new Instance: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating Instance: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{project}}/{{region}}/{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	waitErr := redisOperationWaitTime(
 		config, res, project, "Creating Instance",
 		int(d.Timeout(schema.TimeoutCreate).Minutes()))
@@ -248,20 +297,20 @@ func resourceRedisInstanceCreate(d *schema.ResourceData, meta interface{}) error
 func resourceRedisInstanceRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
+	url, err := replaceVars(d, config, "{{RedisBasePath}}projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return err
-	}
-
-	res, err := sendRequest(config, "GET", url, nil)
-	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("RedisInstance %q", d.Id()))
 	}
 
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
+	res, err := sendRequest(config, "GET", project, url, nil)
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("RedisInstance %q", d.Id()))
+	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading Instance: %s", err)
 	}
@@ -326,6 +375,11 @@ func resourceRedisInstanceRead(d *schema.ResourceData, meta interface{}) error {
 func resourceRedisInstanceUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
 	obj := make(map[string]interface{})
 	displayNameProp, err := expandRedisInstanceDisplayName(d.Get("display_name"), d, config)
 	if err != nil {
@@ -352,7 +406,12 @@ func resourceRedisInstanceUpdate(d *schema.ResourceData, meta interface{}) error
 		obj["memorySizeGb"] = memorySizeGbProp
 	}
 
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
+	obj, err = resourceRedisInstanceEncoder(d, meta, obj)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{RedisBasePath}}projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return err
 	}
@@ -381,15 +440,10 @@ func resourceRedisInstanceUpdate(d *schema.ResourceData, meta interface{}) error
 	if err != nil {
 		return err
 	}
-	res, err := sendRequestWithTimeout(config, "PATCH", url, obj, d.Timeout(schema.TimeoutUpdate))
+	res, err := sendRequestWithTimeout(config, "PATCH", project, url, obj, d.Timeout(schema.TimeoutUpdate))
 
 	if err != nil {
 		return fmt.Errorf("Error updating Instance %q: %s", d.Id(), err)
-	}
-
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
 	}
 
 	err = redisOperationWaitTime(
@@ -406,21 +460,22 @@ func resourceRedisInstanceUpdate(d *schema.ResourceData, meta interface{}) error
 func resourceRedisInstanceDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://redis.googleapis.com/v1/projects/{{project}}/locations/{{region}}/instances/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{RedisBasePath}}projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting Instance %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "Instance")
-	}
-
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
 	}
 
 	err = redisOperationWaitTime(
@@ -437,12 +492,17 @@ func resourceRedisInstanceDelete(d *schema.ResourceData, meta interface{}) error
 
 func resourceRedisInstanceImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/locations/(?P<region>[^/]+)/instances/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/locations/(?P<region>[^/]+)/instances/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{project}}/{{region}}/{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/locations/{{region}}/instances/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -569,17 +629,7 @@ func expandRedisInstanceLocationId(v interface{}, d TerraformResourceData, confi
 }
 
 func expandRedisInstanceName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
-	project, err := getProject(d, config)
-	if err != nil {
-		return nil, err
-	}
-
-	region, err := getRegion(d, config)
-	if err != nil {
-		return nil, err
-	}
-
-	return fmt.Sprintf("projects/%s/locations/%s/instances/%s", project, region, v.(string)), nil
+	return replaceVars(d, config, "projects/{{project}}/locations/{{region}}/instances/{{name}}")
 }
 
 func expandRedisInstanceMemorySizeGb(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
@@ -596,4 +646,14 @@ func expandRedisInstanceReservedIpRange(v interface{}, d TerraformResourceData, 
 
 func expandRedisInstanceTier(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
+}
+
+func resourceRedisInstanceEncoder(d *schema.ResourceData, meta interface{}, obj map[string]interface{}) (map[string]interface{}, error) {
+	config := meta.(*Config)
+	region, err := getRegionFromSchema("region", "location_id", d, config)
+	if err != nil {
+		return nil, err
+	}
+	d.Set("region", region)
+	return obj, nil
 }

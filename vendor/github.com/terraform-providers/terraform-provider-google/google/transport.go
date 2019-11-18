@@ -34,14 +34,20 @@ func isEmptyValue(v reflect.Value) bool {
 	return false
 }
 
-func sendRequest(config *Config, method, rawurl string, body map[string]interface{}) (map[string]interface{}, error) {
-	return sendRequestWithTimeout(config, method, rawurl, body, DefaultRequestTimeout)
+func sendRequest(config *Config, method, project, rawurl string, body map[string]interface{}) (map[string]interface{}, error) {
+	return sendRequestWithTimeout(config, method, project, rawurl, body, DefaultRequestTimeout)
 }
 
-func sendRequestWithTimeout(config *Config, method, rawurl string, body map[string]interface{}, timeout time.Duration) (map[string]interface{}, error) {
+func sendRequestWithTimeout(config *Config, method, project, rawurl string, body map[string]interface{}, timeout time.Duration, errorRetryPredicates ...func(e error) (bool, string)) (map[string]interface{}, error) {
 	reqHeaders := make(http.Header)
 	reqHeaders.Set("User-Agent", config.userAgent)
 	reqHeaders.Set("Content-Type", "application/json")
+
+	if config.UserProjectOverride && project != "" {
+		// Pass the project into this fn instead of parsing it from the URL because
+		// both project names and URLs can have colons in them.
+		reqHeaders.Set("X-Goog-User-Project", project)
+	}
 
 	if timeout == 0 {
 		timeout = time.Duration(1) * time.Hour
@@ -81,6 +87,7 @@ func sendRequestWithTimeout(config *Config, method, rawurl string, body map[stri
 			return nil
 		},
 		timeout,
+		errorRetryPredicates...,
 	)
 	if err != nil {
 		return nil, err
@@ -120,7 +127,8 @@ func addQueryParams(rawurl string, params map[string]string) (string, error) {
 }
 
 func replaceVars(d TerraformResourceData, config *Config, linkTmpl string) (string, error) {
-	re := regexp.MustCompile("{{([[:word:]]+)}}")
+	// https://github.com/google/re2/wiki/Syntax
+	re := regexp.MustCompile("{{([%[:word:]]+)}}")
 	f, err := buildReplacementFunc(re, d, config, linkTmpl)
 	if err != nil {
 		return "", err
@@ -128,12 +136,28 @@ func replaceVars(d TerraformResourceData, config *Config, linkTmpl string) (stri
 	return re.ReplaceAllStringFunc(linkTmpl, f), nil
 }
 
+// This function replaces references to Terraform properties (in the form of {{var}}) with their value in Terraform
+// It also replaces {{project}}, {{project_id_or_project}}, {{region}}, and {{zone}} with their appropriate values
+// This function supports URL-encoding the result by prepending '%' to the field name e.g. {{%var}}
 func buildReplacementFunc(re *regexp.Regexp, d TerraformResourceData, config *Config, linkTmpl string) (func(string) string, error) {
-	var project, region, zone string
+	var project, projectID, region, zone string
 	var err error
 
 	if strings.Contains(linkTmpl, "{{project}}") {
 		project, err = getProject(d, config)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if strings.Contains(linkTmpl, "{{project_id_or_project}}") {
+		v, ok := d.GetOkExists("project_id")
+		if ok {
+			projectID, _ = v.(string)
+		}
+		if projectID == "" {
+			project, err = getProject(d, config)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -158,16 +182,38 @@ func buildReplacementFunc(re *regexp.Regexp, d TerraformResourceData, config *Co
 		if m == "project" {
 			return project
 		}
+		if m == "project_id_or_project" {
+			if projectID != "" {
+				return projectID
+			}
+			return project
+		}
 		if m == "region" {
 			return region
 		}
 		if m == "zone" {
 			return zone
 		}
-		v, ok := d.GetOk(m)
-		if ok {
-			return fmt.Sprintf("%v", v)
+		if string(m[0]) == "%" {
+			v, ok := d.GetOkExists(m[1:])
+			if ok {
+				return url.PathEscape(fmt.Sprintf("%v", v))
+			}
+		} else {
+			v, ok := d.GetOkExists(m)
+			if ok {
+				return fmt.Sprintf("%v", v)
+			}
 		}
+
+		// terraform-google-conversion doesn't provide a provider config in tests.
+		if config != nil {
+			// Attempt to draw values from the provider config if it's present.
+			if f := reflect.Indirect(reflect.ValueOf(config)).FieldByName(m); f.IsValid() {
+				return f.String()
+			}
+		}
+
 		return ""
 	}
 

@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -36,8 +36,8 @@ func resourceComputeRoute() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -45,65 +45,106 @@ func resourceComputeRoute() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `The destination range of outgoing packets that this route applies to.
+Only IPv4 is supported.`,
 			},
 			"name": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateRegexp(`^[a-z]([-a-z0-9]*[a-z0-9])?$`),
+				Description: `Name of the resource. Provided by the client when the resource is
+created. The name must be 1-63 characters long, and comply with
+RFC1035.  Specifically, the name must be 1-63 characters long and
+match the regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means
+the first character must be a lowercase letter, and all following
+characters must be a dash, lowercase letter, or digit, except the
+last character, which cannot be a dash.`,
 			},
 			"network": {
 				Type:             schema.TypeString,
 				Required:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description:      `The network that this route applies to.`,
 			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+				Description: `An optional description of this resource. Provide this property
+when you create the resource.`,
 			},
 			"next_hop_gateway": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description: `URL to a gateway that should handle matching packets.
+Currently, you can only specify the internet gateway, using a full or
+partial valid URL:
+* 'https://www.googleapis.com/compute/v1/projects/project/global/gateways/default-internet-gateway'
+* 'projects/project/global/gateways/default-internet-gateway'
+* 'global/gateways/default-internet-gateway'
+* The string 'default-internet-gateway'.`,
+				ExactlyOneOf: []string{"next_hop_gateway", "next_hop_instance", "next_hop_ip", "next_hop_vpn_tunnel"},
 			},
 			"next_hop_instance": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description: `URL to an instance that should handle matching packets.
+You can specify this as a full or partial URL. For example:
+* 'https://www.googleapis.com/compute/v1/projects/project/zones/zone/instances/instance'
+* 'projects/project/zones/zone/instances/instance'
+* 'zones/zone/instances/instance'
+* Just the instance name, with the zone in 'next_hop_instance_zone'.`,
+				ExactlyOneOf: []string{"next_hop_gateway", "next_hop_instance", "next_hop_ip", "next_hop_vpn_tunnel"},
 			},
 			"next_hop_ip": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Computed:     true,
+				Optional:     true,
+				ForceNew:     true,
+				Description:  `Network IP address of an instance that should handle matching packets.`,
+				ExactlyOneOf: []string{"next_hop_gateway", "next_hop_instance", "next_hop_ip", "next_hop_vpn_tunnel"},
 			},
 			"next_hop_vpn_tunnel": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description:      `URL to a VpnTunnel that should handle matching packets.`,
+				ExactlyOneOf:     []string{"next_hop_gateway", "next_hop_instance", "next_hop_ip", "next_hop_vpn_tunnel"},
 			},
 			"priority": {
 				Type:     schema.TypeInt,
 				Optional: true,
 				ForceNew: true,
-				Default:  1000,
+				Description: `The priority of this route. Priority is used to break ties in cases
+where there is more than one matching route of equal prefix length.
+
+In the case of two routes with equal prefix length, the one with the
+lowest-numbered priority value wins.
+
+Default value is 1000. Valid range is 0 through 65535.`,
+				Default: 1000,
 			},
 			"tags": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				ForceNew:    true,
+				Description: `A list of instance tags to which this route applies.`,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 				Set: schema.HashString,
 			},
 			"next_hop_network": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `URL to a Network that should handle matching packets.`,
 			},
 			"next_hop_instance_zone": {
 				Type:     schema.TypeString,
@@ -189,28 +230,28 @@ func resourceComputeRouteCreate(d *schema.ResourceData, meta interface{}) error 
 		obj["nextHopVpnTunnel"] = nextHopVpnTunnelProp
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/routes")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/routes")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new Route: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating Route: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/global/routes/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -235,12 +276,16 @@ func resourceComputeRouteCreate(d *schema.ResourceData, meta interface{}) error 
 func resourceComputeRouteRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/routes/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/routes/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := sendRequest(config, "GET", url, nil)
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequest(config, "GET", project, url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeRoute %q", d.Id()))
 	}
@@ -250,10 +295,13 @@ func resourceComputeRouteRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
+	if res == nil {
+		// Decoding the object has resulted in it being gone. It may be marked deleted
+		log.Printf("[DEBUG] Removing ComputeRoute because it no longer exists.")
+		d.SetId("")
+		return nil
 	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading Route: %s", err)
 	}
@@ -301,22 +349,24 @@ func resourceComputeRouteRead(d *schema.ResourceData, meta interface{}) error {
 func resourceComputeRouteDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/routes/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/routes/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting Route %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "Route")
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -337,12 +387,16 @@ func resourceComputeRouteDelete(d *schema.ResourceData, meta interface{}) error 
 
 func resourceComputeRouteImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/routes/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/global/routes/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/global/routes/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -443,11 +497,7 @@ func expandComputeRouteTags(v interface{}, d TerraformResourceData, config *Conf
 
 func expandComputeRouteNextHopGateway(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	if v == "default-internet-gateway" {
-		project, err := getProject(d, config)
-		if err != nil {
-			return nil, err
-		}
-		return fmt.Sprintf("projects/%s/global/gateways/default-internet-gateway", project), nil
+		return replaceVars(d, config, "projects/{{project}}/global/gateways/default-internet-gateway")
 	} else {
 		return v, nil
 	}

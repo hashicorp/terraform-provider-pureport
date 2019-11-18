@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceAccessContextManagerAccessLevel() *schema.Resource {
@@ -37,9 +37,9 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(360 * time.Second),
-			Update: schema.DefaultTimeout(360 * time.Second),
-			Delete: schema.DefaultTimeout(360 * time.Second),
+			Create: schema.DefaultTimeout(6 * time.Minute),
+			Update: schema.DefaultTimeout(6 * time.Minute),
+			Delete: schema.DefaultTimeout(6 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -47,37 +47,50 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `Resource name for the Access Level. The short_name component must begin
+with a letter and only include alphanumeric and '_'.
+Format: accessPolicies/{policy_id}/accessLevels/{short_name}`,
 			},
 			"parent": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `The AccessPolicy this AccessLevel lives in.
+Format: accessPolicies/{policy_id}`,
 			},
 			"title": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: `Human readable title. Must be unique within the Policy.`,
 			},
 			"basic": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: `A set of predefined conditions for the access level and a combining function.`,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"conditions": {
-							Type:     schema.TypeList,
-							Required: true,
-							MinItems: 1,
+							Type:        schema.TypeList,
+							Required:    true,
+							Description: `A set of requirements for the AccessLevel to be granted.`,
+							MinItems:    1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"device_policy": {
 										Type:     schema.TypeList,
 										Optional: true,
+										Description: `Device specific restrictions, all restrictions must hold for
+the Condition to be true. If not specified, all devices are
+allowed.`,
 										MaxItems: 1,
 										Elem: &schema.Resource{
 											Schema: map[string]*schema.Schema{
 												"allowed_device_management_levels": {
 													Type:     schema.TypeList,
 													Optional: true,
+													Description: `A list of allowed device management levels.
+An empty list allows all management levels.`,
 													Elem: &schema.Schema{
 														Type: schema.TypeString,
 													},
@@ -85,6 +98,8 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 												"allowed_encryption_statuses": {
 													Type:     schema.TypeList,
 													Optional: true,
+													Description: `A list of allowed encryptions statuses.
+An empty list allows all statuses.`,
 													Elem: &schema.Schema{
 														Type: schema.TypeString,
 													},
@@ -92,16 +107,22 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 												"os_constraints": {
 													Type:     schema.TypeList,
 													Optional: true,
+													Description: `A list of allowed OS versions.
+An empty list allows all types and all versions.`,
 													Elem: &schema.Resource{
 														Schema: map[string]*schema.Schema{
+															"os_type": {
+																Type:         schema.TypeString,
+																Required:     true,
+																ValidateFunc: validation.StringInSlice([]string{"OS_UNSPECIFIED", "DESKTOP_MAC", "DESKTOP_WINDOWS", "DESKTOP_LINUX", "DESKTOP_CHROME_OS"}, false),
+																Description:  `The operating system type of the device.`,
+															},
 															"minimum_version": {
 																Type:     schema.TypeString,
 																Optional: true,
-															},
-															"os_type": {
-																Type:         schema.TypeString,
-																Optional:     true,
-																ValidateFunc: validation.StringInSlice([]string{"OS_UNSPECIFIED", "DESKTOP_MAC", "DESKTOP_WINDOWS", "DESKTOP_LINUX", "DESKTOP_CHROME_OS", ""}, false),
+																Description: `The minimum allowed OS version. If not set, any version
+of this OS satisfies the constraint.
+Format: "major.minor.patch" such as "10.5.301", "9.2.1".`,
 															},
 														},
 													},
@@ -109,6 +130,8 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 												"require_screen_lock": {
 													Type:     schema.TypeBool,
 													Optional: true,
+													Description: `Whether or not screenlock is required for the DevicePolicy
+to be true. Defaults to false.`,
 												},
 											},
 										},
@@ -116,6 +139,16 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 									"ip_subnetworks": {
 										Type:     schema.TypeList,
 										Optional: true,
+										Description: `A list of CIDR block IP subnetwork specification. May be IPv4
+or IPv6.
+Note that for a CIDR IP address block, the specified IP address
+portion must be properly truncated (i.e. all the host bits must
+be zero) or the input is considered malformed. For example,
+"192.0.2.0/24" is accepted but "192.0.2.1/24" is not. Similarly,
+for IPv6, "2001:db8::/32" is accepted whereas "2001:db8::1/32"
+is not. The originating IP of a request must be in one of the
+listed subnets in order for this Condition to be true.
+If empty, all IP addresses are allowed.`,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
@@ -123,6 +156,12 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 									"members": {
 										Type:     schema.TypeList,
 										Optional: true,
+										Description: `An allowed list of members (users, groups, service accounts).
+The signed-in user originating the request must be a part of one
+of the provided members. If not specified, a request may come
+from any user (logged in/not logged in, not present in any
+groups, etc.).
+Formats: 'user:{emailid}', 'group:{emailid}', 'serviceAccount:{emailid}'`,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
@@ -130,10 +169,18 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 									"negate": {
 										Type:     schema.TypeBool,
 										Optional: true,
+										Description: `Whether to negate the Condition. If true, the Condition becomes
+a NAND over its non-empty fields, each field must be false for
+the Condition overall to be satisfied. Defaults to false.`,
 									},
 									"required_access_levels": {
 										Type:     schema.TypeList,
 										Optional: true,
+										Description: `A list of other access levels defined in the same Policy,
+referenced by resource name. Referencing an AccessLevel which
+does not exist is an error. All access levels listed must be
+granted for the Condition to be true.
+Format: accessPolicies/{policy_id}/accessLevels/{short_name}`,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
@@ -145,14 +192,20 @@ func resourceAccessContextManagerAccessLevel() *schema.Resource {
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"AND", "OR", ""}, false),
-							Default:      "AND",
+							Description: `How the conditions list should be combined to determine if a request
+is granted this AccessLevel. If AND is used, each Condition in
+conditions must be satisfied for the AccessLevel to be applied. If
+OR is used, at least one Condition in conditions must be satisfied
+for the AccessLevel to be applied. Defaults to AND if unspecified.`,
+							Default: "AND",
 						},
 					},
 				},
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: `Description of the AccessLevel and its use. Does not affect behavior.`,
 			},
 		},
 	}
@@ -198,13 +251,13 @@ func resourceAccessContextManagerAccessLevelCreate(d *schema.ResourceData, meta 
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://accesscontextmanager.googleapis.com/v1/{{parent}}/accessLevels")
+	url, err := replaceVars(d, config, "{{AccessContextManagerBasePath}}{{parent}}/accessLevels")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new AccessLevel: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequestWithTimeout(config, "POST", "", url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating AccessLevel: %s", err)
 	}
@@ -234,12 +287,12 @@ func resourceAccessContextManagerAccessLevelCreate(d *schema.ResourceData, meta 
 func resourceAccessContextManagerAccessLevelRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://accesscontextmanager.googleapis.com/v1/{{name}}")
+	url, err := replaceVars(d, config, "{{AccessContextManagerBasePath}}{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := sendRequest(config, "GET", url, nil)
+	res, err := sendRequest(config, "GET", "", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("AccessContextManagerAccessLevel %q", d.Id()))
 	}
@@ -288,7 +341,7 @@ func resourceAccessContextManagerAccessLevelUpdate(d *schema.ResourceData, meta 
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://accesscontextmanager.googleapis.com/v1/{{name}}")
+	url, err := replaceVars(d, config, "{{AccessContextManagerBasePath}}{{name}}")
 	if err != nil {
 		return err
 	}
@@ -313,7 +366,7 @@ func resourceAccessContextManagerAccessLevelUpdate(d *schema.ResourceData, meta 
 	if err != nil {
 		return err
 	}
-	res, err := sendRequestWithTimeout(config, "PATCH", url, obj, d.Timeout(schema.TimeoutUpdate))
+	res, err := sendRequestWithTimeout(config, "PATCH", "", url, obj, d.Timeout(schema.TimeoutUpdate))
 
 	if err != nil {
 		return fmt.Errorf("Error updating AccessLevel %q: %s", d.Id(), err)
@@ -333,14 +386,15 @@ func resourceAccessContextManagerAccessLevelUpdate(d *schema.ResourceData, meta 
 func resourceAccessContextManagerAccessLevelDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://accesscontextmanager.googleapis.com/v1/{{name}}")
+	url, err := replaceVars(d, config, "{{AccessContextManagerBasePath}}{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting AccessLevel %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", "", url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "AccessLevel")
 	}
@@ -360,11 +414,14 @@ func resourceAccessContextManagerAccessLevelDelete(d *schema.ResourceData, meta 
 func resourceAccessContextManagerAccessLevelImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
 
-	// current import_formats can't import ids with forward slashes in them.
+	// current import_formats can't import fields with forward slashes in their value
 	if err := parseImportId([]string{"(?P<name>.+)"}, d, config); err != nil {
 		return nil, err
 	}
 	stringParts := strings.Split(d.Get("name").(string), "/")
+	if len(stringParts) < 2 {
+		return nil, fmt.Errorf("Error parsing parent name. Should be in form accessPolicies/{{policy_id}}/accessLevels/{{short_name}}")
+	}
 	d.Set("parent", fmt.Sprintf("%s/%s", stringParts[0], stringParts[1]))
 	return []*schema.ResourceData{d}, nil
 }
