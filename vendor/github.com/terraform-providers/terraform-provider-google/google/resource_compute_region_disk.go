@@ -22,8 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/customdiff"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -40,9 +40,9 @@ func resourceComputeRegionDisk() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(300 * time.Second),
-			Update: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(5 * time.Minute),
+			Update: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
 
 		CustomizeDiff: customdiff.All(
@@ -53,13 +53,21 @@ func resourceComputeRegionDisk() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `Name of the resource. Provided by the client when the resource is
+created. The name must be 1-63 characters long, and comply with
+RFC1035. Specifically, the name must be 1-63 characters long and match
+the regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the
+first character must be a lowercase letter, and all following
+characters must be a dash, lowercase letter, or digit, except the last
+character, which cannot be a dash.`,
 			},
 			"replica_zones": {
-				Type:     schema.TypeList,
-				Required: true,
-				ForceNew: true,
-				MinItems: 2,
-				MaxItems: 2,
+				Type:        schema.TypeList,
+				Required:    true,
+				ForceNew:    true,
+				Description: `URLs of the zones where the disk should be replicated to.`,
+				MinItems:    2,
+				MaxItems:    2,
 				Elem: &schema.Schema{
 					Type:             schema.TypeString,
 					DiffSuppressFunc: compareSelfLinkOrResourceName,
@@ -69,11 +77,25 @@ func resourceComputeRegionDisk() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+				Description: `An optional description of this resource. Provide this property when
+you create the resource.`,
 			},
 			"disk_encryption_key": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `Encrypts the disk using a customer-supplied encryption key.
+
+After you encrypt a disk with a customer-supplied key, you must
+provide the same key if you use the disk later (e.g. to create a disk
+snapshot or an image, or to attach the disk to a virtual machine).
+
+Customer-supplied encryption keys do not protect access to metadata of
+the disk.
+
+If you do not provide an encryption key when creating the disk, then
+the disk will be encrypted using an automatically generated key and
+you do not need to provide a key to use the disk later.`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -81,24 +103,34 @@ func resourceComputeRegionDisk() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `Specifies a 256-bit customer-supplied encryption key, encoded in
+RFC 4648 base64 to either encrypt or decrypt this resource.`,
 						},
 						"sha256": {
 							Type:     schema.TypeString,
 							Computed: true,
+							Description: `The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
+encryption key that protects this resource.`,
 						},
 					},
 				},
 			},
 			"labels": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: `Labels to apply to this disk.  A list of key->value pairs.`,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"physical_block_size_bytes": {
 				Type:     schema.TypeInt,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
+				Description: `Physical block size of the persistent disk, in bytes. If not present
+in a request, a default value is used. Currently supported sizes
+are 4096 and 16384, other sizes may be added in the future.
+If an unsupported value is requested, the error message will list
+the supported values for the caller's project.`,
 			},
 			"region": {
 				Type:             schema.TypeString,
@@ -106,22 +138,42 @@ func resourceComputeRegionDisk() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description:      `A reference to the region where the disk resides.`,
 			},
 			"size": {
 				Type:     schema.TypeInt,
 				Computed: true,
 				Optional: true,
+				Description: `Size of the persistent disk, specified in GB. You can specify this
+field when creating a persistent disk using the sourceImage or
+sourceSnapshot parameter, or specify it alone to create an empty
+persistent disk.
+
+If you specify this field along with sourceImage or sourceSnapshot,
+the value of sizeGb must not be less than the size of the sourceImage
+or the size of the snapshot.`,
 			},
 			"snapshot": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description: `The source snapshot used to create this disk. You can provide this as
+a partial or full URL to the resource. For example, the following are
+valid values:
+
+* 'https://www.googleapis.com/compute/v1/projects/project/global/snapshots/snapshot'
+* 'projects/project/global/snapshots/snapshot'
+* 'global/snapshots/snapshot'
+* 'snapshot'`,
 			},
 			"source_snapshot_encryption_key": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `The customer-supplied encryption key of the source snapshot. Required
+if the source snapshot is protected by a customer-supplied encryption
+key.`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -129,10 +181,14 @@ func resourceComputeRegionDisk() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `Specifies a 256-bit customer-supplied encryption key, encoded in
+RFC 4648 base64 to either encrypt or decrypt this resource.`,
 						},
 						"sha256": {
 							Type:     schema.TypeString,
 							Computed: true,
+							Description: `The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
+encryption key that protects this resource.`,
 						},
 					},
 				},
@@ -142,31 +198,46 @@ func resourceComputeRegionDisk() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
-				Default:          "pd-standard",
+				Description: `URL of the disk type resource describing which disk type to use to
+create the disk. Provide this when creating the disk.`,
+				Default: "pd-standard",
 			},
 			"creation_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Creation timestamp in RFC3339 text format.`,
 			},
 			"label_fingerprint": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `The fingerprint used for optimistic locking of this resource.  Used
+internally during updates.`,
 			},
 			"last_attach_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Last attach timestamp in RFC3339 text format.`,
 			},
 			"last_detach_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Last detach timestamp in RFC3339 text format.`,
 			},
 			"source_snapshot_id": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `The unique ID of the snapshot used to create this disk. This value
+identifies the exact snapshot that was used to create this persistent
+disk. For example, if you created the persistent disk from a snapshot
+that was later deleted and recreated under the same name, the source
+snapshot ID would identify the exact version of the snapshot that was
+used.`,
 			},
 			"users": {
 				Type:     schema.TypeList,
 				Computed: true,
+				Description: `Links to the users of the disk (attached instances) in form:
+project/zones/zone/instances/instance`,
 				Elem: &schema.Schema{
 					Type:             schema.TypeString,
 					DiffSuppressFunc: compareSelfLinkOrResourceName,
@@ -268,28 +339,28 @@ func resourceComputeRegionDiskCreate(d *schema.ResourceData, meta interface{}) e
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/disks")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/disks")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new RegionDisk: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating RegionDisk: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/disks/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -314,12 +385,16 @@ func resourceComputeRegionDiskCreate(d *schema.ResourceData, meta interface{}) e
 func resourceComputeRegionDiskRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/disks/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/disks/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := sendRequest(config, "GET", url, nil)
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequest(config, "GET", project, url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeRegionDisk %q", d.Id()))
 	}
@@ -329,10 +404,13 @@ func resourceComputeRegionDiskRead(d *schema.ResourceData, meta interface{}) err
 		return err
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
+	if res == nil {
+		// Decoding the object has resulted in it being gone. It may be marked deleted
+		log.Printf("[DEBUG] Removing ComputeRegionDisk because it no longer exists.")
+		d.SetId("")
+		return nil
 	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading RegionDisk: %s", err)
 	}
@@ -398,10 +476,16 @@ func resourceComputeRegionDiskRead(d *schema.ResourceData, meta interface{}) err
 func resourceComputeRegionDiskUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
 	d.Partial(true)
 
 	if d.HasChange("label_fingerprint") || d.HasChange("labels") {
 		obj := make(map[string]interface{})
+
 		labelFingerprintProp, err := expandComputeRegionDiskLabelFingerprint(d.Get("label_fingerprint"), d, config)
 		if err != nil {
 			return err
@@ -415,19 +499,15 @@ func resourceComputeRegionDiskUpdate(d *schema.ResourceData, meta interface{}) e
 			obj["labels"] = labelsProp
 		}
 
-		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/disks/{{name}}/setLabels")
+		url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/disks/{{name}}/setLabels")
 		if err != nil {
 			return err
 		}
-		res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutUpdate))
+		res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutUpdate))
 		if err != nil {
 			return fmt.Errorf("Error updating RegionDisk %q: %s", d.Id(), err)
 		}
 
-		project, err := getProject(d, config)
-		if err != nil {
-			return err
-		}
 		op := &compute.Operation{}
 		err = Convert(res, op)
 		if err != nil {
@@ -447,6 +527,7 @@ func resourceComputeRegionDiskUpdate(d *schema.ResourceData, meta interface{}) e
 	}
 	if d.HasChange("size") {
 		obj := make(map[string]interface{})
+
 		sizeGbProp, err := expandComputeRegionDiskSize(d.Get("size"), d, config)
 		if err != nil {
 			return err
@@ -454,19 +535,15 @@ func resourceComputeRegionDiskUpdate(d *schema.ResourceData, meta interface{}) e
 			obj["sizeGb"] = sizeGbProp
 		}
 
-		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/disks/{{name}}/resize")
+		url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/disks/{{name}}/resize")
 		if err != nil {
 			return err
 		}
-		res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutUpdate))
+		res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutUpdate))
 		if err != nil {
 			return fmt.Errorf("Error updating RegionDisk %q: %s", d.Id(), err)
 		}
 
-		project, err := getProject(d, config)
-		if err != nil {
-			return err
-		}
 		op := &compute.Operation{}
 		err = Convert(res, op)
 		if err != nil {
@@ -492,13 +569,18 @@ func resourceComputeRegionDiskUpdate(d *schema.ResourceData, meta interface{}) e
 func resourceComputeRegionDiskDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/disks/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/disks/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
-	readRes, err := sendRequest(config, "GET", url, nil)
+	readRes, err := sendRequest(config, "GET", project, url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeDisk %q", d.Id()))
 	}
@@ -510,13 +592,11 @@ func resourceComputeRegionDiskDelete(d *schema.ResourceData, meta interface{}) e
 
 		for _, instance := range convertStringArr(v) {
 			self := d.Get("self_link").(string)
-			if !computeDiskUserRegex.MatchString(instance) {
-				return fmt.Errorf("Unknown user %q of disk %q", instance, self)
+			instanceProject, instanceZone, instanceName, err := GetLocationalResourcePropertiesFromSelfLinkString(instance)
+			if err != nil {
+				return err
 			}
-			matches := computeDiskUserRegex.FindStringSubmatch(instance)
-			instanceProject := matches[1]
-			instanceZone := matches[2]
-			instanceName := matches[3]
+
 			i, err := config.clientCompute.Instances.Get(instanceProject, instanceZone, instanceName).Do()
 			if err != nil {
 				if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
@@ -526,7 +606,7 @@ func resourceComputeRegionDiskDelete(d *schema.ResourceData, meta interface{}) e
 				return fmt.Errorf("Error retrieving instance %s: %s", instance, err.Error())
 			}
 			for _, disk := range i.Disks {
-				if disk.Source == self {
+				if compareSelfLinkOrResourceName("", disk.Source, self, nil) {
 					detachCalls = append(detachCalls, detachArgs{
 						project:    instanceProject,
 						zone:       GetResourceNameFromSelfLink(i.Zone),
@@ -555,15 +635,12 @@ func resourceComputeRegionDiskDelete(d *schema.ResourceData, meta interface{}) e
 		}
 	}
 	log.Printf("[DEBUG] Deleting RegionDisk %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "RegionDisk")
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -584,12 +661,17 @@ func resourceComputeRegionDiskDelete(d *schema.ResourceData, meta interface{}) e
 
 func resourceComputeRegionDiskImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/regions/(?P<region>[^/]+)/disks/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/regions/(?P<region>[^/]+)/disks/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/disks/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -766,6 +848,9 @@ func expandComputeRegionDiskReplicaZones(v interface{}, d TerraformResourceData,
 	l := v.([]interface{})
 	req := make([]interface{}, 0, len(l))
 	for _, raw := range l {
+		if raw == nil {
+			return nil, fmt.Errorf("Invalid value for replica_zones: nil")
+		}
 		f, err := parseGlobalFieldValue("zones", raw.(string), "project", d, config, true)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid value for replica_zones: %s", err)
@@ -874,26 +959,16 @@ func resourceComputeRegionDiskEncoder(d *schema.ResourceData, meta interface{}, 
 	if err != nil {
 		return nil, err
 	}
-	// Get the region
-	r, err := getRegion(d, config)
-	if err != nil {
-		return nil, err
-	}
-	region, err := config.clientCompute.Regions.Get(project, r).Do()
-	if err != nil {
-		return nil, err
-	}
-
 	if v, ok := d.GetOk("type"); ok {
 		log.Printf("[DEBUG] Loading disk type: %s", v.(string))
-		diskType, err := readRegionDiskType(config, region, project, v.(string))
+		diskType, err := readRegionDiskType(config, d, v.(string))
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Error loading disk type '%s': %s",
 				v.(string), err)
 		}
 
-		obj["type"] = diskType.SelfLink
+		obj["type"] = diskType.RelativeLink()
 	}
 
 	if v, ok := d.GetOk("image"); ok {

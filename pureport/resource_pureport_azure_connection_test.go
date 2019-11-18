@@ -5,8 +5,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
 )
@@ -36,7 +37,6 @@ func init() {
 }
 
 func testAccResourceAzureConnectionConfig_common() string {
-
 	format := `
 data "pureport_accounts" "main" {
   filter {
@@ -75,9 +75,9 @@ data "azurerm_express_route_circuit" "main" {
 
 func testAccResourceAzureConnectionConfig() string {
 
-	return testAccResourceAzureConnectionConfig_common() + `
+	format := testAccResourceAzureConnectionConfig_common() + `
 resource "pureport_azure_connection" "main" {
-  name = "AzureExpressRouteTest"
+  name = "%s"
   description = "Some random description"
   speed = "100"
   high_availability = true
@@ -94,6 +94,10 @@ resource "pureport_azure_connection" "main" {
   }
 }
 `
+
+	connection_name := acctest.RandomWithPrefix("AzureExpressRouteTest")
+
+	return fmt.Sprintf(format, connection_name)
 }
 
 func TestResourceAzureConnection_basic(t *testing.T) {
@@ -113,7 +117,7 @@ func TestResourceAzureConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 
 					resource.ComposeAggregateTestCheckFunc(
-						resource.TestCheckResourceAttr(resourceName, "name", "AzureExpressRouteTest"),
+						resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^AzureExpressRouteTest-.*")),
 						resource.TestCheckResourceAttr(resourceName, "description", "Some random description"),
 						resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 						resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),

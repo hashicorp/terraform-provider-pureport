@@ -5,8 +5,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
 )
@@ -59,9 +60,10 @@ data "pureport_networks" "main" {
 }
 `
 
-const testAccResourceSiteVPNConnectionConfig_route_based_bgp = testAccResourceSiteVPNConnectionConfig_common + `
+func testAccResourceSiteVPNConnectionConfig_route_based_bgp() string {
+	format := testAccResourceSiteVPNConnectionConfig_common + `
 resource "pureport_site_vpn_connection" "main" {
-  name = "SiteVPN_RouteBasedBGP"
+  name = "%s"
   speed = "100"
   high_availability = true
 
@@ -84,9 +86,15 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-const testAccResourceSiteVPNConnectionConfig_route_based_bgp_update_router_ip = testAccResourceSiteVPNConnectionConfig_common + `
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP")
+
+	return fmt.Sprintf(format, connection_name)
+}
+
+func testAccResourceSiteVPNConnectionConfig_route_based_bgp_update_router_ip() string {
+	format := testAccResourceSiteVPNConnectionConfig_common + `
 resource "pureport_site_vpn_connection" "main" {
-  name = "SiteVPN_RouteBasedBGP"
+  name = "%s"
   speed = "100"
   high_availability = true
 
@@ -109,9 +117,15 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-const testAccResourceSiteVPNConnectionConfig_with_ike_config = testAccResourceSiteVPNConnectionConfig_common + `
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP")
+
+	return fmt.Sprintf(format, connection_name)
+}
+
+func testAccResourceSiteVPNConnectionConfig_with_ike_config() string {
+	format := testAccResourceSiteVPNConnectionConfig_common + `
 resource "pureport_site_vpn_connection" "main" {
-  name = "SiteVPN_RouteBasedBGP"
+  name = "%s"
   speed = "100"
   high_availability = true
   enable_bgp_password = true
@@ -149,9 +163,15 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-const testAccResourceSiteVPNConnectionConfig_route_based_static = testAccResourceSiteVPNConnectionConfig_common + `
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedBGP")
+
+	return fmt.Sprintf(format, connection_name)
+}
+
+func testAccResourceSiteVPNConnectionConfig_route_based_static() string {
+	format := testAccResourceSiteVPNConnectionConfig_common + `
 resource "pureport_site_vpn_connection" "main" {
-  name = "SiteVPN_RouteBasedStatic"
+  name = "%s"
   description = "Some Description"
   speed = "100"
   high_availability = true
@@ -184,9 +204,15 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
-const testAccResourceSiteVPNConnectionConfig_policy_based = testAccResourceSiteVPNConnectionConfig_common + `
+	connection_name := acctest.RandomWithPrefix("SiteVPN_RouteBasedStatic")
+
+	return fmt.Sprintf(format, connection_name)
+}
+
+func testAccResourceSiteVPNConnectionConfig_policy_based() string {
+	format := testAccResourceSiteVPNConnectionConfig_common + `
 resource "pureport_site_vpn_connection" "main" {
-  name = "SiteVPN_PolicyBased"
+  name = "%s"
   speed = "50"
   high_availability = true
 
@@ -218,6 +244,11 @@ resource "pureport_site_vpn_connection" "main" {
 }
 `
 
+	connection_name := acctest.RandomWithPrefix("SiteVPN_PolicyBased")
+
+	return fmt.Sprintf(format, connection_name)
+}
+
 func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 
 	resourceName := "pureport_site_vpn_connection.main"
@@ -230,11 +261,11 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceSiteVPNConnectionConfig_route_based_bgp,
+				Config: testAccResourceSiteVPNConnectionConfig_route_based_bgp(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -290,21 +321,21 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccResourceSiteVPNConnectionConfig_route_based_bgp_update_router_ip,
+				Config: testAccResourceSiteVPNConnectionConfig_route_based_bgp_update_router_ip(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "primary_customer_router_ip", "123.123.123.100"),
 					resource.TestCheckResourceAttr(resourceName, "secondary_customer_router_ip", "124.124.124.100"),
 				),
 			},
 			{
-				Config: testAccResourceSiteVPNConnectionConfig_route_based_static,
+				Config: testAccResourceSiteVPNConnectionConfig_route_based_static(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &respawn_instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &respawn_instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedStatic"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedStatic-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", "Some Description"),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -374,11 +405,11 @@ func TestResourceSiteVPNConnection_with_ikeconfig(t *testing.T) {
 		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceSiteVPNConnectionConfig_with_ike_config,
+				Config: testAccResourceSiteVPNConnectionConfig_with_ike_config(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_RouteBasedBGP"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "100"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),
@@ -447,11 +478,11 @@ func TestResourceSiteVPNConnection_with_policy_based(t *testing.T) {
 		CheckDestroy: testAccCheckSiteVPNConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceSiteVPNConnectionConfig_policy_based,
+				Config: testAccResourceSiteVPNConnectionConfig_policy_based(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceSiteVPNConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "SiteVPN_PolicyBased"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^SiteVPN_PolicyBased-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "true"),

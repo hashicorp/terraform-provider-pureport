@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceStorageObjectAccessControl() *schema.Resource {
@@ -37,9 +37,9 @@ func resourceStorageObjectAccessControl() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(240 * time.Second),
-			Update: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(4 * time.Minute),
+			Update: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -47,50 +47,69 @@ func resourceStorageObjectAccessControl() *schema.Resource {
 				Type:             schema.TypeString,
 				Required:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description:      `The name of the bucket.`,
 			},
 			"entity": {
 				Type:     schema.TypeString,
 				Required: true,
+				Description: `The entity holding the permission, in one of the following forms:
+  * user-{{userId}}
+  * user-{{email}} (such as "user-liz@example.com")
+  * group-{{groupId}}
+  * group-{{email}} (such as "group-example@googlegroups.com")
+  * domain-{{domain}} (such as "domain-example.com")
+  * project-team-{{projectId}}
+  * allUsers
+  * allAuthenticatedUsers`,
 			},
 			"object": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: `The name of the object to apply the access control to.`,
 			},
 			"role": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringInSlice([]string{"OWNER", "READER"}, false),
+				Description:  `The access permission for the entity.`,
 			},
 			"domain": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `The domain associated with the entity.`,
 			},
 			"email": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `The email address associated with the entity.`,
 			},
 			"entity_id": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `The ID for the entity`,
 			},
 			"generation": {
-				Type:     schema.TypeInt,
-				Computed: true,
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: `The content generation of the object, if applied to an object.`,
 			},
 			"project_team": {
-				Type:     schema.TypeList,
-				Computed: true,
-				MaxItems: 1,
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: `The project team associated with the entity`,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"project_number": {
-							Type:     schema.TypeString,
-							Optional: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							Description: `The project team associated with the entity`,
 						},
 						"team": {
 							Type:         schema.TypeString,
 							Optional:     true,
 							ValidateFunc: validation.StringInSlice([]string{"editors", "owners", "viewers", ""}, false),
+							Description:  `The team.`,
 						},
 					},
 				},
@@ -128,13 +147,13 @@ func resourceStorageObjectAccessControlCreate(d *schema.ResourceData, meta inter
 		obj["role"] = roleProp
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/storage/v1/b/{{bucket}}/o/{{object}}/acl")
+	url, err := replaceVars(d, config, "{{StorageBasePath}}b/{{bucket}}/o/{{object}}/acl")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new ObjectAccessControl: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequestWithTimeout(config, "POST", "", url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating ObjectAccessControl: %s", err)
 	}
@@ -154,12 +173,12 @@ func resourceStorageObjectAccessControlCreate(d *schema.ResourceData, meta inter
 func resourceStorageObjectAccessControlRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/storage/v1/b/{{bucket}}/o/{{object}}/acl/{{entity}}")
+	url, err := replaceVars(d, config, "{{StorageBasePath}}b/{{bucket}}/o/{{object}}/acl/{{entity}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := sendRequest(config, "GET", url, nil)
+	res, err := sendRequest(config, "GET", "", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("StorageObjectAccessControl %q", d.Id()))
 	}
@@ -224,13 +243,13 @@ func resourceStorageObjectAccessControlUpdate(d *schema.ResourceData, meta inter
 		obj["role"] = roleProp
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/storage/v1/b/{{bucket}}/o/{{object}}/acl/{{entity}}")
+	url, err := replaceVars(d, config, "{{StorageBasePath}}b/{{bucket}}/o/{{object}}/acl/{{entity}}")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Updating ObjectAccessControl %q: %#v", d.Id(), obj)
-	_, err = sendRequestWithTimeout(config, "PUT", url, obj, d.Timeout(schema.TimeoutUpdate))
+	_, err = sendRequestWithTimeout(config, "PUT", "", url, obj, d.Timeout(schema.TimeoutUpdate))
 
 	if err != nil {
 		return fmt.Errorf("Error updating ObjectAccessControl %q: %s", d.Id(), err)
@@ -242,14 +261,15 @@ func resourceStorageObjectAccessControlUpdate(d *schema.ResourceData, meta inter
 func resourceStorageObjectAccessControlDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/storage/v1/b/{{bucket}}/o/{{object}}/acl/{{entity}}")
+	url, err := replaceVars(d, config, "{{StorageBasePath}}b/{{bucket}}/o/{{object}}/acl/{{entity}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting ObjectAccessControl %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", "", url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "ObjectAccessControl")
 	}
@@ -260,7 +280,9 @@ func resourceStorageObjectAccessControlDelete(d *schema.ResourceData, meta inter
 
 func resourceStorageObjectAccessControlImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"(?P<bucket>[^/]+)/(?P<object>[^/]+)/(?P<entity>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"(?P<bucket>[^/]+)/(?P<object>[^/]+)/(?P<entity>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 

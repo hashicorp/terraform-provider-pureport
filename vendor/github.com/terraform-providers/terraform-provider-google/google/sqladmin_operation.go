@@ -33,6 +33,10 @@ func (w *SqlAdminOperationWaiter) Error() error {
 	return nil
 }
 
+func (w *SqlAdminOperationWaiter) IsRetryable(error) bool {
+	return false
+}
+
 func (w *SqlAdminOperationWaiter) SetOp(op interface{}) error {
 	if op == nil {
 		// Starting as a log statement, this may be a useful error in the future
@@ -95,13 +99,13 @@ func (w *SqlAdminOperationWaiter) TargetStates() []string {
 	return []string{"DONE"}
 }
 
-func sqladminOperationWait(config *Config, op *sqladmin.Operation, project, activity string) error {
-	return sqladminOperationWaitTime(config, op, project, activity, 10)
+func sqlAdminOperationWait(service *sqladmin.Service, op *sqladmin.Operation, project, activity string) error {
+	return sqlAdminOperationWaitTime(service, op, project, activity, 10)
 }
 
-func sqladminOperationWaitTime(config *Config, op *sqladmin.Operation, project, activity string, timeoutMinutes int) error {
+func sqlAdminOperationWaitTime(service *sqladmin.Service, op *sqladmin.Operation, project, activity string, timeoutMinutes int) error {
 	w := &SqlAdminOperationWaiter{
-		Service: config.clientSqlAdmin,
+		Service: service,
 		Op:      op,
 		Project: project,
 	}

@@ -18,23 +18,14 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/customdiff"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
-)
-
-const (
-	computeDiskUserRegexString = "^(?:https://www.googleapis.com/compute/v1/projects/)?(" + ProjectRegex + ")/zones/([-_a-zA-Z0-9]*)/instances/([-_a-zA-Z0-9]*)$"
-)
-
-var (
-	computeDiskUserRegex = regexp.MustCompile(computeDiskUserRegexString)
 )
 
 // Is the new disk size smaller than the old one?
@@ -244,9 +235,9 @@ func resourceComputeDisk() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(300 * time.Second),
-			Update: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(5 * time.Minute),
+			Update: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
 
 		CustomizeDiff: customdiff.All(
@@ -257,16 +248,37 @@ func resourceComputeDisk() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `Name of the resource. Provided by the client when the resource is
+created. The name must be 1-63 characters long, and comply with
+RFC1035. Specifically, the name must be 1-63 characters long and match
+the regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the
+first character must be a lowercase letter, and all following
+characters must be a dash, lowercase letter, or digit, except the last
+character, which cannot be a dash.`,
 			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+				Description: `An optional description of this resource. Provide this property when
+you create the resource.`,
 			},
 			"disk_encryption_key": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `Encrypts the disk using a customer-supplied encryption key.
+
+After you encrypt a disk with a customer-supplied key, you must
+provide the same key if you use the disk later (e.g. to create a disk
+snapshot or an image, or to attach the disk to a virtual machine).
+
+Customer-supplied encryption keys do not protect access to metadata of
+the disk.
+
+If you do not provide an encryption key when creating the disk, then
+the disk will be encrypted using an automatically generated key and
+you do not need to provide a key to use the disk later.`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -275,15 +287,23 @@ func resourceComputeDisk() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							DiffSuppressFunc: compareSelfLinkRelativePaths,
+							Description: `The self link of the encryption key used to encrypt the disk. Also called KmsKeyName
+in the cloud console. In order to use this additional
+IAM permissions need to be set on the Compute Engine Service Agent. See
+https://cloud.google.com/compute/docs/disks/customer-managed-encryption#encrypt_a_new_persistent_disk_with_your_own_keys`,
 						},
 						"raw_key": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `Specifies a 256-bit customer-supplied encryption key, encoded in
+RFC 4648 base64 to either encrypt or decrypt this resource.`,
 						},
 						"sha256": {
 							Type:     schema.TypeString,
 							Computed: true,
+							Description: `The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
+encryption key that protects this resource.`,
 						},
 					},
 				},
@@ -293,33 +313,67 @@ func resourceComputeDisk() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: diskImageDiffSuppress,
+				Description: `The image from which to initialize this disk. This can be
+one of: the image's 'self_link', 'projects/{project}/global/images/{image}',
+'projects/{project}/global/images/family/{family}', 'global/images/{image}',
+'global/images/family/{family}', 'family/{family}', '{project}/{family}',
+'{project}/{image}', '{family}', or '{image}'. If referred by family, the
+images names must include the family name. If they don't, use the
+[google_compute_image data source](/docs/providers/google/d/datasource_compute_image.html).
+For instance, the image 'centos-6-v20180104' includes its family name 'centos-6'.
+These images can be referred by family name here.`,
 			},
 			"labels": {
-				Type:     schema.TypeMap,
-				Optional: true,
-				Elem:     &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeMap,
+				Optional:    true,
+				Description: `Labels to apply to this disk.  A list of key->value pairs.`,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 			},
 			"physical_block_size_bytes": {
 				Type:     schema.TypeInt,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
+				Description: `Physical block size of the persistent disk, in bytes. If not present
+in a request, a default value is used. Currently supported sizes
+are 4096 and 16384, other sizes may be added in the future.
+If an unsupported value is requested, the error message will list
+the supported values for the caller's project.`,
 			},
 			"size": {
 				Type:     schema.TypeInt,
 				Computed: true,
 				Optional: true,
+				Description: `Size of the persistent disk, specified in GB. You can specify this
+field when creating a persistent disk using the 'image' or
+'snapshot' parameter, or specify it alone to create an empty
+persistent disk.
+
+If you specify this field along with 'image' or 'snapshot',
+the value must not be less than the size of the image
+or the size of the snapshot.`,
 			},
 			"snapshot": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description: `The source snapshot used to create this disk. You can provide this as
+a partial or full URL to the resource. If the snapshot is in another
+project than this disk, you must supply a full URL. For example, the
+following are valid values:
+
+* 'https://www.googleapis.com/compute/v1/projects/project/global/snapshots/snapshot'
+* 'projects/project/global/snapshots/snapshot'
+* 'global/snapshots/snapshot'
+* 'snapshot'`,
 			},
 			"source_image_encryption_key": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `The customer-supplied encryption key of the source image. Required if
+the source image is protected by a customer-supplied encryption key.`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -328,15 +382,23 @@ func resourceComputeDisk() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							DiffSuppressFunc: compareSelfLinkRelativePaths,
+							Description: `The self link of the encryption key used to encrypt the disk. Also called KmsKeyName
+in the cloud console. In order to use this additional
+IAM permissions need to be set on the Compute Engine Service Agent. See
+https://cloud.google.com/compute/docs/disks/customer-managed-encryption#encrypt_a_new_persistent_disk_with_your_own_keys`,
 						},
 						"raw_key": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `Specifies a 256-bit customer-supplied encryption key, encoded in
+RFC 4648 base64 to either encrypt or decrypt this resource.`,
 						},
 						"sha256": {
 							Type:     schema.TypeString,
 							Computed: true,
+							Description: `The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
+encryption key that protects this resource.`,
 						},
 					},
 				},
@@ -345,6 +407,9 @@ func resourceComputeDisk() *schema.Resource {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `The customer-supplied encryption key of the source snapshot. Required
+if the source snapshot is protected by a customer-supplied encryption
+key.`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -353,15 +418,23 @@ func resourceComputeDisk() *schema.Resource {
 							Optional:         true,
 							ForceNew:         true,
 							DiffSuppressFunc: compareSelfLinkRelativePaths,
+							Description: `The self link of the encryption key used to encrypt the disk. Also called KmsKeyName
+in the cloud console. In order to use this additional
+IAM permissions need to be set on the Compute Engine Service Agent. See
+https://cloud.google.com/compute/docs/disks/customer-managed-encryption#encrypt_a_new_persistent_disk_with_your_own_keys`,
 						},
 						"raw_key": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `Specifies a 256-bit customer-supplied encryption key, encoded in
+RFC 4648 base64 to either encrypt or decrypt this resource.`,
 						},
 						"sha256": {
 							Type:     schema.TypeString,
 							Computed: true,
+							Description: `The RFC 4648 base64 encoded SHA-256 hash of the customer-supplied
+encryption key that protects this resource.`,
 						},
 					},
 				},
@@ -371,7 +444,9 @@ func resourceComputeDisk() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
-				Default:          "pd-standard",
+				Description: `URL of the disk type resource describing which disk type to use to
+create the disk. Provide this when creating the disk.`,
+				Default: "pd-standard",
 			},
 			"zone": {
 				Type:             schema.TypeString,
@@ -379,51 +454,57 @@ func resourceComputeDisk() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description:      `A reference to the zone where the disk resides.`,
 			},
 			"creation_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Creation timestamp in RFC3339 text format.`,
 			},
 			"label_fingerprint": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `The fingerprint used for optimistic locking of this resource.  Used
+internally during updates.`,
 			},
 			"last_attach_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Last attach timestamp in RFC3339 text format.`,
 			},
 			"last_detach_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Last detach timestamp in RFC3339 text format.`,
 			},
 			"source_image_id": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `The ID value of the image used to create this disk. This value
+identifies the exact image that was used to create this persistent
+disk. For example, if you created the persistent disk from an image
+that was later deleted and recreated under the same name, the source
+image ID would identify the exact version of the image that was used.`,
 			},
 			"source_snapshot_id": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `The unique ID of the snapshot used to create this disk. This value
+identifies the exact snapshot that was used to create this persistent
+disk. For example, if you created the persistent disk from a snapshot
+that was later deleted and recreated under the same name, the source
+snapshot ID would identify the exact version of the snapshot that was
+used.`,
 			},
 			"users": {
 				Type:     schema.TypeList,
 				Computed: true,
+				Description: `Links to the users of the disk (attached instances) in form:
+project/zones/zone/instances/instance`,
 				Elem: &schema.Schema{
 					Type:             schema.TypeString,
 					DiffSuppressFunc: compareSelfLinkOrResourceName,
 				},
-			},
-			"disk_encryption_key_raw": {
-				Type:      schema.TypeString,
-				Optional:  true,
-				ForceNew:  true,
-				Sensitive: true,
-				Removed:   "Use disk_encryption_key.raw_key instead.",
-			},
-
-			"disk_encryption_key_sha256": {
-				Type:     schema.TypeString,
-				Computed: true,
-				Removed:  "Use disk_encryption_key.sha256 instead.",
 			},
 			"project": {
 				Type:     schema.TypeString,
@@ -527,28 +608,28 @@ func resourceComputeDiskCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/zones/{{zone}}/disks")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/zones/{{zone}}/disks")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new Disk: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating Disk: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/zones/{{zone}}/disks/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -573,12 +654,16 @@ func resourceComputeDiskCreate(d *schema.ResourceData, meta interface{}) error {
 func resourceComputeDiskRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/zones/{{zone}}/disks/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/zones/{{zone}}/disks/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := sendRequest(config, "GET", url, nil)
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequest(config, "GET", project, url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeDisk %q", d.Id()))
 	}
@@ -588,10 +673,13 @@ func resourceComputeDiskRead(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
+	if res == nil {
+		// Decoding the object has resulted in it being gone. It may be marked deleted
+		log.Printf("[DEBUG] Removing ComputeDisk because it no longer exists.")
+		d.SetId("")
+		return nil
 	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading Disk: %s", err)
 	}
@@ -663,10 +751,16 @@ func resourceComputeDiskRead(d *schema.ResourceData, meta interface{}) error {
 func resourceComputeDiskUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
 	d.Partial(true)
 
 	if d.HasChange("label_fingerprint") || d.HasChange("labels") {
 		obj := make(map[string]interface{})
+
 		labelFingerprintProp, err := expandComputeDiskLabelFingerprint(d.Get("label_fingerprint"), d, config)
 		if err != nil {
 			return err
@@ -680,19 +774,15 @@ func resourceComputeDiskUpdate(d *schema.ResourceData, meta interface{}) error {
 			obj["labels"] = labelsProp
 		}
 
-		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/zones/{{zone}}/disks/{{name}}/setLabels")
+		url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/zones/{{zone}}/disks/{{name}}/setLabels")
 		if err != nil {
 			return err
 		}
-		res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutUpdate))
+		res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutUpdate))
 		if err != nil {
 			return fmt.Errorf("Error updating Disk %q: %s", d.Id(), err)
 		}
 
-		project, err := getProject(d, config)
-		if err != nil {
-			return err
-		}
 		op := &compute.Operation{}
 		err = Convert(res, op)
 		if err != nil {
@@ -712,6 +802,7 @@ func resourceComputeDiskUpdate(d *schema.ResourceData, meta interface{}) error {
 	}
 	if d.HasChange("size") {
 		obj := make(map[string]interface{})
+
 		sizeGbProp, err := expandComputeDiskSize(d.Get("size"), d, config)
 		if err != nil {
 			return err
@@ -719,19 +810,15 @@ func resourceComputeDiskUpdate(d *schema.ResourceData, meta interface{}) error {
 			obj["sizeGb"] = sizeGbProp
 		}
 
-		url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/zones/{{zone}}/disks/{{name}}/resize")
+		url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/zones/{{zone}}/disks/{{name}}/resize")
 		if err != nil {
 			return err
 		}
-		res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutUpdate))
+		res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutUpdate))
 		if err != nil {
 			return fmt.Errorf("Error updating Disk %q: %s", d.Id(), err)
 		}
 
-		project, err := getProject(d, config)
-		if err != nil {
-			return err
-		}
 		op := &compute.Operation{}
 		err = Convert(res, op)
 		if err != nil {
@@ -757,13 +844,18 @@ func resourceComputeDiskUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceComputeDiskDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/zones/{{zone}}/disks/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/zones/{{zone}}/disks/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
-	readRes, err := sendRequest(config, "GET", url, nil)
+	readRes, err := sendRequest(config, "GET", project, url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeDisk %q", d.Id()))
 	}
@@ -775,13 +867,11 @@ func resourceComputeDiskDelete(d *schema.ResourceData, meta interface{}) error {
 
 		for _, instance := range convertStringArr(v) {
 			self := d.Get("self_link").(string)
-			if !computeDiskUserRegex.MatchString(instance) {
-				return fmt.Errorf("Unknown user %q of disk %q", instance, self)
+			instanceProject, instanceZone, instanceName, err := GetLocationalResourcePropertiesFromSelfLinkString(instance)
+			if err != nil {
+				return err
 			}
-			matches := computeDiskUserRegex.FindStringSubmatch(instance)
-			instanceProject := matches[1]
-			instanceZone := matches[2]
-			instanceName := matches[3]
+
 			i, err := config.clientCompute.Instances.Get(instanceProject, instanceZone, instanceName).Do()
 			if err != nil {
 				if gerr, ok := err.(*googleapi.Error); ok && gerr.Code == 404 {
@@ -791,7 +881,7 @@ func resourceComputeDiskDelete(d *schema.ResourceData, meta interface{}) error {
 				return fmt.Errorf("Error retrieving instance %s: %s", instance, err.Error())
 			}
 			for _, disk := range i.Disks {
-				if disk.Source == self {
+				if compareSelfLinkOrResourceName("", disk.Source, self, nil) {
 					detachCalls = append(detachCalls, detachArgs{
 						project:    instanceProject,
 						zone:       GetResourceNameFromSelfLink(i.Zone),
@@ -820,15 +910,12 @@ func resourceComputeDiskDelete(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 	log.Printf("[DEBUG] Deleting Disk %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "Disk")
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -849,12 +936,17 @@ func resourceComputeDiskDelete(d *schema.ResourceData, meta interface{}) error {
 
 func resourceComputeDiskImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/zones/(?P<zone>[^/]+)/disks/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<zone>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/zones/(?P<zone>[^/]+)/disks/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<zone>[^/]+)/(?P<name>[^/]+)",
+		"(?P<zone>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/zones/{{zone}}/disks/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -1239,26 +1331,16 @@ func resourceComputeDiskEncoder(d *schema.ResourceData, meta interface{}, obj ma
 	if err != nil {
 		return nil, err
 	}
-	// Get the zone
-	z, err := getZone(d, config)
-	if err != nil {
-		return nil, err
-	}
-	zone, err := config.clientCompute.Zones.Get(project, z).Do()
-	if err != nil {
-		return nil, err
-	}
-
 	if v, ok := d.GetOk("type"); ok {
 		log.Printf("[DEBUG] Loading disk type: %s", v.(string))
-		diskType, err := readDiskType(config, zone, project, v.(string))
+		diskType, err := readDiskType(config, d, v.(string))
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Error loading disk type '%s': %s",
 				v.(string), err)
 		}
 
-		obj["type"] = diskType.SelfLink
+		obj["type"] = diskType.RelativeLink()
 	}
 
 	if v, ok := d.GetOk("image"); ok {

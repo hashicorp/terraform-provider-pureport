@@ -8,9 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/hashicorp/terraform/helper/customdiff"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceAwsSsmParameter() *schema.Resource {
@@ -75,6 +75,10 @@ func resourceAwsSsmParameter() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"version": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"tags": tagsSchema(),
 		},
 
@@ -121,6 +125,7 @@ func resourceAwsSsmParameterRead(d *schema.ResourceData, meta interface{}) error
 	d.Set("name", param.Name)
 	d.Set("type", param.Type)
 	d.Set("value", param.Value)
+	d.Set("version", param.Version)
 
 	describeParamsInput := &ssm.DescribeParametersInput{
 		ParameterFilters: []*ssm.ParameterStringFilter{
