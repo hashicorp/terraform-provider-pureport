@@ -79,14 +79,14 @@ pipeline {
 
                       case ~/hotfix\/.*/:
                         environment = "Production"
-                        provider_version = "v${version}"
+                        provider_version = "${version}"
 
                       default:
                         environment = "Dev1"
                       }
                     }
 
-                    plugin_name += "_${provider_version}"
+                    plugin_name += "_v${provider_version}_x4"
 
                     env.PUREPORT_ACC_TEST_ENVIRONMENT = environment
                     env.PROVIDER_VERSION = provider_version
