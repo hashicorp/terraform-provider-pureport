@@ -61,7 +61,6 @@ data "pureport_networks" "main" {
 `
 
 func testAccResourceGoogleCloudConnectionConfig_basic() string {
-
 	format := testAccResourceGoogleCloudConnectionConfig_common + `
 data "google_compute_network" "default" {
   name = "terraform-acc-network-%s"
@@ -92,7 +91,7 @@ resource "google_compute_interconnect_attachment" "main" {
 }
 
 resource "pureport_google_cloud_connection" "main" {
-  name = "GoogleCloudTest"
+  name = "%s"
   speed = "50"
 
   location_href = "${data.pureport_locations.main.locations.0.href}"
@@ -108,14 +107,16 @@ resource "pureport_google_cloud_connection" "main" {
 }
 `
 
-	router_name := acctest.RandomWithPrefix("router-")
-	interconnect_name := acctest.RandomWithPrefix("interconnect-")
+	router_name := acctest.RandomWithPrefix("router")
+	interconnect_name := acctest.RandomWithPrefix("interconnect")
+	connection_name := acctest.RandomWithPrefix("GoogleCloudTest")
+	environment_name := "dev1"
 
 	if testEnvironmentName == "Production" {
-		return fmt.Sprintf(format, "prod", router_name, interconnect_name)
+		environment_name = "prod"
 	}
 
-	return fmt.Sprintf(format, "dev1", router_name, interconnect_name)
+	return fmt.Sprintf(format, environment_name, router_name, interconnect_name, connection_name)
 }
 
 func TestResourceGoogleCloudConnection_basic(t *testing.T) {
@@ -133,7 +134,7 @@ func TestResourceGoogleCloudConnection_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceGoogleCloudConnection(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
-					resource.TestCheckResourceAttr(resourceName, "name", "GoogleCloudTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^GoogleCloudTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", ""),
 					resource.TestCheckResourceAttr(resourceName, "speed", "50"),
 					resource.TestCheckResourceAttr(resourceName, "high_availability", "false"),

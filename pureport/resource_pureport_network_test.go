@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
@@ -44,9 +45,10 @@ data "pureport_accounts" "main" {
 }
 `
 
-const testAccResourceNetworkConfig_basic = testAccResourceNetworkConfig_common + `
+func testAccResourceNetworkConfig_basic() string {
+	format := testAccResourceNetworkConfig_common + `
 resource "pureport_network" "main" {
-  name = "NetworkTest"
+  name = "%s"
   description = "Network Terraform Test"
   account_href = "${data.pureport_accounts.main.accounts.0.href}"
 
@@ -57,6 +59,11 @@ resource "pureport_network" "main" {
   }
 }
 `
+
+	connection_name := acctest.RandomWithPrefix("NetworkTest")
+
+	return fmt.Sprintf(format, connection_name)
+}
 
 func TestResourceNetwork_basic(t *testing.T) {
 
@@ -69,12 +76,12 @@ func TestResourceNetwork_basic(t *testing.T) {
 		CheckDestroy: testAccCheckNetworkDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceNetworkConfig_basic,
+				Config: testAccResourceNetworkConfig_basic(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckResourceNetwork(resourceName, &instance),
 					resource.TestCheckResourceAttrPtr(resourceName, "id", &instance.Id),
 					resource.TestCheckResourceAttrPtr(resourceName, "href", &instance.Href),
-					resource.TestCheckResourceAttr(resourceName, "name", "NetworkTest"),
+					resource.TestMatchResourceAttr(resourceName, "name", regexp.MustCompile("^NetworkTest-.*")),
 					resource.TestCheckResourceAttr(resourceName, "description", "Network Terraform Test"),
 					resource.TestMatchResourceAttr(resourceName, "account_href", regexp.MustCompile("/accounts/ac-.{16}")),
 
