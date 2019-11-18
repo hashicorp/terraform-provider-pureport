@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -36,8 +36,8 @@ func resourceComputeAddress() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -46,24 +46,37 @@ func resourceComputeAddress() *schema.Resource {
 				Required:     true,
 				ForceNew:     true,
 				ValidateFunc: validateRegexp(`^(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)$`),
+				Description: `Name of the resource. The name must be 1-63 characters long, and
+comply with RFC1035. Specifically, the name must be 1-63 characters
+long and match the regular expression '[a-z]([-a-z0-9]*[a-z0-9])?'
+which means the first character must be a lowercase letter, and all
+following characters must be a dash, lowercase letter, or digit,
+except the last character, which cannot be a dash.`,
 			},
 			"address": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
 				ForceNew: true,
+				Description: `The static external IP address represented by this resource. Only
+IPv4 is supported. An address may only be specified for INTERNAL
+address types. The IP address must be inside the specified subnetwork,
+if any.`,
 			},
 			"address_type": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"INTERNAL", "EXTERNAL", ""}, false),
-				Default:      "EXTERNAL",
+				Description: `The type of address to reserve, either INTERNAL or EXTERNAL.
+If unspecified, defaults to EXTERNAL.`,
+				Default: "EXTERNAL",
 			},
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: `An optional description of this resource.`,
 			},
 			"network_tier": {
 				Type:         schema.TypeString,
@@ -71,6 +84,21 @@ func resourceComputeAddress() *schema.Resource {
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice([]string{"PREMIUM", "STANDARD", ""}, false),
+				Description: `The networking tier used for configuring this address. This field can
+take the following values: PREMIUM or STANDARD. If this field is not
+specified, it is assumed to be PREMIUM.`,
+			},
+			"purpose": {
+				Type:         schema.TypeString,
+				Computed:     true,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice([]string{"GCE_ENDPOINT", ""}, false),
+				Description: `The purpose of this resource, which can be one of the following values:
+
+- GCE_ENDPOINT for addresses that are used by VM instances, alias IP ranges, internal load balancers, and similar resources.
+
+This should only be set when using an Internal address.`,
 			},
 			"region": {
 				Type:             schema.TypeString,
@@ -78,6 +106,8 @@ func resourceComputeAddress() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description: `The Region in which the created address should reside.
+If it is not provided, the provider region is used.`,
 			},
 			"subnetwork": {
 				Type:             schema.TypeString,
@@ -85,14 +115,20 @@ func resourceComputeAddress() *schema.Resource {
 				Optional:         true,
 				ForceNew:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description: `The URL of the subnetwork in which to reserve the address. If an IP
+address is specified, it must be within the subnetwork's IP range.
+This field can only be used with INTERNAL type with
+GCE_ENDPOINT/DNS_RESOLVER purposes.`,
 			},
 			"creation_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Creation timestamp in RFC3339 text format.`,
 			},
 			"users": {
-				Type:     schema.TypeList,
-				Computed: true,
+				Type:        schema.TypeList,
+				Computed:    true,
+				Description: `The URLs of the resources that are using this address.`,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
@@ -139,6 +175,12 @@ func resourceComputeAddressCreate(d *schema.ResourceData, meta interface{}) erro
 	} else if v, ok := d.GetOkExists("name"); !isEmptyValue(reflect.ValueOf(nameProp)) && (ok || !reflect.DeepEqual(v, nameProp)) {
 		obj["name"] = nameProp
 	}
+	purposeProp, err := expandComputeAddressPurpose(d.Get("purpose"), d, config)
+	if err != nil {
+		return err
+	} else if v, ok := d.GetOkExists("purpose"); !isEmptyValue(reflect.ValueOf(purposeProp)) && (ok || !reflect.DeepEqual(v, purposeProp)) {
+		obj["purpose"] = purposeProp
+	}
 	networkTierProp, err := expandComputeAddressNetworkTier(d.Get("network_tier"), d, config)
 	if err != nil {
 		return err
@@ -158,28 +200,28 @@ func resourceComputeAddressCreate(d *schema.ResourceData, meta interface{}) erro
 		obj["region"] = regionProp
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/addresses")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/addresses")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new Address: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating Address: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{project}}/{{region}}/{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/addresses/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -204,20 +246,20 @@ func resourceComputeAddressCreate(d *schema.ResourceData, meta interface{}) erro
 func resourceComputeAddressRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/addresses/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/addresses/{{name}}")
 	if err != nil {
 		return err
-	}
-
-	res, err := sendRequest(config, "GET", url, nil)
-	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("ComputeAddress %q", d.Id()))
 	}
 
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
+	res, err := sendRequest(config, "GET", project, url, nil)
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("ComputeAddress %q", d.Id()))
+	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading Address: %s", err)
 	}
@@ -235,6 +277,9 @@ func resourceComputeAddressRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error reading Address: %s", err)
 	}
 	if err := d.Set("name", flattenComputeAddressName(res["name"], d)); err != nil {
+		return fmt.Errorf("Error reading Address: %s", err)
+	}
+	if err := d.Set("purpose", flattenComputeAddressPurpose(res["purpose"], d)); err != nil {
 		return fmt.Errorf("Error reading Address: %s", err)
 	}
 	if err := d.Set("network_tier", flattenComputeAddressNetworkTier(res["networkTier"], d)); err != nil {
@@ -259,22 +304,24 @@ func resourceComputeAddressRead(d *schema.ResourceData, meta interface{}) error 
 func resourceComputeAddressDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/regions/{{region}}/addresses/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/regions/{{region}}/addresses/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting Address %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "Address")
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -295,12 +342,17 @@ func resourceComputeAddressDelete(d *schema.ResourceData, meta interface{}) erro
 
 func resourceComputeAddressImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/regions/(?P<region>[^/]+)/addresses/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/regions/(?P<region>[^/]+)/addresses/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{project}}/{{region}}/{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/addresses/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -329,6 +381,10 @@ func flattenComputeAddressDescription(v interface{}, d *schema.ResourceData) int
 }
 
 func flattenComputeAddressName(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeAddressPurpose(v interface{}, d *schema.ResourceData) interface{} {
 	return v
 }
 
@@ -367,6 +423,10 @@ func expandComputeAddressDescription(v interface{}, d TerraformResourceData, con
 }
 
 func expandComputeAddressName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeAddressPurpose(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 

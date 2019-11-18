@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/antihax/optional"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/structure"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/structure"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
 	"github.com/terraform-providers/terraform-provider-pureport/pureport/tags"

@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/errwrap"
-	"github.com/hashicorp/terraform/helper/hashcode"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/hashcode"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"google.golang.org/api/compute/v1"
 )
 
@@ -50,13 +50,16 @@ func resourceGoogleComputeBackendServiceBackendHash(v interface{}) int {
 			v = ""
 		}
 
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+		buf.WriteString(fmt.Sprintf("%v-", v))
 	}
 	if v, ok := m["capacity_scaler"]; ok {
 		if v == nil {
 			v = 0.0
 		}
 
+		// floats can't be added to the hash with %v as the other values are because
+		// %v and %f are not equivalent strings so this must remain as a float so that
+		// the hash function doesn't return something else.
 		buf.WriteString(fmt.Sprintf("%f-", v.(float64)))
 	}
 	if v, ok := m["description"]; ok {
@@ -65,20 +68,23 @@ func resourceGoogleComputeBackendServiceBackendHash(v interface{}) int {
 		}
 
 		log.Printf("[DEBUG] writing description %s", v)
-		buf.WriteString(fmt.Sprintf("%s-", v.(string)))
+		buf.WriteString(fmt.Sprintf("%v-", v))
 	}
 	if v, ok := m["max_rate"]; ok {
 		if v == nil {
 			v = 0
 		}
 
-		buf.WriteString(fmt.Sprintf("%d-", int64(v.(int))))
+		buf.WriteString(fmt.Sprintf("%v-", v))
 	}
 	if v, ok := m["max_rate_per_instance"]; ok {
 		if v == nil {
 			v = 0.0
 		}
 
+		// floats can't be added to the hash with %v as the other values are because
+		// %v and %f are not equivalent strings so this must remain as a float so that
+		// the hash function doesn't return something else.
 		buf.WriteString(fmt.Sprintf("%f-", v.(float64)))
 	}
 	if v, ok := m["max_connections"]; ok {
@@ -86,73 +92,50 @@ func resourceGoogleComputeBackendServiceBackendHash(v interface{}) int {
 			v = 0
 		}
 
-		switch v := v.(type) {
-		case float64:
-			// The Golang JSON library can't tell int values apart from floats,
-			// because MM doesn't give fields strong types. Since another value
-			// in this block was a real float, it assumed this was a float too.
-			// It's not.
-			// Note that math.Round in Go is from float64 -> float64, so it will
-			// be a noop. int(floatVal) truncates extra parts, so if the float64
-			// representation of an int falls below the real value we'll have
-			// the wrong value. eg if 3 was represented as 2.999999, that would
-			// convert to 2. So we add 0.5, ensuring that we'll truncate to the
-			// correct value. This wouldn't remain true if we were far enough
-			// from 0 that we were off by > 0.5, but no float conversion *could*
-			// work correctly in that case. 53-bit floating types as the only
-			// numeric type was not a good idea, thanks Javascript.
-			var vInt int
-			if v < 0 {
-				vInt = int(v - 0.5)
-			} else {
-				vInt = int(v + 0.5)
-			}
-
-			log.Printf("[DEBUG] writing float value %f as integer value %v", v, vInt)
-			buf.WriteString(fmt.Sprintf("%d-", vInt))
-		default:
-			buf.WriteString(fmt.Sprintf("%d-", int64(v.(int))))
-		}
+		buf.WriteString(fmt.Sprintf("%v-", v))
 	}
 	if v, ok := m["max_connections_per_instance"]; ok {
 		if v == nil {
 			v = 0
 		}
 
-		switch v := v.(type) {
-		case float64:
-			// The Golang JSON library can't tell int values apart from floats,
-			// because MM doesn't give fields strong types. Since another value
-			// in this block was a real float, it assumed this was a float too.
-			// It's not.
-			// Note that math.Round in Go is from float64 -> float64, so it will
-			// be a noop. int(floatVal) truncates extra parts, so if the float64
-			// representation of an int falls below the real value we'll have
-			// the wrong value. eg if 3 was represented as 2.999999, that would
-			// convert to 2. So we add 0.5, ensuring that we'll truncate to the
-			// correct value. This wouldn't remain true if we were far enough
-			// from 0 that we were off by > 0.5, but no float conversion *could*
-			// work correctly in that case. 53-bit floating types as the only
-			// numeric type was not a good idea, thanks Javascript.
-			var vInt int
-			if v < 0 {
-				vInt = int(v - 0.5)
-			} else {
-				vInt = int(v + 0.5)
-			}
-
-			log.Printf("[DEBUG] writing float value %f as integer value %v", v, vInt)
-			buf.WriteString(fmt.Sprintf("%d-", vInt))
-		default:
-			buf.WriteString(fmt.Sprintf("%d-", int64(v.(int))))
-		}
+		buf.WriteString(fmt.Sprintf("%v-", v))
 	}
 	if v, ok := m["max_rate_per_instance"]; ok {
 		if v == nil {
 			v = 0.0
 		}
 
+		// floats can't be added to the hash with %v as the other values are because
+		// %v and %f are not equivalent strings so this must remain as a float so that
+		// the hash function doesn't return something else.
 		buf.WriteString(fmt.Sprintf("%f-", v.(float64)))
+	}
+	if v, ok := m["max_connections_per_endpoint"]; ok {
+		if v == nil {
+			v = 0
+		}
+
+		buf.WriteString(fmt.Sprintf("%v-", v))
+	}
+	if v, ok := m["max_rate_per_endpoint"]; ok {
+		if v == nil {
+			v = 0.0
+		}
+
+		// floats can't be added to the hash with %v as the other values are because
+		// %v and %f are not equivalent strings so this must remain as a float so that
+		// the hash function doesn't return something else.
+		buf.WriteString(fmt.Sprintf("%f-", v.(float64)))
+	}
+
+	// This is in region backend service, but not in backend service.  Should be a no-op
+	// if it's not present.
+	if v, ok := m["failover"]; ok {
+		if v == nil {
+			v = false
+		}
+		buf.WriteString(fmt.Sprintf("%v-", v.(bool)))
 	}
 
 	log.Printf("[DEBUG] computed hash value of %v from %v", hashcode.String(buf.String()), buf.String())
@@ -171,9 +154,9 @@ func resourceComputeBackendService() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(240 * time.Second),
-			Update: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(4 * time.Minute),
+			Update: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
 
 		SchemaVersion: 1,
@@ -182,6 +165,11 @@ func resourceComputeBackendService() *schema.Resource {
 			"health_checks": {
 				Type:     schema.TypeSet,
 				Required: true,
+				Description: `The set of URLs to the HttpHealthCheck or HttpsHealthCheck resource
+for health checking this BackendService. Currently at most one health
+check can be specified, and a health check is required.
+
+For internal load balancing, a URL to a HealthCheck resource must be specified instead.`,
 				MinItems: 1,
 				MaxItems: 1,
 				Elem: &schema.Schema{
@@ -193,65 +181,119 @@ func resourceComputeBackendService() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `Name of the resource. Provided by the client when the resource is
+created. The name must be 1-63 characters long, and comply with
+RFC1035. Specifically, the name must be 1-63 characters long and match
+the regular expression '[a-z]([-a-z0-9]*[a-z0-9])?' which means the
+first character must be a lowercase letter, and all following
+characters must be a dash, lowercase letter, or digit, except the last
+character, which cannot be a dash.`,
 			},
 			"affinity_cookie_ttl_sec": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Description: `Lifetime of cookies in seconds if session_affinity is
+GENERATED_COOKIE. If set to 0, the cookie is non-persistent and lasts
+only until the end of the browser session (or equivalent). The
+maximum allowed value for TTL is one day.
+
+When the load balancing scheme is INTERNAL, this field is not used.`,
 			},
 			"backend": {
-				Type:     schema.TypeSet,
-				Optional: true,
-				Elem:     computeBackendServiceBackendSchema(),
-				Set:      resourceGoogleComputeBackendServiceBackendHash,
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Description: `The set of backends that serve this BackendService.`,
+				Elem:        computeBackendServiceBackendSchema(),
+				Set:         resourceGoogleComputeBackendServiceBackendHash,
 			},
 			"cdn_policy": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Optional: true,
-				MaxItems: 1,
+				Type:        schema.TypeList,
+				Computed:    true,
+				Optional:    true,
+				Description: `Cloud CDN configuration for this BackendService.`,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"cache_key_policy": {
-							Type:     schema.TypeList,
-							Optional: true,
-							MaxItems: 1,
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: `The CacheKeyPolicy for this CdnPolicy.`,
+							MaxItems:    1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"include_host": {
-										Type:     schema.TypeBool,
-										Optional: true,
+										Type:         schema.TypeBool,
+										Optional:     true,
+										Description:  `If true requests to different hosts will be cached separately.`,
+										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
 									},
 									"include_protocol": {
-										Type:     schema.TypeBool,
-										Optional: true,
+										Type:         schema.TypeBool,
+										Optional:     true,
+										Description:  `If true, http and https requests will be cached separately.`,
+										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
 									},
 									"include_query_string": {
 										Type:     schema.TypeBool,
 										Optional: true,
+										Description: `If true, include query string parameters in the cache key
+according to query_string_whitelist and
+query_string_blacklist. If neither is set, the entire query
+string will be included.
+
+If false, the query string will be excluded from the cache
+key entirely.`,
+										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
 									},
 									"query_string_blacklist": {
 										Type:     schema.TypeSet,
 										Optional: true,
+										Description: `Names of query string parameters to exclude in cache keys.
+
+All other parameters will be included. Either specify
+query_string_whitelist or query_string_blacklist, not both.
+'&' and '=' will be percent encoded and not treated as
+delimiters.`,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
-										Set: schema.HashString,
+										Set:          schema.HashString,
+										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
 									},
 									"query_string_whitelist": {
 										Type:     schema.TypeSet,
 										Optional: true,
+										Description: `Names of query string parameters to include in cache keys.
+
+All other parameters will be excluded. Either specify
+query_string_whitelist or query_string_blacklist, not both.
+'&' and '=' will be percent encoded and not treated as
+delimiters.`,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
-										Set: schema.HashString,
+										Set:          schema.HashString,
+										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
 									},
 								},
 							},
+							AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy", "cdn_policy.0.signed_url_cache_max_age_sec"},
 						},
 						"signed_url_cache_max_age_sec": {
 							Type:     schema.TypeInt,
 							Optional: true,
-							Default:  3600,
+							Description: `Maximum number of seconds the response to a signed URL request
+will be considered fresh, defaults to 1hr (3600s). After this
+time period, the response will be revalidated before
+being served.
+
+When serving responses to signed URL requests, Cloud CDN will
+internally behave as though all responses from this backend had a
+"Cache-Control: public, max-age=[TTL]" header, regardless of any
+existing Cache-Control header. The actual headers served in
+responses will not be altered.`,
+							Default:      3600,
+							AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy", "cdn_policy.0.signed_url_cache_max_age_sec"},
 						},
 					},
 				},
@@ -259,36 +301,44 @@ func resourceComputeBackendService() *schema.Resource {
 			"connection_draining_timeout_sec": {
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default:  300,
+				Description: `Time for which instance will be drained (not accept new
+connections, but still work to finish started).`,
+				Default: 300,
 			},
 
 			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: `An optional description of this resource.`,
 			},
 			"enable_cdn": {
-				Type:     schema.TypeBool,
-				Optional: true,
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: `If true, enable Cloud CDN for this BackendService.`,
 			},
 			"iap": {
-				Type:     schema.TypeList,
-				Optional: true,
-				MaxItems: 1,
+				Type:        schema.TypeList,
+				Optional:    true,
+				Description: `Settings for enabling Cloud Identity Aware Proxy`,
+				MaxItems:    1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"oauth2_client_id": {
-							Type:     schema.TypeString,
-							Required: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: `OAuth2 Client ID for IAP`,
 						},
 						"oauth2_client_secret": {
-							Type:      schema.TypeString,
-							Required:  true,
-							Sensitive: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: `OAuth2 Client Secret for IAP`,
+							Sensitive:   true,
 						},
 						"oauth2_client_secret_sha256": {
-							Type:      schema.TypeString,
-							Computed:  true,
-							Sensitive: true,
+							Type:        schema.TypeString,
+							Computed:    true,
+							Description: `OAuth2 Client Secret SHA-256 for IAP`,
+							Sensitive:   true,
 						},
 					},
 				},
@@ -296,43 +346,63 @@ func resourceComputeBackendService() *schema.Resource {
 			"load_balancing_scheme": {
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"INTERNAL", "EXTERNAL", ""}, false),
-				Default:      "EXTERNAL",
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice([]string{"EXTERNAL", "INTERNAL_SELF_MANAGED", ""}, false),
+				Description: `Indicates whether the backend service will be used with internal or
+external load balancing. A backend service created for one type of
+load balancing cannot be used with the other. Must be 'EXTERNAL' or
+'INTERNAL_SELF_MANAGED' for a global backend service. Defaults to 'EXTERNAL'.`,
+				Default: "EXTERNAL",
 			},
 			"port_name": {
 				Type:     schema.TypeString,
 				Computed: true,
 				Optional: true,
+				Description: `Name of backend port. The same name should appear in the instance
+groups referenced by this service. Required when the load balancing
+scheme is EXTERNAL.`,
 			},
 			"protocol": {
 				Type:         schema.TypeString,
 				Computed:     true,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"HTTP", "HTTPS", "TCP", "SSL", ""}, false),
+				ValidateFunc: validation.StringInSlice([]string{"HTTP", "HTTPS", "HTTP2", "TCP", "SSL", ""}, false),
+				Description: `The protocol this BackendService uses to communicate with backends.
+Possible values are HTTP, HTTPS, HTTP2, TCP, and SSL. The default is
+HTTP. **NOTE**: HTTP2 is only valid for beta HTTP/2 load balancer
+types and may result in errors if used with the GA API.`,
 			},
 			"security_policy": {
 				Type:             schema.TypeString,
 				Optional:         true,
 				DiffSuppressFunc: compareSelfLinkOrResourceName,
+				Description:      `The security policy associated with this backend service.`,
 			},
 			"session_affinity": {
 				Type:         schema.TypeString,
 				Computed:     true,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"NONE", "CLIENT_IP", "GENERATED_COOKIE", "CLIENT_IP_PROTO", "CLIENT_IP_PORT_PROTO", ""}, false),
+				ValidateFunc: validation.StringInSlice([]string{"NONE", "CLIENT_IP", "CLIENT_IP_PORT_PROTO", "CLIENT_IP_PROTO", "GENERATED_COOKIE", "HEADER_FIELD", "HTTP_COOKIE", ""}, false),
+				Description: `Type of session affinity to use. The default is NONE. Session affinity is
+not applicable if the protocol is UDP.`,
 			},
 			"timeout_sec": {
 				Type:     schema.TypeInt,
 				Computed: true,
 				Optional: true,
+				Description: `How many seconds to wait for the backend before considering it a
+failed request. Default is 30 seconds. Valid range is [1, 86400].`,
 			},
 			"creation_timestamp": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Creation timestamp in RFC3339 text format.`,
 			},
 			"fingerprint": {
 				Type:     schema.TypeString,
 				Computed: true,
+				Description: `Fingerprint of this resource. A hash of the contents stored in this
+object. This field is used in optimistic locking.`,
 			},
 			"project": {
 				Type:     schema.TypeString,
@@ -351,46 +421,122 @@ func resourceComputeBackendService() *schema.Resource {
 func computeBackendServiceBackendSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
+			"group": {
+				Type:             schema.TypeString,
+				Required:         true,
+				DiffSuppressFunc: compareSelfLinkRelativePaths,
+				Description: `The fully-qualified URL of an Instance Group or Network Endpoint
+Group resource. In case of instance group this defines the list
+of instances that serve traffic. Member virtual machine
+instances from each instance group must live in the same zone as
+the instance group itself. No two backends in a backend service
+are allowed to use same Instance Group resource.
+
+For Network Endpoint Groups this defines list of endpoints. All
+endpoints of Network Endpoint Group must be hosted on instances
+located in the same zone as the Network Endpoint Group.
+
+Backend services cannot mix Instance Group and
+Network Endpoint Group backends.
+
+Note that you must specify an Instance Group or Network Endpoint
+Group resource using the fully-qualified URL, rather than a
+partial URL.`,
+			},
 			"balancing_mode": {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validation.StringInSlice([]string{"UTILIZATION", "RATE", "CONNECTION", ""}, false),
-				Default:      "UTILIZATION",
+				Description: `Specifies the balancing mode for this backend.
+
+For global HTTP(S) or TCP/SSL load balancing, the default is
+UTILIZATION. Valid values are UTILIZATION, RATE (for HTTP(S))
+and CONNECTION (for TCP/SSL).`,
+				Default: "UTILIZATION",
 			},
 			"capacity_scaler": {
 				Type:     schema.TypeFloat,
 				Optional: true,
-				Default:  1.0,
+				Description: `A multiplier applied to the group's maximum servicing capacity
+(based on UTILIZATION, RATE or CONNECTION).
+
+Default value is 1, which means the group will serve up to 100%
+of its configured capacity (depending on balancingMode). A
+setting of 0 means the group is completely drained, offering
+0% of its available Capacity. Valid range is [0.0,1.0].`,
+				Default: 1.0,
 			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
-			},
-			"group": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				DiffSuppressFunc: compareSelfLinkRelativePaths,
+				Description: `An optional description of this resource.
+Provide this property when you create the resource.`,
 			},
 			"max_connections": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Description: `The max number of simultaneous connections for the group. Can
+be used with either CONNECTION or UTILIZATION balancing modes.
+
+For CONNECTION mode, either maxConnections or one
+of maxConnectionsPerInstance or maxConnectionsPerEndpoint,
+as appropriate for group type, must be set.`,
+			},
+			"max_connections_per_endpoint": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Description: `The max number of simultaneous connections that a single backend
+network endpoint can handle. This is used to calculate the
+capacity of the group. Can be used in either CONNECTION or
+UTILIZATION balancing modes.
+
+For CONNECTION mode, either
+maxConnections or maxConnectionsPerEndpoint must be set.`,
 			},
 			"max_connections_per_instance": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Description: `The max number of simultaneous connections that a single
+backend instance can handle. This is used to calculate the
+capacity of the group. Can be used in either CONNECTION or
+UTILIZATION balancing modes.
+
+For CONNECTION mode, either maxConnections or
+maxConnectionsPerInstance must be set.`,
 			},
 			"max_rate": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Description: `The max requests per second (RPS) of the group.
+
+Can be used with either RATE or UTILIZATION balancing modes,
+but required if RATE mode. For RATE mode, either maxRate or one
+of maxRatePerInstance or maxRatePerEndpoint, as appropriate for
+group type, must be set.`,
+			},
+			"max_rate_per_endpoint": {
+				Type:     schema.TypeFloat,
+				Optional: true,
+				Description: `The max requests per second (RPS) that a single backend network
+endpoint can handle. This is used to calculate the capacity of
+the group. Can be used in either balancing mode. For RATE mode,
+either maxRate or maxRatePerEndpoint must be set.`,
 			},
 			"max_rate_per_instance": {
 				Type:     schema.TypeFloat,
 				Optional: true,
+				Description: `The max requests per second (RPS) that a single backend
+instance can handle. This is used to calculate the capacity of
+the group. Can be used in either balancing mode. For RATE mode,
+either maxRate or maxRatePerInstance must be set.`,
 			},
 			"max_utilization": {
 				Type:     schema.TypeFloat,
 				Optional: true,
-				Default:  0.8,
+				Description: `Used when balancingMode is UTILIZATION. This ratio defines the
+CPU utilization target for the group. The default is 0.8. Valid
+range is [0.0, 1.0].`,
+				Default: 0.8,
 			},
 		},
 	}
@@ -418,7 +564,7 @@ func resourceComputeBackendServiceCreate(d *schema.ResourceData, meta interface{
 	} else if v, ok := d.GetOkExists("cdn_policy"); !isEmptyValue(reflect.ValueOf(cdnPolicyProp)) && (ok || !reflect.DeepEqual(v, cdnPolicyProp)) {
 		obj["cdnPolicy"] = cdnPolicyProp
 	}
-	connectionDrainingProp, err := expandComputeBackendServiceConnectionDraining(d, config)
+	connectionDrainingProp, err := expandComputeBackendServiceConnectionDraining(nil, d, config)
 	if err != nil {
 		return err
 	} else if !isEmptyValue(reflect.ValueOf(connectionDrainingProp)) {
@@ -502,28 +648,28 @@ func resourceComputeBackendServiceCreate(d *schema.ResourceData, meta interface{
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/backendServices")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/backendServices")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new BackendService: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating BackendService: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/global/backendServices/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -543,8 +689,8 @@ func resourceComputeBackendServiceCreate(d *schema.ResourceData, meta interface{
 	log.Printf("[DEBUG] Finished creating BackendService %q: %#v", d.Id(), res)
 
 	// security_policy isn't set by Create / Update
-	if v, ok := d.GetOk("security_policy"); ok {
-		pol, err := ParseSecurityPolicyFieldValue(v.(string), d, config)
+	if o, n := d.GetChange("security_policy"); o.(string) != n.(string) {
+		pol, err := ParseSecurityPolicyFieldValue(n.(string), d, config)
 		if err != nil {
 			return errwrap.Wrapf("Error parsing Backend Service security policy: {{err}}", err)
 		}
@@ -567,12 +713,16 @@ func resourceComputeBackendServiceCreate(d *schema.ResourceData, meta interface{
 func resourceComputeBackendServiceRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/backendServices/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/backendServices/{{name}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := sendRequest(config, "GET", url, nil)
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequest(config, "GET", project, url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ComputeBackendService %q", d.Id()))
 	}
@@ -582,10 +732,13 @@ func resourceComputeBackendServiceRead(d *schema.ResourceData, meta interface{})
 		return err
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
+	if res == nil {
+		// Decoding the object has resulted in it being gone. It may be marked deleted
+		log.Printf("[DEBUG] Removing ComputeBackendService because it no longer exists.")
+		d.SetId("")
+		return nil
 	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading BackendService: %s", err)
 	}
@@ -599,12 +752,15 @@ func resourceComputeBackendServiceRead(d *schema.ResourceData, meta interface{})
 	if err := d.Set("cdn_policy", flattenComputeBackendServiceCdnPolicy(res["cdnPolicy"], d)); err != nil {
 		return fmt.Errorf("Error reading BackendService: %s", err)
 	}
-	if v, ok := res["connectionDraining"].(map[string]interface{}); res["connectionDraining"] != nil && ok {
-		if err := d.Set("connection_draining_timeout_sec", flattenComputeBackendServiceConnectionDrainingConnection_draining_timeout_sec(v["drainingTimeoutSec"], d)); err != nil {
-			return fmt.Errorf("Error reading BackendService: %s", err)
+	// Terraform must set the top level schema field, but since this object contains collapsed properties
+	// it's difficult to know what the top level should be. Instead we just loop over the map returned from flatten.
+	if flattenedProp := flattenComputeBackendServiceConnectionDraining(res["connectionDraining"], d); flattenedProp != nil {
+		casted := flattenedProp.([]interface{})[0]
+		if casted != nil {
+			for k, v := range casted.(map[string]interface{}) {
+				d.Set(k, v)
+			}
 		}
-	} else {
-		d.Set("connection_draining_timeout_sec", nil)
 	}
 	if err := d.Set("creation_timestamp", flattenComputeBackendServiceCreationTimestamp(res["creationTimestamp"], d)); err != nil {
 		return fmt.Errorf("Error reading BackendService: %s", err)
@@ -655,6 +811,11 @@ func resourceComputeBackendServiceRead(d *schema.ResourceData, meta interface{})
 func resourceComputeBackendServiceUpdate(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
 	obj := make(map[string]interface{})
 	affinityCookieTtlSecProp, err := expandComputeBackendServiceAffinityCookieTtlSec(d.Get("affinity_cookie_ttl_sec"), d, config)
 	if err != nil {
@@ -674,10 +835,10 @@ func resourceComputeBackendServiceUpdate(d *schema.ResourceData, meta interface{
 	} else if v, ok := d.GetOkExists("cdn_policy"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, cdnPolicyProp)) {
 		obj["cdnPolicy"] = cdnPolicyProp
 	}
-	connectionDrainingProp, err := expandComputeBackendServiceConnectionDraining(d, config)
+	connectionDrainingProp, err := expandComputeBackendServiceConnectionDraining(nil, d, config)
 	if err != nil {
 		return err
-	} else if !isEmptyValue(reflect.ValueOf(connectionDrainingProp)) {
+	} else if v, ok := d.GetOkExists("connection_draining"); !isEmptyValue(reflect.ValueOf(v)) && (ok || !reflect.DeepEqual(v, connectionDrainingProp)) {
 		obj["connectionDraining"] = connectionDrainingProp
 	}
 	fingerprintProp, err := expandComputeBackendServiceFingerprint(d.Get("fingerprint"), d, config)
@@ -758,22 +919,18 @@ func resourceComputeBackendServiceUpdate(d *schema.ResourceData, meta interface{
 		return err
 	}
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/backendServices/{{name}}")
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/backendServices/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Updating BackendService %q: %#v", d.Id(), obj)
-	res, err := sendRequestWithTimeout(config, "PUT", url, obj, d.Timeout(schema.TimeoutUpdate))
+	res, err := sendRequestWithTimeout(config, "PUT", project, url, obj, d.Timeout(schema.TimeoutUpdate))
 
 	if err != nil {
 		return fmt.Errorf("Error updating BackendService %q: %s", d.Id(), err)
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -789,8 +946,8 @@ func resourceComputeBackendServiceUpdate(d *schema.ResourceData, meta interface{
 	}
 
 	// security_policy isn't set by Create / Update
-	if v, ok := d.GetOk("security_policy"); ok {
-		pol, err := ParseSecurityPolicyFieldValue(v.(string), d, config)
+	if o, n := d.GetChange("security_policy"); o.(string) != n.(string) {
+		pol, err := ParseSecurityPolicyFieldValue(n.(string), d, config)
 		if err != nil {
 			return errwrap.Wrapf("Error parsing Backend Service security policy: {{err}}", err)
 		}
@@ -812,22 +969,24 @@ func resourceComputeBackendServiceUpdate(d *schema.ResourceData, meta interface{
 func resourceComputeBackendServiceDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://www.googleapis.com/compute/v1/projects/{{project}}/global/backendServices/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{ComputeBasePath}}projects/{{project}}/global/backendServices/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting BackendService %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "BackendService")
 	}
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
 	op := &compute.Operation{}
 	err = Convert(res, op)
 	if err != nil {
@@ -848,12 +1007,16 @@ func resourceComputeBackendServiceDelete(d *schema.ResourceData, meta interface{
 
 func resourceComputeBackendServiceImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/global/backendServices/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/global/backendServices/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/global/backendServices/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -891,8 +1054,10 @@ func flattenComputeBackendServiceBackend(v interface{}, d *schema.ResourceData) 
 			"group":                        flattenComputeBackendServiceBackendGroup(original["group"], d),
 			"max_connections":              flattenComputeBackendServiceBackendMaxConnections(original["maxConnections"], d),
 			"max_connections_per_instance": flattenComputeBackendServiceBackendMaxConnectionsPerInstance(original["maxConnectionsPerInstance"], d),
+			"max_connections_per_endpoint": flattenComputeBackendServiceBackendMaxConnectionsPerEndpoint(original["maxConnectionsPerEndpoint"], d),
 			"max_rate":                     flattenComputeBackendServiceBackendMaxRate(original["maxRate"], d),
 			"max_rate_per_instance":        flattenComputeBackendServiceBackendMaxRatePerInstance(original["maxRatePerInstance"], d),
+			"max_rate_per_endpoint":        flattenComputeBackendServiceBackendMaxRatePerEndpoint(original["maxRatePerEndpoint"], d),
 			"max_utilization":              flattenComputeBackendServiceBackendMaxUtilization(original["maxUtilization"], d),
 		})
 	}
@@ -937,6 +1102,16 @@ func flattenComputeBackendServiceBackendMaxConnectionsPerInstance(v interface{},
 	return v
 }
 
+func flattenComputeBackendServiceBackendMaxConnectionsPerEndpoint(v interface{}, d *schema.ResourceData) interface{} {
+	// Handles the string fixed64 format
+	if strVal, ok := v.(string); ok {
+		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
+			return intVal
+		} // let terraform core handle it if we can't convert the string to an int.
+	}
+	return v
+}
+
 func flattenComputeBackendServiceBackendMaxRate(v interface{}, d *schema.ResourceData) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
@@ -948,6 +1123,10 @@ func flattenComputeBackendServiceBackendMaxRate(v interface{}, d *schema.Resourc
 }
 
 func flattenComputeBackendServiceBackendMaxRatePerInstance(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenComputeBackendServiceBackendMaxRatePerEndpoint(v interface{}, d *schema.ResourceData) interface{} {
 	return v
 }
 
@@ -1027,7 +1206,20 @@ func flattenComputeBackendServiceCdnPolicySignedUrlCacheMaxAgeSec(v interface{},
 	return v
 }
 
-func flattenComputeBackendServiceConnectionDrainingConnection_draining_timeout_sec(v interface{}, d *schema.ResourceData) interface{} {
+func flattenComputeBackendServiceConnectionDraining(v interface{}, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+	original := v.(map[string]interface{})
+	if len(original) == 0 {
+		return nil
+	}
+	transformed := make(map[string]interface{})
+	transformed["connection_draining_timeout_sec"] =
+		flattenComputeBackendServiceConnectionDrainingConnectionDrainingTimeoutSec(original["drainingTimeoutSec"], d)
+	return []interface{}{transformed}
+}
+func flattenComputeBackendServiceConnectionDrainingConnectionDrainingTimeoutSec(v interface{}, d *schema.ResourceData) interface{} {
 	// Handles the string fixed64 format
 	if strVal, ok := v.(string); ok {
 		if intVal, err := strconv.ParseInt(strVal, 10, 64); err == nil {
@@ -1148,7 +1340,7 @@ func expandComputeBackendServiceBackend(v interface{}, d TerraformResourceData, 
 		transformedCapacityScaler, err := expandComputeBackendServiceBackendCapacityScaler(original["capacity_scaler"], d, config)
 		if err != nil {
 			return nil, err
-		} else if val := reflect.ValueOf(transformedCapacityScaler); val.IsValid() && !isEmptyValue(val) {
+		} else {
 			transformed["capacityScaler"] = transformedCapacityScaler
 		}
 
@@ -1180,6 +1372,13 @@ func expandComputeBackendServiceBackend(v interface{}, d TerraformResourceData, 
 			transformed["maxConnectionsPerInstance"] = transformedMaxConnectionsPerInstance
 		}
 
+		transformedMaxConnectionsPerEndpoint, err := expandComputeBackendServiceBackendMaxConnectionsPerEndpoint(original["max_connections_per_endpoint"], d, config)
+		if err != nil {
+			return nil, err
+		} else if val := reflect.ValueOf(transformedMaxConnectionsPerEndpoint); val.IsValid() && !isEmptyValue(val) {
+			transformed["maxConnectionsPerEndpoint"] = transformedMaxConnectionsPerEndpoint
+		}
+
 		transformedMaxRate, err := expandComputeBackendServiceBackendMaxRate(original["max_rate"], d, config)
 		if err != nil {
 			return nil, err
@@ -1194,10 +1393,17 @@ func expandComputeBackendServiceBackend(v interface{}, d TerraformResourceData, 
 			transformed["maxRatePerInstance"] = transformedMaxRatePerInstance
 		}
 
+		transformedMaxRatePerEndpoint, err := expandComputeBackendServiceBackendMaxRatePerEndpoint(original["max_rate_per_endpoint"], d, config)
+		if err != nil {
+			return nil, err
+		} else if val := reflect.ValueOf(transformedMaxRatePerEndpoint); val.IsValid() && !isEmptyValue(val) {
+			transformed["maxRatePerEndpoint"] = transformedMaxRatePerEndpoint
+		}
+
 		transformedMaxUtilization, err := expandComputeBackendServiceBackendMaxUtilization(original["max_utilization"], d, config)
 		if err != nil {
 			return nil, err
-		} else if val := reflect.ValueOf(transformedMaxUtilization); val.IsValid() && !isEmptyValue(val) {
+		} else {
 			transformed["maxUtilization"] = transformedMaxUtilization
 		}
 
@@ -1230,11 +1436,19 @@ func expandComputeBackendServiceBackendMaxConnectionsPerInstance(v interface{}, 
 	return v, nil
 }
 
+func expandComputeBackendServiceBackendMaxConnectionsPerEndpoint(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
 func expandComputeBackendServiceBackendMaxRate(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
 func expandComputeBackendServiceBackendMaxRatePerInstance(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandComputeBackendServiceBackendMaxRatePerEndpoint(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 
@@ -1341,20 +1555,19 @@ func expandComputeBackendServiceCdnPolicySignedUrlCacheMaxAgeSec(v interface{}, 
 	return v, nil
 }
 
-func expandComputeBackendServiceConnectionDraining(d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeBackendServiceConnectionDraining(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	transformed := make(map[string]interface{})
-	// Note that nesting flattened objects won't work because we don't handle them properly here.
-	transformedConnection_draining_timeout_sec, err := expandComputeBackendServiceConnectionDrainingConnection_draining_timeout_sec(d.Get("connection_draining_timeout_sec"), d, config)
+	transformedConnectionDrainingTimeoutSec, err := expandComputeBackendServiceConnectionDrainingConnectionDrainingTimeoutSec(d.Get("connection_draining_timeout_sec"), d, config)
 	if err != nil {
 		return nil, err
-	} else if val := reflect.ValueOf(transformedConnection_draining_timeout_sec); val.IsValid() && !isEmptyValue(val) {
-		transformed["drainingTimeoutSec"] = transformedConnection_draining_timeout_sec
+	} else if val := reflect.ValueOf(transformedConnectionDrainingTimeoutSec); val.IsValid() && !isEmptyValue(val) {
+		transformed["drainingTimeoutSec"] = transformedConnectionDrainingTimeoutSec
 	}
 
 	return transformed, nil
 }
 
-func expandComputeBackendServiceConnectionDrainingConnection_draining_timeout_sec(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+func expandComputeBackendServiceConnectionDrainingConnectionDrainingTimeoutSec(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
 	return v, nil
 }
 

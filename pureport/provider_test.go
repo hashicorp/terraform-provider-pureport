@@ -4,34 +4,28 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"github.com/terraform-providers/terraform-provider-aws/aws"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm"
 	"github.com/terraform-providers/terraform-provider-google/google"
 )
 
 var (
-	testAccProviders      map[string]terraform.ResourceProvider
-	testAccProvider       *schema.Provider
-	testAccGoogleProvider *schema.Provider
-	testAccAWSProvider    *schema.Provider
-	testAccAzureProvider  *schema.Provider
+	testAccProviders map[string]terraform.ResourceProvider
+	testAccProvider  *schema.Provider
 )
 
 var testEnvironmentName string = "Production"
 
 func init() {
 	testAccProvider = Provider().(*schema.Provider)
-	testAccGoogleProvider = google.Provider().(*schema.Provider)
-	testAccAWSProvider = aws.Provider().(*schema.Provider)
-	testAccAzureProvider = azurerm.Provider().(*schema.Provider)
 
 	testAccProviders = map[string]terraform.ResourceProvider{
 		"pureport": testAccProvider,
-		"google":   testAccGoogleProvider,
-		"aws":      testAccAWSProvider,
-		"azurerm":  testAccAzureProvider,
+		"google":   google.Provider(),
+		"aws":      aws.Provider(),
+		"azurerm":  azurerm.Provider(),
 	}
 
 	// Environment Variables for the Test Environment
@@ -96,7 +90,7 @@ func testAccPreCheck(t *testing.T) {
 		}
 	}
 
-	if err := testAccProvider.Configure(terraform.NewResourceConfig(nil)); err != nil {
+	if err := testAccProvider.Configure(terraform.NewResourceConfigRaw(nil)); err != nil {
 		t.Fatal(err)
 	}
 }

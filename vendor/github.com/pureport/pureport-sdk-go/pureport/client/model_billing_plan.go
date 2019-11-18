@@ -10,9 +10,9 @@
 package client
 
 type BillingPlan struct {
-	Amount          int64  `json:"amount,omitempty"`
-	BillingInterval string `json:"billingInterval,omitempty"`
-	Id              string `json:"id,omitempty"`
-	SetupAmount     int64  `json:"setupAmount,omitempty"`
-	Term            string `json:"term,omitempty"`
+	Amount          float64 `json:"amount,omitempty"`
+	BillingInterval string  `json:"billingInterval,omitempty"`
+	Id              string  `json:"id,omitempty"`
+	SetupAmount     int64   `json:"setupAmount,omitempty"`
+	Term            string  `json:"term,omitempty"`
 }

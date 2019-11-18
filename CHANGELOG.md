@@ -1,4 +1,16 @@
 ## 1.1.5 (Unreleased)
+
+ENHANCEMENTS:
+ * Update to Terraform 0.12.13
+ * Update to AzureRM 1.36.1
+ * Update to AWS 1.60.1
+ * Updated to golangci-lint 1.21.0
+ * Added Terraform Plugins SDK 1.3.0
+
+BUG FIXES:
+ * Update the billing amount to float64 to work with new REST API for 2.22.0
+ * Ensure resources created during acceptance tests are unique.
+
 ## 1.1.4 (October 24, 2019)
 
 ENHANCEMENTS:

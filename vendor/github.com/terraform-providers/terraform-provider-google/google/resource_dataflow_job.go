@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 
-	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"google.golang.org/api/dataflow/v1b3"
 	"google.golang.org/api/googleapi"
 )
@@ -71,6 +71,12 @@ func resourceDataflowJob() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"labels": {
+				Type:     schema.TypeMap,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"on_delete": {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringInSlice([]string{"cancel", "drain"}, false),
@@ -96,6 +102,33 @@ func resourceDataflowJob() *schema.Resource {
 				Optional: true,
 				ForceNew: true,
 			},
+
+			"network": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
+			},
+
+			"subnetwork": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: compareSelfLinkOrResourceName,
+			},
+
+			"machine_type": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
+			"ip_configuration": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice([]string{"WORKER_IP_PUBLIC", "WORKER_IP_PRIVATE", ""}, false),
+			},
 		},
 	}
 }
@@ -119,12 +152,18 @@ func resourceDataflowJobCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	params := expandStringMap(d, "parameters")
+	labels := expandStringMap(d, "labels")
 
 	env := dataflow.RuntimeEnvironment{
-		TempLocation:        d.Get("temp_gcs_location").(string),
-		Zone:                zone,
-		MaxWorkers:          int64(d.Get("max_workers").(int)),
-		ServiceAccountEmail: d.Get("service_account_email").(string),
+		MaxWorkers:           int64(d.Get("max_workers").(int)),
+		Network:              d.Get("network").(string),
+		ServiceAccountEmail:  d.Get("service_account_email").(string),
+		Subnetwork:           d.Get("subnetwork").(string),
+		TempLocation:         d.Get("temp_gcs_location").(string),
+		MachineType:          d.Get("machine_type").(string),
+		IpConfiguration:      d.Get("ip_configuration").(string),
+		AdditionalUserLabels: labels,
+		Zone:                 zone,
 	}
 
 	request := dataflow.CreateJobFromTemplateRequest{
@@ -166,6 +205,7 @@ func resourceDataflowJobRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("state", job.CurrentState)
 	d.Set("name", job.Name)
 	d.Set("project", project)
+	d.Set("labels", job.Labels)
 
 	if _, ok := dataflowTerminalStatesMap[job.CurrentState]; ok {
 		log.Printf("[DEBUG] Removing resource '%s' because it is in state %s.\n", job.Name, job.CurrentState)

@@ -20,10 +20,10 @@ sweep:
 
 install: plugin
 	mkdir -p $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
-	mv terraform-provider-pureport_$(PROVIDER_VERSION) $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
+	mv terraform-provider-pureport_v$(PROVIDER_VERSION)_x4 $(HOME)/.terraform.d/plugins/$(GOOS)_$(GOARCH)
 
 plugin: fmtcheck
-	go build -ldflags="-X=github.com/terraform-providers/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)" -o terraform-provider-pureport_$(PROVIDER_VERSION)
+	go build -ldflags="-X=github.com/terraform-providers/terraform-provider-pureport/version.ProviderVersion=$(PROVIDER_VERSION)" -o terraform-provider-pureport_v$(PROVIDER_VERSION)_x4
 
 test: fmtcheck
 	go test -i $(TEST) || exit 1
