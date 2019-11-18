@@ -9,6 +9,7 @@ ENHANCEMENTS:
 
 BUG FIXES:
  * Update the billing amount to float64 to work with new REST API for 2.22.0
+ * Ensure resources created during acceptance tests are unique.
 
 ## 1.1.4 (October 24, 2019)
 
