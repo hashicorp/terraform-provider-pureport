@@ -7,9 +7,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/resource"
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/pureport/pureport-sdk-go/pureport/client"
 	"github.com/terraform-providers/terraform-provider-pureport/pureport/configuration"
 	"github.com/terraform-providers/terraform-provider-pureport/pureport/filter"

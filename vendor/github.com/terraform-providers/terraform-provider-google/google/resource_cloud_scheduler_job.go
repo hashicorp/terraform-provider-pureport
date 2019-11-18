@@ -23,8 +23,57 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
+
+// Both oidc and oauth headers cannot be set
+func validateAuthHeaders(diff *schema.ResourceDiff, v interface{}) error {
+	httpBlock := diff.Get("http_target.0").(map[string]interface{})
+
+	if httpBlock != nil {
+		oauth := httpBlock["oauth_token"]
+		oidc := httpBlock["oidc_token"]
+
+		if oauth != nil && oidc != nil {
+			if len(oidc.([]interface{})) > 0 && len(oauth.([]interface{})) > 0 {
+				return fmt.Errorf("Error in http_target: only one of oauth_token or oidc_token can be specified, but not both.")
+			}
+		}
+	}
+
+	return nil
+}
+
+func authHeaderDiffSuppress(k, old, new string, d *schema.ResourceData) bool {
+	// If generating an `oauth_token` and `scope` is not provided in the configuration,
+	// the default "https://www.googleapis.com/auth/cloud-platform" scope will be used.
+	// Similarly, if generating an `oidc_token` and `audience` is not provided in the
+	// configuration, the URI specified in target will be used. Although not in the
+	// configuration, in both cases the default is returned in the object, but is not in.
+	// state. We suppress the diff if the values are these defaults but are not stored in state.
+
+	b := strings.Split(k, ".")
+	if b[0] == "http_target" && len(b) > 4 {
+		block := b[2]
+		attr := b[4]
+
+		if block == "oauth_token" && attr == "scope" {
+			if old == canonicalizeServiceScope("cloud-platform") && new == "" {
+				return true
+			}
+		}
+
+		if block == "oidc_token" && attr == "audience" {
+			uri := d.Get(strings.Join(b[0:2], ".") + ".uri")
+			if old == uri && new == "" {
+				return true
+			}
+		}
+
+	}
+
+	return false
+}
 
 func resourceCloudSchedulerJob() *schema.Resource {
 	return &schema.Resource{
@@ -37,26 +86,33 @@ func resourceCloudSchedulerJob() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
+
+		CustomizeDiff: validateAuthHeaders,
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				Description: `The name of the job.`,
 			},
 			"region": {
-				Type:     schema.TypeString,
-				Computed: true,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Optional:    true,
+				ForceNew:    true,
+				Description: `Region where the scheduler job resides`,
 			},
 			"app_engine_http_target": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `App Engine HTTP target.
+If the job providers a App Engine HTTP target the cron will 
+send a request to the service instance`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -64,28 +120,43 @@ func resourceCloudSchedulerJob() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 							ForceNew: true,
+							Description: `The relative URI.
+The relative URL must begin with "/" and must be a valid HTTP relative URL. 
+It can contain a path, query string arguments, and \# fragments. 
+If the relative URL is empty, then the root path "/" will be used. 
+No spaces are allowed, and the maximum length allowed is 2083 characters`,
 						},
 						"app_engine_routing": {
-							Type:     schema.TypeList,
-							Optional: true,
-							ForceNew: true,
-							MaxItems: 1,
+							Type:        schema.TypeList,
+							Optional:    true,
+							ForceNew:    true,
+							Description: `App Engine Routing setting for the job.`,
+							MaxItems:    1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"instance": {
 										Type:     schema.TypeString,
 										Optional: true,
 										ForceNew: true,
+										Description: `App instance.
+By default, the job is sent to an instance which is available when the job is attempted.`,
+										AtLeastOneOf: []string{"app_engine_http_target.0.app_engine_routing.0.service", "app_engine_http_target.0.app_engine_routing.0.version", "app_engine_http_target.0.app_engine_routing.0.instance"},
 									},
 									"service": {
 										Type:     schema.TypeString,
 										Optional: true,
 										ForceNew: true,
+										Description: `App service.
+By default, the job is sent to the service which is the default service when the job is attempted.`,
+										AtLeastOneOf: []string{"app_engine_http_target.0.app_engine_routing.0.service", "app_engine_http_target.0.app_engine_routing.0.version", "app_engine_http_target.0.app_engine_routing.0.instance"},
 									},
 									"version": {
 										Type:     schema.TypeString,
 										Optional: true,
 										ForceNew: true,
+										Description: `App version.
+By default, the job is sent to the version which is the default version when the job is attempted.`,
+										AtLeastOneOf: []string{"app_engine_http_target.0.app_engine_routing.0.service", "app_engine_http_target.0.app_engine_routing.0.version", "app_engine_http_target.0.app_engine_routing.0.instance"},
 									},
 								},
 							},
@@ -94,65 +165,141 @@ func resourceCloudSchedulerJob() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `HTTP request body. 
+A request body is allowed only if the HTTP method is POST or PUT. 
+It will result in invalid argument error to set a body on a job with an incompatible HttpMethod.`,
 						},
 						"headers": {
 							Type:         schema.TypeMap,
 							Optional:     true,
 							ForceNew:     true,
 							ValidateFunc: validateHttpHeaders(),
-							Elem:         &schema.Schema{Type: schema.TypeString},
+							Description: `HTTP request headers.
+This map contains the header field names and values. 
+Headers can be set when the job is created.`,
+							Elem: &schema.Schema{Type: schema.TypeString},
 						},
 						"http_method": {
-							Type:     schema.TypeString,
-							Optional: true,
-							ForceNew: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: `Which HTTP method to use for the request.`,
 						},
 					},
 				},
-				ConflictsWith: []string{"pubsub_target", "http_target"},
+				ExactlyOneOf: []string{"pubsub_target", "http_target", "app_engine_http_target"},
 			},
 			"description": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
+				Description: `A human-readable description for the job. 
+This string must not contain more than 500 characters.`,
 			},
 			"http_target": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `HTTP target.
+If the job providers a http_target the cron will 
+send a request to the targeted url`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"uri": {
-							Type:     schema.TypeString,
-							Required: true,
-							ForceNew: true,
+							Type:        schema.TypeString,
+							Required:    true,
+							ForceNew:    true,
+							Description: `The full URI path that the request will be sent to.`,
 						},
 						"body": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `HTTP request body. 
+A request body is allowed only if the HTTP method is POST, PUT, or PATCH. 
+It is an error to set body on a job with an incompatible HttpMethod.`,
 						},
 						"headers": {
 							Type:         schema.TypeMap,
 							Optional:     true,
 							ForceNew:     true,
 							ValidateFunc: validateHttpHeaders(),
-							Elem:         &schema.Schema{Type: schema.TypeString},
+							Description: `This map contains the header field names and values. 
+Repeated headers are not supported, but a header value can contain commas.`,
+							Elem: &schema.Schema{Type: schema.TypeString},
 						},
 						"http_method": {
-							Type:     schema.TypeString,
-							Optional: true,
-							ForceNew: true,
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: `Which HTTP method to use for the request.`,
+						},
+						"oauth_token": {
+							Type:             schema.TypeList,
+							Optional:         true,
+							ForceNew:         true,
+							DiffSuppressFunc: authHeaderDiffSuppress,
+							Description: `Contains information needed for generating an OAuth token.
+This type of authorization should be used when sending requests to a GCP endpoint.`,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"service_account_email": {
+										Type:     schema.TypeString,
+										Required: true,
+										ForceNew: true,
+										Description: `Service account email to be used for generating OAuth token.
+The service account must be within the same project as the job.`,
+									},
+									"scope": {
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
+										Description: `OAuth scope to be used for generating OAuth access token. If not specified,
+"https://www.googleapis.com/auth/cloud-platform" will be used.`,
+									},
+								},
+							},
+						},
+						"oidc_token": {
+							Type:             schema.TypeList,
+							Optional:         true,
+							ForceNew:         true,
+							DiffSuppressFunc: authHeaderDiffSuppress,
+							Description: `Contains information needed for generating an OpenID Connect token.
+This type of authorization should be used when sending requests to third party endpoints or Cloud Run.`,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"service_account_email": {
+										Type:     schema.TypeString,
+										Required: true,
+										ForceNew: true,
+										Description: `Service account email to be used for generating OAuth token.
+The service account must be within the same project as the job.`,
+									},
+									"audience": {
+										Type:     schema.TypeString,
+										Optional: true,
+										ForceNew: true,
+										Description: `Audience to be used when generating OIDC token. If not specified,
+the URI specified in target will be used.`,
+									},
+								},
+							},
 						},
 					},
 				},
-				ConflictsWith: []string{"pubsub_target", "app_engine_http_target"},
+				ExactlyOneOf: []string{"pubsub_target", "http_target", "app_engine_http_target"},
 			},
 			"pubsub_target": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `Pub/Sub target
+If the job providers a Pub/Sub target the cron will publish
+a message to the provided topic`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -160,26 +307,36 @@ func resourceCloudSchedulerJob() *schema.Resource {
 							Type:     schema.TypeString,
 							Required: true,
 							ForceNew: true,
+							Description: `The name of the Cloud Pub/Sub topic to which messages will be published when a job is delivered. 
+The topic name must be in the same format as required by PubSub's PublishRequest.name, 
+for example projects/PROJECT_ID/topics/TOPIC_ID.`,
 						},
 						"attributes": {
 							Type:     schema.TypeMap,
 							Optional: true,
 							ForceNew: true,
-							Elem:     &schema.Schema{Type: schema.TypeString},
+							Description: `Attributes for PubsubMessage.
+Pubsub message must contain either non-empty data, or at least one attribute.`,
+							Elem: &schema.Schema{Type: schema.TypeString},
 						},
 						"data": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `The message payload for PubsubMessage.
+Pubsub message must contain either non-empty data, or at least one attribute.`,
 						},
 					},
 				},
-				ConflictsWith: []string{"app_engine_http_target", "http_target"},
+				ExactlyOneOf: []string{"pubsub_target", "http_target", "app_engine_http_target"},
 			},
 			"retry_config": {
 				Type:     schema.TypeList,
 				Optional: true,
 				ForceNew: true,
+				Description: `By default, if a job does not complete successfully, 
+meaning that an acknowledgement is not received from the handler, 
+then it will be retried with exponential backoff according to the settings`,
 				MaxItems: 1,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -187,40 +344,62 @@ func resourceCloudSchedulerJob() *schema.Resource {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `The maximum amount of time to wait before retrying a job after it fails.
+A duration in seconds with up to nine fractional digits, terminated by 's'.`,
+							AtLeastOneOf: []string{"retry_config.0.retry_count", "retry_config.0.max_retry_duration", "retry_config.0.min_backoff_duration", "retry_config.0.max_backoff_duration", "retry_config.0.max_doublings"},
 						},
 						"max_doublings": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
+							Description: `The time between retries will double maxDoublings times.
+A job's retry interval starts at minBackoffDuration, 
+then doubles maxDoublings times, then increases linearly, 
+and finally retries retries at intervals of maxBackoffDuration up to retryCount times.`,
+							AtLeastOneOf: []string{"retry_config.0.retry_count", "retry_config.0.max_retry_duration", "retry_config.0.min_backoff_duration", "retry_config.0.max_backoff_duration", "retry_config.0.max_doublings"},
 						},
 						"max_retry_duration": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `The time limit for retrying a failed job, measured from time when an execution was first attempted. 
+If specified with retryCount, the job will be retried until both limits are reached.
+A duration in seconds with up to nine fractional digits, terminated by 's'.`,
+							AtLeastOneOf: []string{"retry_config.0.retry_count", "retry_config.0.max_retry_duration", "retry_config.0.min_backoff_duration", "retry_config.0.max_backoff_duration", "retry_config.0.max_doublings"},
 						},
 						"min_backoff_duration": {
 							Type:     schema.TypeString,
 							Optional: true,
 							ForceNew: true,
+							Description: `The minimum amount of time to wait before retrying a job after it fails.
+A duration in seconds with up to nine fractional digits, terminated by 's'.`,
+							AtLeastOneOf: []string{"retry_config.0.retry_count", "retry_config.0.max_retry_duration", "retry_config.0.min_backoff_duration", "retry_config.0.max_backoff_duration", "retry_config.0.max_doublings"},
 						},
 						"retry_count": {
 							Type:     schema.TypeInt,
 							Optional: true,
 							ForceNew: true,
+							Description: `The number of attempts that the system will make to run a 
+job using the exponential backoff procedure described by maxDoublings.
+Values greater than 5 and negative values are not allowed.`,
+							AtLeastOneOf: []string{"retry_config.0.retry_count", "retry_config.0.max_retry_duration", "retry_config.0.min_backoff_duration", "retry_config.0.max_backoff_duration", "retry_config.0.max_doublings"},
 						},
 					},
 				},
 			},
 			"schedule": {
-				Type:     schema.TypeString,
-				Optional: true,
-				ForceNew: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Description: `Describes the schedule on which the job will be executed.`,
 			},
 			"time_zone": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
-				Default:  "Etc/UTC",
+				Description: `Specifies the time zone to be used in interpreting schedule.
+The value of this field must be a time zone name from the tz database.`,
+				Default: "Etc/UTC",
 			},
 			"project": {
 				Type:     schema.TypeString,
@@ -285,19 +464,23 @@ func resourceCloudSchedulerJobCreate(d *schema.ResourceData, meta interface{}) e
 		obj["httpTarget"] = httpTargetProp
 	}
 
-	url, err := replaceVars(d, config, "https://cloudscheduler.googleapis.com/v1/projects/{{project}}/locations/{{region}}/jobs")
+	url, err := replaceVars(d, config, "{{CloudSchedulerBasePath}}projects/{{project}}/locations/{{region}}/jobs")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new Job: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+	res, err := sendRequestWithTimeout(config, "POST", project, url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating Job: %s", err)
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/locations/{{region}}/jobs/{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -311,20 +494,20 @@ func resourceCloudSchedulerJobCreate(d *schema.ResourceData, meta interface{}) e
 func resourceCloudSchedulerJobRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://cloudscheduler.googleapis.com/v1/projects/{{project}}/locations/{{region}}/jobs/{{name}}")
+	url, err := replaceVars(d, config, "{{CloudSchedulerBasePath}}projects/{{project}}/locations/{{region}}/jobs/{{name}}")
 	if err != nil {
 		return err
-	}
-
-	res, err := sendRequest(config, "GET", url, nil)
-	if err != nil {
-		return handleNotFoundError(err, d, fmt.Sprintf("CloudSchedulerJob %q", d.Id()))
 	}
 
 	project, err := getProject(d, config)
 	if err != nil {
 		return err
 	}
+	res, err := sendRequest(config, "GET", project, url, nil)
+	if err != nil {
+		return handleNotFoundError(err, d, fmt.Sprintf("CloudSchedulerJob %q", d.Id()))
+	}
+
 	if err := d.Set("project", project); err != nil {
 		return fmt.Errorf("Error reading Job: %s", err)
 	}
@@ -368,14 +551,20 @@ func resourceCloudSchedulerJobRead(d *schema.ResourceData, meta interface{}) err
 func resourceCloudSchedulerJobDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://cloudscheduler.googleapis.com/v1/projects/{{project}}/locations/{{region}}/jobs/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return err
+	}
+
+	url, err := replaceVars(d, config, "{{CloudSchedulerBasePath}}projects/{{project}}/locations/{{region}}/jobs/{{name}}")
 	if err != nil {
 		return err
 	}
 
 	var obj map[string]interface{}
 	log.Printf("[DEBUG] Deleting Job %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", project, url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "Job")
 	}
@@ -386,12 +575,17 @@ func resourceCloudSchedulerJobDelete(d *schema.ResourceData, meta interface{}) e
 
 func resourceCloudSchedulerJobImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"projects/(?P<project>[^/]+)/locations/(?P<region>[^/]+)/jobs/(?P<name>[^/]+)", "(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)", "(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"projects/(?P<project>[^/]+)/locations/(?P<region>[^/]+)/jobs/(?P<name>[^/]+)",
+		"(?P<project>[^/]+)/(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<region>[^/]+)/(?P<name>[^/]+)",
+		"(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "{{name}}")
+	id, err := replaceVars(d, config, "projects/{{project}}/locations/{{region}}/jobs/{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -526,33 +720,23 @@ func flattenCloudSchedulerJobAppEngineHttpTargetHttpMethod(v interface{}, d *sch
 	return v
 }
 
+// An `appEngineRouting` in API response is useless, so we set config values rather than api response to state.
 func flattenCloudSchedulerJobAppEngineHttpTargetAppEngineRouting(v interface{}, d *schema.ResourceData) interface{} {
 	if v == nil {
 		return nil
+	}
+	if stateV, ok := d.GetOk("app_engine_http_target"); ok && len(stateV.([]interface{})) > 0 {
+		return d.Get("app_engine_http_target.0.app_engine_routing")
 	}
 	original := v.(map[string]interface{})
 	if len(original) == 0 {
 		return nil
 	}
 	transformed := make(map[string]interface{})
-	transformed["service"] =
-		flattenCloudSchedulerJobAppEngineHttpTargetAppEngineRoutingService(original["service"], d)
-	transformed["version"] =
-		flattenCloudSchedulerJobAppEngineHttpTargetAppEngineRoutingVersion(original["version"], d)
-	transformed["instance"] =
-		flattenCloudSchedulerJobAppEngineHttpTargetAppEngineRoutingInstance(original["instance"], d)
+	transformed["service"] = original["service"]
+	transformed["version"] = original["version"]
+	transformed["instance"] = original["instance"]
 	return []interface{}{transformed}
-}
-func flattenCloudSchedulerJobAppEngineHttpTargetAppEngineRoutingService(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenCloudSchedulerJobAppEngineHttpTargetAppEngineRoutingVersion(v interface{}, d *schema.ResourceData) interface{} {
-	return v
-}
-
-func flattenCloudSchedulerJobAppEngineHttpTargetAppEngineRoutingInstance(v interface{}, d *schema.ResourceData) interface{} {
-	return v
 }
 
 func flattenCloudSchedulerJobAppEngineHttpTargetRelativeUri(v interface{}, d *schema.ResourceData) interface{} {
@@ -605,6 +789,10 @@ func flattenCloudSchedulerJobHttpTarget(v interface{}, d *schema.ResourceData) i
 		flattenCloudSchedulerJobHttpTargetBody(original["body"], d)
 	transformed["headers"] =
 		flattenCloudSchedulerJobHttpTargetHeaders(original["headers"], d)
+	transformed["oauth_token"] =
+		flattenCloudSchedulerJobHttpTargetOauthToken(original["oauthToken"], d)
+	transformed["oidc_token"] =
+		flattenCloudSchedulerJobHttpTargetOidcToken(original["oidcToken"], d)
 	return []interface{}{transformed}
 }
 func flattenCloudSchedulerJobHttpTargetUri(v interface{}, d *schema.ResourceData) interface{} {
@@ -644,26 +832,54 @@ func flattenCloudSchedulerJobHttpTargetHeaders(v interface{}, d *schema.Resource
 	return headers
 }
 
+func flattenCloudSchedulerJobHttpTargetOauthToken(v interface{}, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+	original := v.(map[string]interface{})
+	if len(original) == 0 {
+		return nil
+	}
+	transformed := make(map[string]interface{})
+	transformed["service_account_email"] =
+		flattenCloudSchedulerJobHttpTargetOauthTokenServiceAccountEmail(original["serviceAccountEmail"], d)
+	transformed["scope"] =
+		flattenCloudSchedulerJobHttpTargetOauthTokenScope(original["scope"], d)
+	return []interface{}{transformed}
+}
+func flattenCloudSchedulerJobHttpTargetOauthTokenServiceAccountEmail(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenCloudSchedulerJobHttpTargetOauthTokenScope(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenCloudSchedulerJobHttpTargetOidcToken(v interface{}, d *schema.ResourceData) interface{} {
+	if v == nil {
+		return nil
+	}
+	original := v.(map[string]interface{})
+	if len(original) == 0 {
+		return nil
+	}
+	transformed := make(map[string]interface{})
+	transformed["service_account_email"] =
+		flattenCloudSchedulerJobHttpTargetOidcTokenServiceAccountEmail(original["serviceAccountEmail"], d)
+	transformed["audience"] =
+		flattenCloudSchedulerJobHttpTargetOidcTokenAudience(original["audience"], d)
+	return []interface{}{transformed}
+}
+func flattenCloudSchedulerJobHttpTargetOidcTokenServiceAccountEmail(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
+func flattenCloudSchedulerJobHttpTargetOidcTokenAudience(v interface{}, d *schema.ResourceData) interface{} {
+	return v
+}
+
 func expandCloudSchedulerJobName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
-	var jobName string
-	project, err := getProject(d, config)
-	if err != nil {
-		return nil, err
-	}
-
-	region, err := getRegion(d, config)
-	if err != nil {
-		return nil, err
-	}
-
-	if v, ok := d.GetOk("name"); ok {
-		jobName = fmt.Sprintf("projects/%s/locations/%s/jobs/%s", project, region, v.(string))
-	} else {
-		err := fmt.Errorf("The name is missing for the job cannot be empty")
-		return nil, err
-	}
-
-	return jobName, nil
+	return replaceVars(d, config, "projects/{{project}}/locations/{{region}}/jobs/{{name}}")
 }
 
 func expandCloudSchedulerJobDescription(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
@@ -949,6 +1165,20 @@ func expandCloudSchedulerJobHttpTarget(v interface{}, d TerraformResourceData, c
 		transformed["headers"] = transformedHeaders
 	}
 
+	transformedOauthToken, err := expandCloudSchedulerJobHttpTargetOauthToken(original["oauth_token"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedOauthToken); val.IsValid() && !isEmptyValue(val) {
+		transformed["oauthToken"] = transformedOauthToken
+	}
+
+	transformedOidcToken, err := expandCloudSchedulerJobHttpTargetOidcToken(original["oidc_token"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedOidcToken); val.IsValid() && !isEmptyValue(val) {
+		transformed["oidcToken"] = transformedOidcToken
+	}
+
 	return transformed, nil
 }
 
@@ -973,4 +1203,72 @@ func expandCloudSchedulerJobHttpTargetHeaders(v interface{}, d TerraformResource
 		m[k] = val.(string)
 	}
 	return m, nil
+}
+
+func expandCloudSchedulerJobHttpTargetOauthToken(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	l := v.([]interface{})
+	if len(l) == 0 || l[0] == nil {
+		return nil, nil
+	}
+	raw := l[0]
+	original := raw.(map[string]interface{})
+	transformed := make(map[string]interface{})
+
+	transformedServiceAccountEmail, err := expandCloudSchedulerJobHttpTargetOauthTokenServiceAccountEmail(original["service_account_email"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedServiceAccountEmail); val.IsValid() && !isEmptyValue(val) {
+		transformed["serviceAccountEmail"] = transformedServiceAccountEmail
+	}
+
+	transformedScope, err := expandCloudSchedulerJobHttpTargetOauthTokenScope(original["scope"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedScope); val.IsValid() && !isEmptyValue(val) {
+		transformed["scope"] = transformedScope
+	}
+
+	return transformed, nil
+}
+
+func expandCloudSchedulerJobHttpTargetOauthTokenServiceAccountEmail(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandCloudSchedulerJobHttpTargetOauthTokenScope(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandCloudSchedulerJobHttpTargetOidcToken(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	l := v.([]interface{})
+	if len(l) == 0 || l[0] == nil {
+		return nil, nil
+	}
+	raw := l[0]
+	original := raw.(map[string]interface{})
+	transformed := make(map[string]interface{})
+
+	transformedServiceAccountEmail, err := expandCloudSchedulerJobHttpTargetOidcTokenServiceAccountEmail(original["service_account_email"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedServiceAccountEmail); val.IsValid() && !isEmptyValue(val) {
+		transformed["serviceAccountEmail"] = transformedServiceAccountEmail
+	}
+
+	transformedAudience, err := expandCloudSchedulerJobHttpTargetOidcTokenAudience(original["audience"], d, config)
+	if err != nil {
+		return nil, err
+	} else if val := reflect.ValueOf(transformedAudience); val.IsValid() && !isEmptyValue(val) {
+		transformed["audience"] = transformedAudience
+	}
+
+	return transformed, nil
+}
+
+func expandCloudSchedulerJobHttpTargetOidcTokenServiceAccountEmail(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
+}
+
+func expandCloudSchedulerJobHttpTargetOidcTokenAudience(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
+	return v, nil
 }

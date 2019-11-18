@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 func resourceResourceManagerLien() *schema.Resource {
@@ -36,8 +36,8 @@ func resourceResourceManagerLien() *schema.Resource {
 		},
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(240 * time.Second),
-			Delete: schema.DefaultTimeout(240 * time.Second),
+			Create: schema.DefaultTimeout(4 * time.Minute),
+			Delete: schema.DefaultTimeout(4 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -45,32 +45,48 @@ func resourceResourceManagerLien() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `A stable, user-visible/meaningful string identifying the origin
+of the Lien, intended to be inspected programmatically. Maximum length of
+200 characters.`,
 			},
 			"parent": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `A reference to the resource this Lien is attached to.
+The server will validate the parent against those for which Liens are supported.
+Since a variety of objects can have Liens against them, you must provide the type
+prefix (e.g. "projects/my-project-name").`,
 			},
 			"reason": {
 				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+				Description: `Concise user-visible strings indicating why an action cannot be performed
+on a resource. Maximum length of 200 characters.`,
 			},
 			"restrictions": {
 				Type:     schema.TypeList,
 				Required: true,
 				ForceNew: true,
+				Description: `The types of operations which should be blocked as a result of this Lien.
+Each value should correspond to an IAM permission. The server will validate
+the permissions against those for which Liens are supported.  An empty
+list is meaningless and will be rejected.
+e.g. ['resourcemanager.projects.delete']`,
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
 			},
 			"create_time": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `Time of creation`,
 			},
 			"name": {
-				Type:     schema.TypeString,
-				Computed: true,
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: `A system-generated unique identifier for this Lien.`,
 			},
 		},
 	}
@@ -105,13 +121,13 @@ func resourceResourceManagerLienCreate(d *schema.ResourceData, meta interface{})
 		obj["restrictions"] = restrictionsProp
 	}
 
-	url, err := replaceVars(d, config, "https://cloudresourcemanager.googleapis.com/v1/liens")
+	url, err := replaceVars(d, config, "{{ResourceManagerBasePath}}liens")
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[DEBUG] Creating new Lien: %#v", obj)
-	res, err := sendRequestWithTimeout(config, "POST", url, obj, d.Timeout(schema.TimeoutCreate))
+	res, err := sendRequestWithTimeout(config, "POST", "", url, obj, d.Timeout(schema.TimeoutCreate))
 	if err != nil {
 		return fmt.Errorf("Error creating Lien: %s", err)
 	}
@@ -141,12 +157,12 @@ func resourceResourceManagerLienCreate(d *schema.ResourceData, meta interface{})
 func resourceResourceManagerLienRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://cloudresourcemanager.googleapis.com/v1/liens?parent={{parent}}")
+	url, err := replaceVars(d, config, "{{ResourceManagerBasePath}}liens?parent={{parent}}")
 	if err != nil {
 		return err
 	}
 
-	res, err := sendRequest(config, "GET", url, nil)
+	res, err := sendRequest(config, "GET", "", url, nil)
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("ResourceManagerLien %q", d.Id()))
 	}
@@ -166,6 +182,13 @@ func resourceResourceManagerLienRead(d *schema.ResourceData, meta interface{}) e
 	res, err = resourceResourceManagerLienDecoder(d, meta, res)
 	if err != nil {
 		return err
+	}
+
+	if res == nil {
+		// Decoding the object has resulted in it being gone. It may be marked deleted
+		log.Printf("[DEBUG] Removing ResourceManagerLien because it no longer exists.")
+		d.SetId("")
+		return nil
 	}
 
 	if err := d.Set("name", flattenResourceManagerLienName(res["name"], d)); err != nil {
@@ -193,7 +216,7 @@ func resourceResourceManagerLienRead(d *schema.ResourceData, meta interface{}) e
 func resourceResourceManagerLienDelete(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	url, err := replaceVars(d, config, "https://cloudresourcemanager.googleapis.com/v1/liens?parent={{parent}}")
+	url, err := replaceVars(d, config, "{{ResourceManagerBasePath}}liens?parent={{parent}}")
 	if err != nil {
 		return err
 	}
@@ -203,12 +226,13 @@ func resourceResourceManagerLienDelete(d *schema.ResourceData, meta interface{})
 	// in theory, we should find a way to disable the default URL and not construct
 	// both, but that's a problem for another day. Today, we cheat.
 	log.Printf("[DEBUG] replacing URL %q with a custom delete URL", url)
-	url, err = replaceVars(d, config, "https://cloudresourcemanager.googleapis.com/v1/liens/{{name}}")
+	url, err = replaceVars(d, config, "{{ResourceManagerBasePath}}liens/{{name}}")
 	if err != nil {
 		return err
 	}
 	log.Printf("[DEBUG] Deleting Lien %q", d.Id())
-	res, err := sendRequestWithTimeout(config, "DELETE", url, obj, d.Timeout(schema.TimeoutDelete))
+
+	res, err := sendRequestWithTimeout(config, "DELETE", "", url, obj, d.Timeout(schema.TimeoutDelete))
 	if err != nil {
 		return handleNotFoundError(err, d, "Lien")
 	}
@@ -219,7 +243,9 @@ func resourceResourceManagerLienDelete(d *schema.ResourceData, meta interface{})
 
 func resourceResourceManagerLienImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
 	config := meta.(*Config)
-	if err := parseImportId([]string{"(?P<parent>[^/]+)/(?P<name>[^/]+)"}, d, config); err != nil {
+	if err := parseImportId([]string{
+		"(?P<parent>[^/]+)/(?P<name>[^/]+)",
+	}, d, config); err != nil {
 		return nil, err
 	}
 
@@ -229,6 +255,7 @@ func resourceResourceManagerLienImport(d *schema.ResourceData, meta interface{})
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}
 	d.SetId(id)
+
 	parent, err := replaceVars(d, config, "projects/{{parent}}")
 	if err != nil {
 		return nil, err
@@ -290,31 +317,49 @@ func flattenNestedResourceManagerLien(d *schema.ResourceData, meta interface{}, 
 		return nil, nil
 	}
 
-	// Final nested resource is either a list of resources we need to filter
-	// or just the resource itself, which we return.
 	switch v.(type) {
 	case []interface{}:
 		break
 	case map[string]interface{}:
-		return v.(map[string]interface{}), nil
+		// Construct list out of single nested resource
+		v = []interface{}{v}
 	default:
-		return nil, fmt.Errorf("invalid value for liens: %v", v)
+		return nil, fmt.Errorf("expected list or map for value liens. Actual value: %v", v)
 	}
 
-	items := v.([]interface{})
-	for _, vRaw := range items {
-		item := vRaw.(map[string]interface{})
-		itemIdV := d.Get("name")
-		actualIdV := flattenResourceManagerLienName(item["name"], d)
-		log.Printf("[DEBUG] Checking if item's name (%#v) is equal to resource's (%#v)", itemIdV, actualIdV)
-		if !reflect.DeepEqual(itemIdV, actualIdV) {
-			continue
-		}
-		return item, nil
+	_, item, err := resourceResourceManagerLienFindNestedObjectInList(d, meta, v.([]interface{}))
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
+	return item, nil
 }
 
+func resourceResourceManagerLienFindNestedObjectInList(d *schema.ResourceData, meta interface{}, items []interface{}) (index int, item map[string]interface{}, err error) {
+	expectedName := d.Get("name")
+
+	// Search list for this resource.
+	for idx, itemRaw := range items {
+		if itemRaw == nil {
+			continue
+		}
+		item := itemRaw.(map[string]interface{})
+
+		// Decode list item before comparing.
+		item, err := resourceResourceManagerLienDecoder(d, meta, item)
+		if err != nil {
+			return -1, nil, err
+		}
+
+		itemName := flattenResourceManagerLienName(item["name"], d)
+		if !reflect.DeepEqual(itemName, expectedName) {
+			log.Printf("[DEBUG] Skipping item with name= %#v, looking for %#v)", itemName, expectedName)
+			continue
+		}
+		log.Printf("[DEBUG] Found item for resource %q: %#v)", d.Id(), item)
+		return idx, item, nil
+	}
+	return -1, nil, nil
+}
 func resourceResourceManagerLienDecoder(d *schema.ResourceData, meta interface{}, res map[string]interface{}) (map[string]interface{}, error) {
 	// The problem we're trying to solve here is that this property is a Project,
 	// and there are a lot of ways to specify a Project, including the ID vs
