@@ -1,4 +1,5 @@
-## 1.1.5 (Unreleased)
+## 1.1.6 (Unreleased)
+## 1.1.5 (November 18, 2019)
 
 ENHANCEMENTS:
  * Update to Terraform 0.12.13

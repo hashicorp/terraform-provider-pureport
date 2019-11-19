@@ -20,8 +20,8 @@ linters:
 
 linters-settings:
   errcheck:
-    ignore: github.com/hashicorp/terraform/helper/schema:ForceNew|Set,fmt:.*,io:Close
+    ignore: github.com/hashicorp/terraform-plugin-sdk/helper/schema:ForceNew|Set,fmt:.*,io:Close
 
 run:
-  deadline: 10m
+  deadline: 20m
   modules-download-mode: vendor
