@@ -135,12 +135,12 @@ func resourceSiteVPNConnection() *schema.Resource {
 					"customer_side": {
 						Type:         schema.TypeString,
 						Required:     true,
-						ValidateFunc: validation.CIDRNetwork(16, 32),
+						ValidateFunc: validation.CIDRNetwork(8, 32),
 					},
 					"pureport_side": {
 						Type:         schema.TypeString,
 						Required:     true,
-						ValidateFunc: validation.CIDRNetwork(16, 32),
+						ValidateFunc: validation.CIDRNetwork(8, 32),
 					},
 				},
 			},
