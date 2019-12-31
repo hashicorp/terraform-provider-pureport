@@ -603,7 +603,7 @@ func DeleteConnection(name string, d *schema.ResourceData, m interface{}) error 
 
 	_, err = deleteStateConf.WaitForState()
 	if err != nil {
-		return fmt.Errorf("Error waiting for connection (%s) to be created: %s", connectionId, err)
+		return fmt.Errorf("Error waiting for connection (%s) to be deleted: %s", connectionId, err)
 	}
 
 	d.SetId("")
