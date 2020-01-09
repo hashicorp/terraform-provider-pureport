@@ -8,7 +8,7 @@ require (
 	github.com/client9/misspell v0.3.4
 	github.com/dustinkirkland/golang-petname v0.0.0-20190613200456-11339a705ed2 // indirect
 	github.com/golangci/golangci-lint v1.21.0
-	github.com/hashicorp/terraform v0.12.16
+	github.com/hashicorp/terraform v0.12.19
 	github.com/hashicorp/terraform-plugin-sdk v1.3.0
 	github.com/pureport/pureport-sdk-go v1.2.3
 	github.com/stoewer/go-strcase v1.1.0 // indirect
