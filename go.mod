@@ -10,10 +10,11 @@ require (
 	github.com/golangci/golangci-lint v1.21.0
 	github.com/hashicorp/terraform v0.12.19
 	github.com/hashicorp/terraform-plugin-sdk v1.3.0
+	github.com/marstr/guid v1.1.0 // indirect
 	github.com/pureport/pureport-sdk-go v1.2.3
 	github.com/stoewer/go-strcase v1.1.0 // indirect
 	github.com/terraform-providers/terraform-provider-aws v1.60.1-0.20191114211556-907e76d4b112
-	github.com/terraform-providers/terraform-provider-azurerm v1.36.1
+	github.com/terraform-providers/terraform-provider-azurerm v1.40.0
 	github.com/terraform-providers/terraform-provider-google v1.20.1-0.20191115162029-8f21d20d5fe3
 	github.com/terraform-providers/terraform-provider-random v2.0.0+incompatible // indirect
 	honnef.co/go/tools v0.0.1-2019.2.3
