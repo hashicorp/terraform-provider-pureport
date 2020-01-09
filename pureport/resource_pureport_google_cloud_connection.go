@@ -61,7 +61,7 @@ func resourceGoogleCloudConnection() *schema.Resource {
 
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(connection.CreateTimeout),
-			Delete: schema.DefaultTimeout(connection.CreateTimeout),
+			Delete: schema.DefaultTimeout(connection.DeleteTimeout),
 		},
 	}
 }
