@@ -879,7 +879,7 @@ github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/st
 github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts
 github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils
 github.com/terraform-providers/terraform-provider-azurerm/version
-# github.com/terraform-providers/terraform-provider-google v1.20.1-0.20191113202234-2eb04684ddf7
+# github.com/terraform-providers/terraform-provider-google v1.20.1-0.20191213211412-5a1a8bc2ae4a
 github.com/terraform-providers/terraform-provider-google/google
 github.com/terraform-providers/terraform-provider-google/version
 # github.com/timakin/bodyclose v0.0.0-20190930140734-f7f2e9bca95e
