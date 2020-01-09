@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
-	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -64,8 +63,8 @@ func resourceAzureConnection() *schema.Resource {
 		Schema: connection_schema,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(6 * time.Minute),
-			Delete: schema.DefaultTimeout(6 * time.Minute),
+			Create: schema.DefaultTimeout(connection.CreateTimeout),
+			Delete: schema.DefaultTimeout(connection.CreateTimeout),
 		},
 	}
 }

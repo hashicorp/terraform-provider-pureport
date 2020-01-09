@@ -21,6 +21,9 @@ const (
 	AzureConnectionName   = "Azure Cloud Connection"
 	GoogleConnectionName  = "Google Cloud Connection"
 	SiteVPNConnectionName = "SiteVPN Connection"
+
+	CreateTimeout = 10 * time.Minute
+	DeleteTimeout = 10 * time.Minute
 )
 
 var (

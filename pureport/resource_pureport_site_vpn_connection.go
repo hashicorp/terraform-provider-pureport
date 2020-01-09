@@ -170,8 +170,8 @@ func resourceSiteVPNConnection() *schema.Resource {
 		Schema: connection_schema,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(6 * time.Minute),
-			Delete: schema.DefaultTimeout(6 * time.Minute),
+			Create: schema.DefaultTimeout(15 * time.Minute),
+			Delete: schema.DefaultTimeout(connection.DeleteTimeout),
 		},
 	}
 }
