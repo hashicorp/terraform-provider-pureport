@@ -145,7 +145,7 @@ describes the bucket boundaries used to create a histogram of the extracted valu
 								Schema: map[string]*schema.Schema{
 									"bounds": {
 										Type:        schema.TypeList,
-										Required:    true,
+										Optional:    true,
 										Description: `The values must be monotonically increasing.`,
 										Elem: &schema.Schema{
 											Type: schema.TypeFloat,
@@ -153,7 +153,6 @@ describes the bucket boundaries used to create a histogram of the extracted valu
 									},
 								},
 							},
-							AtLeastOneOf: []string{"bucket_options.0.linear_buckets", "bucket_options.0.exponential_buckets", "bucket_options.0.explicit_buckets"},
 						},
 						"exponential_buckets": {
 							Type:     schema.TypeList,
@@ -164,26 +163,22 @@ the lower bound. Each bucket represents a constant relative uncertainty on a spe
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"growth_factor": {
-										Type:         schema.TypeInt,
-										Optional:     true,
-										Description:  `Must be greater than 1.`,
-										AtLeastOneOf: []string{"bucket_options.0.exponential_buckets.0.num_finite_buckets", "bucket_options.0.exponential_buckets.0.growth_factor", "bucket_options.0.exponential_buckets.0.scale"},
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: `Must be greater than 1.`,
 									},
 									"num_finite_buckets": {
-										Type:         schema.TypeInt,
-										Optional:     true,
-										Description:  `Must be greater than 0.`,
-										AtLeastOneOf: []string{"bucket_options.0.exponential_buckets.0.num_finite_buckets", "bucket_options.0.exponential_buckets.0.growth_factor", "bucket_options.0.exponential_buckets.0.scale"},
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: `Must be greater than 0.`,
 									},
 									"scale": {
-										Type:         schema.TypeFloat,
-										Optional:     true,
-										Description:  `Must be greater than 0.`,
-										AtLeastOneOf: []string{"bucket_options.0.exponential_buckets.0.num_finite_buckets", "bucket_options.0.exponential_buckets.0.growth_factor", "bucket_options.0.exponential_buckets.0.scale"},
+										Type:        schema.TypeFloat,
+										Optional:    true,
+										Description: `Must be greater than 0.`,
 									},
 								},
 							},
-							AtLeastOneOf: []string{"bucket_options.0.linear_buckets", "bucket_options.0.exponential_buckets", "bucket_options.0.explicit_buckets"},
 						},
 						"linear_buckets": {
 							Type:     schema.TypeList,
@@ -194,26 +189,22 @@ Each bucket represents a constant absolute uncertainty on the specific value in 
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"num_finite_buckets": {
-										Type:         schema.TypeInt,
-										Optional:     true,
-										Description:  `Must be greater than 0.`,
-										AtLeastOneOf: []string{"bucket_options.0.linear_buckets.0.num_finite_buckets", "bucket_options.0.linear_buckets.0.width", "bucket_options.0.linear_buckets.0.offset"},
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: `Must be greater than 0.`,
 									},
 									"offset": {
-										Type:         schema.TypeFloat,
-										Optional:     true,
-										Description:  `Lower bound of the first bucket.`,
-										AtLeastOneOf: []string{"bucket_options.0.linear_buckets.0.num_finite_buckets", "bucket_options.0.linear_buckets.0.width", "bucket_options.0.linear_buckets.0.offset"},
+										Type:        schema.TypeFloat,
+										Optional:    true,
+										Description: `Lower bound of the first bucket.`,
 									},
 									"width": {
-										Type:         schema.TypeInt,
-										Optional:     true,
-										Description:  `Must be greater than 0.`,
-										AtLeastOneOf: []string{"bucket_options.0.linear_buckets.0.num_finite_buckets", "bucket_options.0.linear_buckets.0.width", "bucket_options.0.linear_buckets.0.offset"},
+										Type:        schema.TypeInt,
+										Optional:    true,
+										Description: `Must be greater than 0.`,
 									},
 								},
 							},
-							AtLeastOneOf: []string{"bucket_options.0.linear_buckets", "bucket_options.0.exponential_buckets", "bucket_options.0.explicit_buckets"},
 						},
 					},
 				},

@@ -111,11 +111,7 @@ func resourceBigtableTableCreate(d *schema.ResourceData, meta interface{}) error
 		}
 	}
 
-	id, err := replaceVars(d, config, "projects/{{project}}/instances/{{instance_name}}/tables/{{name}}")
-	if err != nil {
-		return fmt.Errorf("Error constructing id: %s", err)
-	}
-	d.SetId(id)
+	d.SetId(name)
 
 	return resourceBigtableTableRead(d, meta)
 }
@@ -137,7 +133,7 @@ func resourceBigtableTableRead(d *schema.ResourceData, meta interface{}) error {
 
 	defer c.Close()
 
-	name := d.Get("name").(string)
+	name := d.Id()
 	table, err := c.TableInfo(ctx, name)
 	if err != nil {
 		log.Printf("[WARN] Removing %s because it's gone", name)
@@ -203,7 +199,7 @@ func resourceBigtableTableImport(d *schema.ResourceData, meta interface{}) ([]*s
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "projects/{{project}}/instances/{{instance_name}}/tables/{{name}}")
+	id, err := replaceVars(d, config, "{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}

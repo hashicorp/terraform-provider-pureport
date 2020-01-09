@@ -222,16 +222,14 @@ When the load balancing scheme is INTERNAL, this field is not used.`,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"include_host": {
-										Type:         schema.TypeBool,
-										Optional:     true,
-										Description:  `If true requests to different hosts will be cached separately.`,
-										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Description: `If true requests to different hosts will be cached separately.`,
 									},
 									"include_protocol": {
-										Type:         schema.TypeBool,
-										Optional:     true,
-										Description:  `If true, http and https requests will be cached separately.`,
-										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
+										Type:        schema.TypeBool,
+										Optional:    true,
+										Description: `If true, http and https requests will be cached separately.`,
 									},
 									"include_query_string": {
 										Type:     schema.TypeBool,
@@ -243,7 +241,6 @@ string will be included.
 
 If false, the query string will be excluded from the cache
 key entirely.`,
-										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
 									},
 									"query_string_blacklist": {
 										Type:     schema.TypeSet,
@@ -257,8 +254,7 @@ delimiters.`,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
-										Set:          schema.HashString,
-										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
+										Set: schema.HashString,
 									},
 									"query_string_whitelist": {
 										Type:     schema.TypeSet,
@@ -272,12 +268,10 @@ delimiters.`,
 										Elem: &schema.Schema{
 											Type: schema.TypeString,
 										},
-										Set:          schema.HashString,
-										AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy.0.include_host", "cdn_policy.0.cache_key_policy.0.include_protocol", "cdn_policy.0.cache_key_policy.0.include_query_string", "cdn_policy.0.cache_key_policy.0.query_string_blacklist", "cdn_policy.0.cache_key_policy.0.query_string_whitelist"},
+										Set: schema.HashString,
 									},
 								},
 							},
-							AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy", "cdn_policy.0.signed_url_cache_max_age_sec"},
 						},
 						"signed_url_cache_max_age_sec": {
 							Type:     schema.TypeInt,
@@ -292,8 +286,7 @@ internally behave as though all responses from this backend had a
 "Cache-Control: public, max-age=[TTL]" header, regardless of any
 existing Cache-Control header. The actual headers served in
 responses will not be altered.`,
-							Default:      3600,
-							AtLeastOneOf: []string{"cdn_policy.0.cache_key_policy", "cdn_policy.0.signed_url_cache_max_age_sec"},
+							Default: 3600,
 						},
 					},
 				},
@@ -421,28 +414,6 @@ object. This field is used in optimistic locking.`,
 func computeBackendServiceBackendSchema() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"group": {
-				Type:             schema.TypeString,
-				Required:         true,
-				DiffSuppressFunc: compareSelfLinkRelativePaths,
-				Description: `The fully-qualified URL of an Instance Group or Network Endpoint
-Group resource. In case of instance group this defines the list
-of instances that serve traffic. Member virtual machine
-instances from each instance group must live in the same zone as
-the instance group itself. No two backends in a backend service
-are allowed to use same Instance Group resource.
-
-For Network Endpoint Groups this defines list of endpoints. All
-endpoints of Network Endpoint Group must be hosted on instances
-located in the same zone as the Network Endpoint Group.
-
-Backend services cannot mix Instance Group and
-Network Endpoint Group backends.
-
-Note that you must specify an Instance Group or Network Endpoint
-Group resource using the fully-qualified URL, rather than a
-partial URL.`,
-			},
 			"balancing_mode": {
 				Type:         schema.TypeString,
 				Optional:     true,
@@ -471,6 +442,28 @@ setting of 0 means the group is completely drained, offering
 				Optional: true,
 				Description: `An optional description of this resource.
 Provide this property when you create the resource.`,
+			},
+			"group": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: compareSelfLinkRelativePaths,
+				Description: `The fully-qualified URL of an Instance Group or Network Endpoint
+Group resource. In case of instance group this defines the list
+of instances that serve traffic. Member virtual machine
+instances from each instance group must live in the same zone as
+the instance group itself. No two backends in a backend service
+are allowed to use same Instance Group resource.
+
+For Network Endpoint Groups this defines list of endpoints. All
+endpoints of Network Endpoint Group must be hosted on instances
+located in the same zone as the Network Endpoint Group.
+
+Backend services cannot mix Instance Group and
+Network Endpoint Group backends.
+
+Note that you must specify an Instance Group or Network Endpoint
+Group resource using the fully-qualified URL, rather than a
+partial URL.`,
 			},
 			"max_connections": {
 				Type:     schema.TypeInt,
@@ -664,7 +657,7 @@ func resourceComputeBackendServiceCreate(d *schema.ResourceData, meta interface{
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "projects/{{project}}/global/backendServices/{{name}}")
+	id, err := replaceVars(d, config, "{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -1016,7 +1009,7 @@ func resourceComputeBackendServiceImport(d *schema.ResourceData, meta interface{
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "projects/{{project}}/global/backendServices/{{name}}")
+	id, err := replaceVars(d, config, "{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}

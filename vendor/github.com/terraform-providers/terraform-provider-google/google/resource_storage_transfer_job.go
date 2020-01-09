@@ -11,27 +11,6 @@ import (
 	"time"
 )
 
-var (
-	objectConditionsKeys = []string{
-		"transfer_spec.0.object_conditions.0.min_time_elapsed_since_last_modification",
-		"transfer_spec.0.object_conditions.0.max_time_elapsed_since_last_modification",
-		"transfer_spec.0.object_conditions.0.include_prefixes",
-		"transfer_spec.0.object_conditions.0.exclude_prefixes",
-	}
-
-	transferOptionsKeys = []string{
-		"transfer_spec.0.transfer_options.0.overwrite_objects_already_existing_in_sink",
-		"transfer_spec.0.transfer_options.0.delete_objects_unique_in_sink",
-		"transfer_spec.0.transfer_options.0.delete_objects_from_source_after_transfer",
-	}
-
-	transferSpecDataSourceKeys = []string{
-		"transfer_spec.0.gcs_data_source",
-		"transfer_spec.0.aws_s3_data_source",
-		"transfer_spec.0.http_data_source",
-	}
-)
-
 func resourceStorageTransferJob() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceStorageTransferJobCreate,
@@ -73,25 +52,25 @@ func resourceStorageTransferJob() *schema.Resource {
 							Elem:     gcsDataSchema(),
 						},
 						"gcs_data_source": {
-							Type:         schema.TypeList,
-							Optional:     true,
-							MaxItems:     1,
-							Elem:         gcsDataSchema(),
-							ExactlyOneOf: transferSpecDataSourceKeys,
+							Type:          schema.TypeList,
+							Optional:      true,
+							MaxItems:      1,
+							Elem:          gcsDataSchema(),
+							ConflictsWith: []string{"transfer_spec.aws_s3_data_source", "transfer_spec.http_data_source"},
 						},
 						"aws_s3_data_source": {
-							Type:         schema.TypeList,
-							Optional:     true,
-							MaxItems:     1,
-							Elem:         awsS3DataSchema(),
-							ExactlyOneOf: transferSpecDataSourceKeys,
+							Type:          schema.TypeList,
+							Optional:      true,
+							MaxItems:      1,
+							Elem:          awsS3DataSchema(),
+							ConflictsWith: []string{"transfer_spec.gcs_data_source", "transfer_spec.http_data_source"},
 						},
 						"http_data_source": {
-							Type:         schema.TypeList,
-							Optional:     true,
-							MaxItems:     1,
-							Elem:         httpDataSchema(),
-							ExactlyOneOf: transferSpecDataSourceKeys,
+							Type:          schema.TypeList,
+							Optional:      true,
+							MaxItems:      1,
+							Elem:          httpDataSchema(),
+							ConflictsWith: []string{"transfer_spec.aws_s3_data_source", "transfer_spec.gcs_data_source"},
 						},
 					},
 				},
@@ -160,27 +139,23 @@ func objectConditionsSchema() *schema.Schema {
 					Type:         schema.TypeString,
 					ValidateFunc: validateDuration(),
 					Optional:     true,
-					AtLeastOneOf: objectConditionsKeys,
 				},
 				"max_time_elapsed_since_last_modification": {
 					Type:         schema.TypeString,
 					ValidateFunc: validateDuration(),
 					Optional:     true,
-					AtLeastOneOf: objectConditionsKeys,
 				},
 				"include_prefixes": {
-					Type:         schema.TypeList,
-					Optional:     true,
-					AtLeastOneOf: objectConditionsKeys,
+					Type:     schema.TypeList,
+					Optional: true,
 					Elem: &schema.Schema{
 						MaxItems: 1000,
 						Type:     schema.TypeString,
 					},
 				},
 				"exclude_prefixes": {
-					Type:         schema.TypeList,
-					Optional:     true,
-					AtLeastOneOf: objectConditionsKeys,
+					Type:     schema.TypeList,
+					Optional: true,
 					Elem: &schema.Schema{
 						MaxItems: 1000,
 						Type:     schema.TypeString,
@@ -199,20 +174,17 @@ func transferOptionsSchema() *schema.Schema {
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"overwrite_objects_already_existing_in_sink": {
-					Type:         schema.TypeBool,
-					Optional:     true,
-					AtLeastOneOf: transferOptionsKeys,
+					Type:     schema.TypeBool,
+					Optional: true,
 				},
 				"delete_objects_unique_in_sink": {
 					Type:          schema.TypeBool,
 					Optional:      true,
-					AtLeastOneOf:  transferOptionsKeys,
 					ConflictsWith: []string{"transfer_spec.transfer_options.delete_objects_from_source_after_transfer"},
 				},
 				"delete_objects_from_source_after_transfer": {
 					Type:          schema.TypeBool,
 					Optional:      true,
-					AtLeastOneOf:  transferOptionsKeys,
 					ConflictsWith: []string{"transfer_spec.transfer_options.delete_objects_unique_in_sink"},
 				},
 			},

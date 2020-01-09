@@ -57,10 +57,11 @@ func resourcePubsubSubscription() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": {
-				Type:        schema.TypeString,
-				Required:    true,
-				ForceNew:    true,
-				Description: `Name of the subscription.`,
+				Type:             schema.TypeString,
+				Required:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: comparePubsubSubscriptionBasename,
+				Description:      `Name of the subscription.`,
 			},
 			"topic": {
 				Type:             schema.TypeString,
@@ -100,7 +101,7 @@ will eventually redeliver the message.`,
 A subscription is considered active as long as any connected subscriber
 is successfully consuming messages from the subscription or is issuing
 operations on the subscription. If expirationPolicy is not set, a default
-policy with ttl of 31 days will be used.  If it is set but ttl is "", the
+policy with ttl of 31 days will be used.  If it is set but left empty, the
 resource never expires.  The minimum allowed value for expirationPolicy.ttl
 is 1 day.`,
 				MaxItems: 1,
@@ -108,7 +109,7 @@ is 1 day.`,
 					Schema: map[string]*schema.Schema{
 						"ttl": {
 							Type:             schema.TypeString,
-							Required:         true,
+							Optional:         true,
 							DiffSuppressFunc: comparePubsubSubscriptionExpirationPolicy,
 							Description: `Specifies the "time-to-live" duration for an associated resource. The
 resource expires if it is not active for a period of ttl.
@@ -624,7 +625,26 @@ func flattenPubsubSubscriptionExpirationPolicyTtl(v interface{}, d *schema.Resou
 }
 
 func expandPubsubSubscriptionName(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {
-	return replaceVars(d, config, "projects/{{project}}/subscriptions/{{name}}")
+	project, err := getProject(d, config)
+	if err != nil {
+		return "", err
+	}
+
+	subscription := d.Get("name").(string)
+
+	re := regexp.MustCompile("projects\\/(.*)\\/subscriptions\\/(.*)")
+	match := re.FindStringSubmatch(subscription)
+	if len(match) == 3 {
+		// We need to preserve the behavior where the user passes the subscription name already in the long form,
+		// however we need it to be stored as the short form since it's used for the replaceVars in the URL.
+		// The unintuitive behavior is that if the user provides the long form, we use the project from there, not the one
+		// specified on the resource or provider.
+		// TODO(drebes): consider deprecating the long form behavior for 3.0
+		d.Set("project", match[1])
+		d.Set("name", match[2])
+		return subscription, nil
+	}
+	return fmt.Sprintf("projects/%s/subscriptions/%s", project, subscription), nil
 }
 
 func expandPubsubSubscriptionTopic(v interface{}, d TerraformResourceData, config *Config) (interface{}, error) {

@@ -1,6 +1,9 @@
 package google
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	containerBeta "google.golang.org/api/container/v1beta1"
@@ -172,11 +175,9 @@ var schemaNodeConfig = &schema.Schema{
 				Type:     schema.TypeList,
 				Optional: true,
 				// Computed=true because GKE Sandbox will automatically add taints to nodes that can/cannot run sandboxed pods.
-				Computed: true,
-				ForceNew: true,
-				// Legacy config mode allows explicitly defining an empty taint.
-				// See https://www.terraform.io/docs/configuration/attr-as-blocks.html
-				ConfigMode: schema.SchemaConfigModeAttr,
+				Computed:         true,
+				ForceNew:         true,
+				DiffSuppressFunc: taintDiffSuppress,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"key": {
@@ -420,4 +421,21 @@ func flattenTaints(c []*containerBeta.NodeTaint) []map[string]interface{} {
 		})
 	}
 	return result
+}
+
+func taintDiffSuppress(k, old, new string, d *schema.ResourceData) bool {
+	if strings.HasSuffix(k, "#") {
+		oldCount, oldErr := strconv.Atoi(old)
+		newCount, newErr := strconv.Atoi(new)
+		// If either of them isn't a number somehow, or if there's one that we didn't have before.
+		return oldErr != nil || newErr != nil || oldCount == newCount+1
+	} else {
+		lastDot := strings.LastIndex(k, ".")
+		taintKey := d.Get(k[:lastDot] + ".key").(string)
+		if taintKey == "nvidia.com/gpu" {
+			return true
+		} else {
+			return false
+		}
+	}
 }

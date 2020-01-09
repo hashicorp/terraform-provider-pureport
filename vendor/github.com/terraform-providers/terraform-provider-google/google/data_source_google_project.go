@@ -1,7 +1,6 @@
 package google
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -22,13 +21,13 @@ func datasourceGoogleProjectRead(d *schema.ResourceData, meta interface{}) error
 
 	if v, ok := d.GetOk("project_id"); ok {
 		project := v.(string)
-		d.SetId(fmt.Sprintf("projects/%s", project))
+		d.SetId(project)
 	} else {
 		project, err := getProject(d, config)
 		if err != nil {
 			return err
 		}
-		d.SetId(fmt.Sprintf("projects/%s", project))
+		d.SetId(project)
 	}
 
 	return resourceGoogleProjectRead(d, meta)
