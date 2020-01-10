@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -170,7 +169,7 @@ func resourceSiteVPNConnection() *schema.Resource {
 		Schema: connection_schema,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(15 * time.Minute),
+			Create: schema.DefaultTimeout(connection.CreateTimeout),
 			Delete: schema.DefaultTimeout(connection.DeleteTimeout),
 		},
 	}
