@@ -117,7 +117,7 @@ func appEngineApplicationFeatureSettingsResource() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"split_health_checks": {
 				Type:     schema.TypeBool,
-				Required: true,
+				Optional: true,
 			},
 		},
 	}
