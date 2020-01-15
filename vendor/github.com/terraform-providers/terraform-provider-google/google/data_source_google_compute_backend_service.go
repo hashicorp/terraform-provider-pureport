@@ -1,8 +1,6 @@
 package google
 
 import (
-	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -22,16 +20,9 @@ func dataSourceGoogleComputeBackendService() *schema.Resource {
 }
 
 func dataSourceComputeBackendServiceRead(d *schema.ResourceData, meta interface{}) error {
-	config := meta.(*Config)
-
 	serviceName := d.Get("name").(string)
 
-	project, err := getProject(d, config)
-	if err != nil {
-		return err
-	}
-
-	d.SetId(fmt.Sprintf("projects/%s/global/backendServices/%s", project, serviceName))
+	d.SetId(serviceName)
 
 	return resourceComputeBackendServiceRead(d, meta)
 }

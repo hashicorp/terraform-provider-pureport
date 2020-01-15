@@ -80,18 +80,16 @@ be specified.`,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"cpus": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ForceNew:     true,
-							Description:  `Number of virtual CPUs to use.`,
-							AtLeastOneOf: []string{"node_type_flexibility.0.cpus", "node_type_flexibility.0.memory"},
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: `Number of virtual CPUs to use.`,
 						},
 						"memory": {
-							Type:         schema.TypeString,
-							Optional:     true,
-							ForceNew:     true,
-							Description:  `Physical memory available to the node, defined in MB.`,
-							AtLeastOneOf: []string{"node_type_flexibility.0.cpus", "node_type_flexibility.0.memory"},
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: `Physical memory available to the node, defined in MB.`,
 						},
 						"local_ssd": {
 							Type:        schema.TypeString,
@@ -187,7 +185,7 @@ func resourceComputeNodeTemplateCreate(d *schema.ResourceData, meta interface{})
 	}
 
 	// Store the ID now
-	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/nodeTemplates/{{name}}")
+	id, err := replaceVars(d, config, "{{name}}")
 	if err != nil {
 		return fmt.Errorf("Error constructing id: %s", err)
 	}
@@ -314,7 +312,7 @@ func resourceComputeNodeTemplateImport(d *schema.ResourceData, meta interface{})
 	}
 
 	// Replace import id for the resource id
-	id, err := replaceVars(d, config, "projects/{{project}}/regions/{{region}}/nodeTemplates/{{name}}")
+	id, err := replaceVars(d, config, "{{name}}")
 	if err != nil {
 		return nil, fmt.Errorf("Error constructing id: %s", err)
 	}

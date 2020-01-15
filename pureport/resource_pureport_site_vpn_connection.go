@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/antihax/optional"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -135,12 +134,12 @@ func resourceSiteVPNConnection() *schema.Resource {
 					"customer_side": {
 						Type:         schema.TypeString,
 						Required:     true,
-						ValidateFunc: validation.CIDRNetwork(16, 32),
+						ValidateFunc: validation.CIDRNetwork(8, 32),
 					},
 					"pureport_side": {
 						Type:         schema.TypeString,
 						Required:     true,
-						ValidateFunc: validation.CIDRNetwork(16, 32),
+						ValidateFunc: validation.CIDRNetwork(8, 32),
 					},
 				},
 			},
@@ -170,8 +169,8 @@ func resourceSiteVPNConnection() *schema.Resource {
 		Schema: connection_schema,
 
 		Timeouts: &schema.ResourceTimeout{
-			Create: schema.DefaultTimeout(6 * time.Minute),
-			Delete: schema.DefaultTimeout(6 * time.Minute),
+			Create: schema.DefaultTimeout(connection.CreateTimeout),
+			Delete: schema.DefaultTimeout(connection.DeleteTimeout),
 		},
 	}
 }

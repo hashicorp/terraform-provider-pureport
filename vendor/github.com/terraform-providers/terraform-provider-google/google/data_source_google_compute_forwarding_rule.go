@@ -107,7 +107,7 @@ func dataSourceGoogleComputeForwardingRuleRead(d *schema.ResourceData, meta inte
 	if err != nil {
 		return handleNotFoundError(err, d, fmt.Sprintf("Forwarding Rule Not Found : %s", name))
 	}
-	d.SetId(fmt.Sprintf("projects/%s/regions/%s/forwardingRules/%s", project, region, name))
+	d.SetId(frule.Name)
 
 	d.Set("self_link", frule.SelfLink)
 	d.Set("description", frule.Description)
