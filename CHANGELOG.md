@@ -1,4 +1,4 @@
-## 1.1.6 (Unreleased)
+## 1.1.6 (January 16, 2020)
 
 ENHANCEMENTS:
  * Update to Terraform 0.12.19
