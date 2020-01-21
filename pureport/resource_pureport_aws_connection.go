@@ -43,11 +43,11 @@ func resourceAWSConnection() *schema.Resource {
 		},
 		"peering_type": {
 			Type:         schema.TypeString,
-			Description:  "The peering type to use for this connection: [PUBLIC, PRIVATE]",
+			Description:  "The peering type to use for this connection: [PUBLIC, PRIVATE, TRANSIT]",
 			Default:      "PRIVATE",
 			Optional:     true,
 			ForceNew:     true,
-			ValidateFunc: validation.StringInSlice([]string{"private", "public"}, true),
+			ValidateFunc: validation.StringInSlice([]string{"private", "public", "transit"}, true),
 		},
 		"gateways": {
 			Computed: true,
