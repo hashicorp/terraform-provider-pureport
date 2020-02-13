@@ -2,6 +2,7 @@ package pureport
 
 import (
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -35,7 +36,7 @@ func TestDataSourceCloudRegionsDataSource_empty(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckDataSourceCloudRegions(resourceName),
 
-					resource.TestCheckResourceAttr(resourceName, "regions.#", "39"),
+					resource.TestMatchResourceAttr(resourceName, "regions.#", regexp.MustCompile("[0-9]{1,2}")),
 
 					resource.TestCheckResourceAttr(resourceName, "regions.0.id", "aws-ap-northeast-1"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0.name", "Asia Pacific (Tokyo)"),
