@@ -1,14 +1,16 @@
 ## 1.1.6 (Unreleased)
 
 ENHANCEMENTS:
- * Update to golang 1.14
- * Update Acceptance tests to use the Terraform 0.12 syntax
- * Add support for AWS Transit Peering Type
+ * Update to golang 1.14.
+ * Update Acceptance tests to use the Terraform 0.12 syntax.
+ * Add support for AWS Transit Peering Type.
+ * Update test-infr terraform configurations to 0.12.
 
 BUG FIXES:
  * Update the documentation for filtering data sources and resources
    to match the standard Terraform API.
  * Fix random acceptance tests failures due to changes in AWS cloud regions and services.
+ * Fix TravisCI deprecation warnings.
 
 ## 1.1.5 (November 18, 2019)
 
