@@ -52,7 +52,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
   filter {
     name = "Name"
     values = ["Bansh.*"]
@@ -67,8 +67,8 @@ resource "pureport_site_vpn_connection" "main" {
   speed = "100"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
   ike_version = "V2"
 
@@ -98,8 +98,8 @@ resource "pureport_site_vpn_connection" "main" {
   speed = "100"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
   ike_version = "V2"
 
@@ -130,8 +130,8 @@ resource "pureport_site_vpn_connection" "main" {
   high_availability = true
   enable_bgp_password = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
   ike_version = "v2"
 
@@ -176,8 +176,8 @@ resource "pureport_site_vpn_connection" "main" {
   speed = "100"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
   customer_networks {
     name = "Customer#1"
@@ -216,8 +216,8 @@ resource "pureport_site_vpn_connection" "main" {
   speed = "50"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
   ike_version = "V2"
 

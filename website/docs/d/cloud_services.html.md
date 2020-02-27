@@ -12,7 +12,10 @@ description: |-
 
 ```hcl
 data "pureport_cloud_services" "name_regex" {
-  name_regex = ".*S3 us-west-2"
+  filter {
+    name = "Name"
+    values = [".*S3 us-west-2"]
+  }
 }
 ```
 

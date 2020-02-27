@@ -15,7 +15,10 @@ data "pureport_accounts" "empty" {
 }
 
 data "pureport_accounts" "name_regex" {
-  name_regex = "My Name.*"
+  filter {
+    name = "Name"
+    values = ["My Name.*"]
+  }
 }
 ```
 

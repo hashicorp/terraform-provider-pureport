@@ -18,7 +18,7 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
   filter {
     name = "Name"
     values = ["Connections"]
@@ -28,13 +28,13 @@ data "pureport_networks" "main" {
 
 const testAccDataSourceConnectionsConfig_empty = testAccDataSourceConnectionsConfig_common + `
 data "pureport_connections" "empty" {
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  network_href = data.pureport_networks.main.networks.0.href
 }
 `
 
 const testAccDataSourceConnectionsConfig_name_filter = testAccDataSourceConnectionsConfig_common + `
 data "pureport_connections" "name_filter" {
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  network_href = data.pureport_networks.main.networks.0.href
   filter {
     name = "Name"
     values = [".*Test-2"]

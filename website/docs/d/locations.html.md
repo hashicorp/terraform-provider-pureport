@@ -12,7 +12,10 @@ description: |-
 
 ```hcl
 data "pureport_locations" "name_regex" {
-  name_regex = "^Sea*"
+  filter {
+    name = "Name"
+    values = ["^Sea*"]
+  }
 }
 ```
 

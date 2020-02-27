@@ -1,6 +1,6 @@
 module github.com/terraform-providers/terraform-provider-pureport
 
-go 1.13
+go 1.14
 
 require (
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
@@ -10,7 +10,6 @@ require (
 	github.com/golangci/golangci-lint v1.21.0
 	github.com/hashicorp/terraform v0.12.19
 	github.com/hashicorp/terraform-plugin-sdk v1.3.0
-	github.com/marstr/guid v1.1.0 // indirect
 	github.com/pureport/pureport-sdk-go v1.2.3
 	github.com/stoewer/go-strcase v1.1.0 // indirect
 	github.com/terraform-providers/terraform-provider-aws v1.60.1-0.20191114211556-907e76d4b112

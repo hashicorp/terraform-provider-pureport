@@ -13,13 +13,16 @@ description: |-
 ```hcl
 
 data "pureport_accounts" "main" {
-  name_regex = "MyAccount"
+  filter {
+    name = "Name"
+    values = ["MyAccount"]
+  }
 }
 
 resource "pureport_network" "main" {
   name = "MyNetwork"
   description = "My Custom Network"
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
 
   tags = {
     Environment = "production"

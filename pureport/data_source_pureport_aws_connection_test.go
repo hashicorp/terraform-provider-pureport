@@ -16,7 +16,7 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
   filter {
     name = "Name"
     values = ["A Flock of Seagulls"]
@@ -24,7 +24,7 @@ data "pureport_networks" "main" {
 }
 
 data "pureport_connections" "main" {
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  network_href = data.pureport_networks.main.networks.0.href
   filter {
     name = "Name"
     values = ["AWS"]
@@ -34,7 +34,7 @@ data "pureport_connections" "main" {
 
 const testAccDataSourceAwsConnectionConfig_basic = testAccDataSourceAwsConnectionConfig_common + `
 data "pureport_aws_connection" "basic" {
-  connection_id = "${data.pureport_connections.main.connections.0.id}"
+  connection_id = data.pureport_connections.main.connections.0.id
 }
 `
 
