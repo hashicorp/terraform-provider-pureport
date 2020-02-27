@@ -1,4 +1,29 @@
-## 1.1.6 (Unreleased)
+## 1.1.7 (Unreleased)
+
+ENHANCEMENTS:
+ * Update to golang 1.14.
+ * Update Acceptance tests to use the Terraform 0.12 syntax.
+ * Add support for AWS Transit Peering Type.
+ * Update test-infr terraform configurations to 0.12.
+
+BUG FIXES:
+ * Update the documentation for filtering data sources and resources
+   to match the standard Terraform API.
+ * Fix random acceptance tests failures due to changes in AWS cloud regions and services.
+ * Fix TravisCI deprecation warnings.
+
+## 1.1.6 (January 16, 2020)
+
+ENHANCEMENTS:
+ * Update to Terraform 0.12.19
+ * Update to AzureRM 1.40.0
+ * Update to AWS 1.60.1
+ * Update to Google 2.20.1
+
+BUG FIXES:
+ * Fix issue with AWS updating Cloud Services at will
+ * Increase timeouts due to changes in the backend which may result in longer expected wait times.
+
 ## 1.1.5 (November 18, 2019)
 
 ENHANCEMENTS:
