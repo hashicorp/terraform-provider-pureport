@@ -1,4 +1,16 @@
-## 1.1.6 (Unreleased)
+## 1.1.7 (Unreleased)
+## 1.1.6 (January 16, 2020)
+
+ENHANCEMENTS:
+ * Update to Terraform 0.12.19
+ * Update to AzureRM 1.40.0
+ * Update to AWS 1.60.1
+ * Update to Google 2.20.1
+
+BUG FIXES:
+ * Fix issue with AWS updating Cloud Services at will
+ * Increase timeouts due to changes in the backend which may result in longer expected wait times.
+
 ## 1.1.5 (November 18, 2019)
 
 ENHANCEMENTS:
