@@ -10,7 +10,7 @@ def plugin_name = "terraform-provider-pureport"
 pipeline {
     agent {
       docker {
-        image 'golang:1.13'
+        image 'golang:1.14'
       }
     }
     options {
