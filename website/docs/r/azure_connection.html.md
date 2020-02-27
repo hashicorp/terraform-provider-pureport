@@ -12,16 +12,25 @@ description: |-
 
 ```hcl
 data "pureport_accounts" "main" {
-  name_regex = "MyAccount"
+  filter {
+    name = "Name"
+    values = ["MyAccount"]
+  }
 }
 
 data "pureport_locations" "main" {
-  name_regex = "Sea.*"
+  filter {
+    name = "Name"
+    values = ["Sea.*"]
+  }
 }
 
 data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "MyNetwork"
+  account_href = data.pureport_accounts.main.accounts.0.href
+  filter {
+    name = "Name"
+    values = ["MyNetwork"]
+  }
 }
 
 resource "pureport_azure_connection" "main" {
@@ -30,8 +39,8 @@ resource "pureport_azure_connection" "main" {
   speed = "100"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
   service_key = "3166c9a8-1275-4e7b-bad2-0dc6db0c6e02"
 

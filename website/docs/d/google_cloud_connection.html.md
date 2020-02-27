@@ -12,7 +12,12 @@ description: |-
 
 ```hcl
 data "pureport_google_cloud_connection" "basic" {
-  connection_id = "${data.pureport_connections.main.connections.0.id}"
+  connection_id = data.pureport_connections.main.connections.0.id
+
+  filter {
+    name = "Name"
+    values = ["^My Conn*"]
+  }
 }
 ```
 

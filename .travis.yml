@@ -1,10 +1,12 @@
 dist: xenial
-sudo: required
 services:
   - docker
 language: go
 go:
-  - "1.13.x"
+  - "1.14.x"
+os:
+  - linux
+  - osx
 
 cache:
   directories:
@@ -18,18 +20,18 @@ env:
   global:
     GOFLAGS=-mod=vendor
 
-matrix:
+jobs:
   fast_finish: true
   allow_failures:
   - go: tip
   include:
-  - go: "1.13.x"
+  - go: "1.14.x"
     name: "Code Lint"
     script: make lint
-  - go: "1.13.x"
+  - go: "1.14.x"
     name: "Code UnitTest"
     script: make test
-  - go: "1.13.x"
+  - go: "1.14.x"
     name: "Website"
     script:
       - make website-test

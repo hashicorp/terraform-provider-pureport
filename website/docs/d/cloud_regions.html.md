@@ -12,7 +12,10 @@ description: |-
 
 ```hcl
 data "pureport_cloud_regions" "name_regex" {
-  name_regex = "US East.*"
+  filter {
+    name = "Name"
+    values = ["US East.*"]
+  }
 }
 ```
 

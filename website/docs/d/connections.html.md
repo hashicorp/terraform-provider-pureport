@@ -12,16 +12,27 @@ description: |-
 
 ```hcl
 data "pureport_accounts" "main" {
-  name_regex = "My Account.*"
+  filter {
+    name = "Name"
+    values = ["My Account.*"]
+  }
 }
 
 data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
-  name_regex = "Connections"
+  account_href = data.pureport_accounts.main.accounts.0.href
+  filter {
+    name = "Name"
+    values = ["Connections"]
+  }
 }
 
 data "pureport_connections" "empty" {
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  network_href = data.pureport_networks.main.networks.0.href
+
+  filter {
+    name = "Name"
+    values = ["^Some Conn*"]
+  }
 }
 ```
 

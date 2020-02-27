@@ -50,7 +50,7 @@ func testAccResourceNetworkConfig_basic() string {
 resource "pureport_network" "main" {
   name = "%s"
   description = "Network Terraform Test"
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
 
   tags = {
     Environment = "tf-test"

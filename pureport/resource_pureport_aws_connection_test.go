@@ -59,7 +59,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
   filter {
     name = "Name"
     values = ["Bansh.*"]
@@ -76,11 +76,11 @@ resource "pureport_aws_connection" "basic" {
   speed = "50"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+  aws_region = data.pureport_cloud_regions.main.regions.0.identifier
+  aws_account_id = data.aws_caller_identity.current.account_id
 
   tags = {
     Environment = "tf-test"
@@ -103,11 +103,11 @@ resource "pureport_aws_connection" "basic" {
   speed = "50"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+  aws_region = data.pureport_cloud_regions.main.regions.0.identifier
+  aws_account_id = data.aws_caller_identity.current.account_id
 
   tags = {
     Environment = "tf-test"
@@ -130,11 +130,11 @@ resource "pureport_aws_connection" "basic" {
   speed = "50"
   high_availability = false
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+  aws_region = data.pureport_cloud_regions.main.regions.0.identifier
+  aws_account_id = data.aws_caller_identity.current.account_id
 }
 `
 	connection_name := acctest.RandomWithPrefix("AwsDirectConnectTest")
@@ -149,11 +149,11 @@ resource "pureport_aws_connection" "updateSpeed" {
   speed = "100"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+  aws_region = data.pureport_cloud_regions.main.regions.0.identifier
+  aws_account_id = data.aws_caller_identity.current.account_id
 
   tags = {
     Environment = "tf-test"
@@ -174,11 +174,11 @@ resource "pureport_aws_connection" "updateSpeed" {
   speed = "200"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+  aws_region = data.pureport_cloud_regions.main.regions.0.identifier
+  aws_account_id = data.aws_caller_identity.current.account_id
 
   tags = {
     Environment = "tf-test"
@@ -206,14 +206,14 @@ resource "pureport_aws_connection" "cloudServices" {
   speed = "100"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
   cloud_service_hrefs = data.pureport_cloud_services.s3.services.*.href
   peering_type = "PUBLIC"
 
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+  aws_region = data.pureport_cloud_regions.main.regions.0.identifier
+  aws_account_id = data.aws_caller_identity.current.account_id
 
   tags = {
     Environment = "tf-test"
@@ -234,11 +234,11 @@ resource "pureport_aws_connection" "nat_mapping" {
   speed = "100"
   high_availability = true
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
-  aws_region = "${data.pureport_cloud_regions.main.regions.0.identifier}"
-  aws_account_id = "${data.aws_caller_identity.current.account_id}"
+  aws_region = data.pureport_cloud_regions.main.regions.0.identifier
+  aws_account_id = data.aws_caller_identity.current.account_id
 
   nat_config {
     enabled = true

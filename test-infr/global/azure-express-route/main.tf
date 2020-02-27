@@ -19,7 +19,7 @@ resource "azurerm_express_route_circuit" "main" {
   }
 
   tags = {
-    Environment = "${var.env}"
+    Environment = var.env
     Purpose     = "AcceptanceTests"
   }
 }
@@ -38,7 +38,7 @@ resource "azurerm_express_route_circuit" "datasource" {
   }
 
   tags = {
-    Environment = "${var.env}"
+    Environment = var.env
     Purpose     = "AcceptanceTests"
   }
 }

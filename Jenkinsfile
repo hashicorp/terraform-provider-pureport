@@ -4,13 +4,13 @@
 
 def utils = new com.pureport.Utils()
 
-def version = "1.1.6"
+def version = "1.1.7"
 def plugin_name = "terraform-provider-pureport"
 
 pipeline {
     agent {
       docker {
-        image 'golang:1.13'
+        image 'golang:1.14'
       }
     }
     options {

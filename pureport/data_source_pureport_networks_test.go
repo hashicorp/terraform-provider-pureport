@@ -18,7 +18,7 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_networks" "empty" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
 }
 `
 
@@ -31,7 +31,7 @@ data "pureport_accounts" "main" {
 }
 
 data "pureport_networks" "name_filter" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
   filter {
     name = "Name"
     values = ["Clash.*"]

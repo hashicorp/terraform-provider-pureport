@@ -52,7 +52,7 @@ data "pureport_locations" "main" {
 }
 
 data "pureport_networks" "main" {
-  account_href = "${data.pureport_accounts.main.accounts.0.href}"
+  account_href = data.pureport_accounts.main.accounts.0.href
   filter {
     name = "Name"
     values = ["Bansh.*"]
@@ -68,7 +68,7 @@ data "google_compute_network" "default" {
 
 resource "google_compute_router" "main" {
   name    = "terraform-acc-%s-${count.index + 1}"
-  network = "${data.google_compute_network.default.name}"
+  network = data.google_compute_network.default.name
 
   bgp {
     asn = "16550"
@@ -79,7 +79,7 @@ resource "google_compute_router" "main" {
 
 resource "google_compute_interconnect_attachment" "main" {
   name   = "terraform-acc-%s-${count.index + 1}"
-  router = "${element(google_compute_router.main.*.self_link, count.index)}"
+  router = element(google_compute_router.main.*.self_link, count.index)
   type   = "PARTNER"
   edge_availability_domain = "AVAILABILITY_DOMAIN_${count.index + 1}"
 
@@ -94,10 +94,10 @@ resource "pureport_google_cloud_connection" "main" {
   name = "%s"
   speed = "50"
 
-  location_href = "${data.pureport_locations.main.locations.0.href}"
-  network_href = "${data.pureport_networks.main.networks.0.href}"
+  location_href = data.pureport_locations.main.locations.0.href
+  network_href = data.pureport_networks.main.networks.0.href
 
-  primary_pairing_key = "${google_compute_interconnect_attachment.main.0.pairing_key}"
+  primary_pairing_key = google_compute_interconnect_attachment.main.0.pairing_key
 
   tags = {
     Environment = "tf-test"
