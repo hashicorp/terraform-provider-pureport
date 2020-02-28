@@ -1,3 +1,4 @@
+## 1.2.0 (Unreleased)
 ## 1.1.7 (February 28, 2020)
 
 ENHANCEMENTS:
