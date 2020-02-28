@@ -1,4 +1,4 @@
-## 1.1.7 (Unreleased)
+## 1.1.7 (February 28, 2020)
 
 ENHANCEMENTS:
  * Update to golang 1.14.
