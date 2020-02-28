@@ -69,7 +69,7 @@ func TestDataSourceSiteVPNConnection_basic(t *testing.T) {
 
 						resource.ComposeAggregateTestCheckFunc(
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-							resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
+							resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SiteVPN_RouteBasedBGP_DataSource - Primary"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 							resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "30000"),
 							resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
@@ -88,7 +88,7 @@ func TestDataSourceSiteVPNConnection_basic(t *testing.T) {
 
 						resource.ComposeAggregateTestCheckFunc(
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-							resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
+							resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SiteVPN_RouteBasedBGP_DataSource - Secondary"),
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 							resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "30000"),
 							resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
