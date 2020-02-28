@@ -291,7 +291,7 @@ func TestResourceAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AWS_DIRECT_CONNECT"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.name", regexp.MustCompile("^AwsDirectConnectTest-.* - Primary")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "64512"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}/30")),
@@ -304,7 +304,7 @@ func TestResourceAWSConnection_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.remote_id"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AWS_DIRECT_CONNECT 2"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.name", regexp.MustCompile("^AwsDirectConnectTest-.* - Secondary")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "64512"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}/30")),
@@ -417,7 +417,7 @@ func TestResourceAWSConnection_cloudServices(t *testing.T) {
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-					resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AWS_DIRECT_CONNECT"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.0.name", regexp.MustCompile("^AwsDirectConnectTest-.* - Primary")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 					resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "7224"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("45.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}")),
@@ -430,7 +430,7 @@ func TestResourceAWSConnection_cloudServices(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "gateways.0.remote_id"),
 
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-					resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AWS_DIRECT_CONNECT 2"),
+					resource.TestMatchResourceAttr(resourceName, "gateways.1.name", regexp.MustCompile("^AwsDirectConnectTest-.* - Secondary")),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 					resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "7224"),
 					resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("45.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}")),

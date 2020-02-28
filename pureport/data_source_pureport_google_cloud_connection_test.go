@@ -69,7 +69,7 @@ func TestDataSourceGoogleConnection_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.#", "1"),
 
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "GOOGLE_CLOUD_INTERCONNECT"),
+						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "GoogleCloud_DataSource - Primary"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "16550"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
