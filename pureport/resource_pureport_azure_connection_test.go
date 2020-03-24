@@ -126,7 +126,7 @@ func TestResourceAzureConnection_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.#", "2"),
 
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AZURE_EXPRESS_ROUTE"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.0.name", regexp.MustCompile("^AzureExpressRouteTest-.* - Primary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "12076"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}/30")),
@@ -139,7 +139,7 @@ func TestResourceAzureConnection_basic(t *testing.T) {
 						resource.TestCheckResourceAttrSet(resourceName, "gateways.0.remote_id"),
 
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "AZURE_EXPRESS_ROUTE 2"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.1.name", regexp.MustCompile("^AzureExpressRouteTest-.* - Secondary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "12076"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}/30")),

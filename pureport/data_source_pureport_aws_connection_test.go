@@ -71,7 +71,7 @@ func TestDataSourceAwsConnection_basic(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "gateways.#", "1"),
 
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AWS_DIRECT_CONNECT"),
+						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "AWS Connection DataSource - Primary"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "64512"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}/30")),

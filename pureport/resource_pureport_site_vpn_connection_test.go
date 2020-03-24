@@ -281,7 +281,7 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.0.name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.* - Primary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
@@ -300,7 +300,7 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.1.name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.* - Secondary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
@@ -351,7 +351,7 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.0.name", regexp.MustCompile("^SiteVPN_RouteBasedStatic-.* - Primary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", ""),
@@ -370,7 +370,7 @@ func TestResourceSiteVPNConnection_route_based_bgp(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.1.name", regexp.MustCompile("^SiteVPN_RouteBasedStatic-.* - Secondary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", ""),
@@ -424,7 +424,7 @@ func TestResourceSiteVPNConnection_with_ikeconfig(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.0.name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.* - Primary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.0.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
@@ -443,7 +443,7 @@ func TestResourceSiteVPNConnection_with_ikeconfig(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.1.name", regexp.MustCompile("^SiteVPN_RouteBasedBGP-.* - Secondary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "30000"),
 						resource.TestMatchResourceAttr(resourceName, "gateways.1.customer_ip", regexp.MustCompile("169.254.[0-9]{1,3}.[0-9]{1,3}")),
@@ -499,7 +499,7 @@ func TestResourceSiteVPNConnection_with_policy_based(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.availability_domain", "PRIMARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.0.name", "SITE_IPSEC_VPN"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.0.name", regexp.MustCompile("^SiteVPN_PolicyBased-.* - Primary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.0.customer_ip", ""),
@@ -518,7 +518,7 @@ func TestResourceSiteVPNConnection_with_policy_based(t *testing.T) {
 
 					resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.availability_domain", "SECONDARY"),
-						resource.TestCheckResourceAttr(resourceName, "gateways.1.name", "SITE_IPSEC_VPN 2"),
+						resource.TestMatchResourceAttr(resourceName, "gateways.1.name", regexp.MustCompile("^SiteVPN_PolicyBased-.* - Secondary")),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.description", ""),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_asn", "0"),
 						resource.TestCheckResourceAttr(resourceName, "gateways.1.customer_ip", ""),
