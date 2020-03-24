@@ -1,3 +1,4 @@
+## 1.2.0 (Unreleased)
 ## 1.1.8 (March 24, 2020)
 
 ENHANCEMENTS:
