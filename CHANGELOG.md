@@ -1,4 +1,5 @@
-## 1.1.8 (Unreleased)
+## 1.2.0 (Unreleased)
+## 1.1.8 (March 24, 2020)
 
 ENHANCEMENTS:
  * Update acceptance tests for new gateway naming.
