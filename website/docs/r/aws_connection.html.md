@@ -72,6 +72,7 @@ The following arguments are supported:
 
 - - -
 * `description` - (Optional) The description for the connection.
+* `customer_asn` - (Optional) The BGP ASN number to use for the customer network 
 * `customer_networks` - (Optional) A list of named CIDR block to easily identify a customer network.
     * `name` - The name for the network.
     * `address` - The CIDR block for the network

@@ -84,12 +84,14 @@ func expandAWSConnection(d *schema.ResourceData) client.AwsDirectConnectConnecti
 
 	// Generic Connection values
 	speed := d.Get("speed").(int)
+	customer_asn := d.Get("customer_asn").(int)
 
 	// Create the body of the request
 	c := client.AwsDirectConnectConnection{
-		Type_: "AWS_DIRECT_CONNECT",
-		Name:  d.Get("name").(string),
-		Speed: int32(speed),
+		Type_:       "AWS_DIRECT_CONNECT",
+		Name:        d.Get("name").(string),
+		Speed:       int32(speed),
+		CustomerASN: int64(customer_asn),
 		Location: &client.Link{
 			Href: d.Get("location_href").(string),
 		},
