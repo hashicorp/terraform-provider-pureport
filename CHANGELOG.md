@@ -1,4 +1,8 @@
-## 1.2.0 (Unreleased)
+## 1.1.9 (Unreleased)
+
+ENHANCEMENTS:
+  * Add support for setting `customer_asn` for AWS resources.
+
 ## 1.1.8 (March 24, 2020)
 
 ENHANCEMENTS:
