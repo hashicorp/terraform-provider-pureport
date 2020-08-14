@@ -27,7 +27,7 @@ jobs:
   include:
   - go: "1.14.x"
     name: "Code Lint"
-    script: make lint
+    script: travis_wait 30 make lint
   - go: "1.14.x"
     name: "Code UnitTest"
     script: make test
